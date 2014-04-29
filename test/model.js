@@ -20,8 +20,8 @@ describe("Data", function() {
 			assert.deepEqual(tpl.get(), { foo: "bar" });
 		});
 
-		it("returns `this.data` value on null or empty path", function() {
-			assert.strictEqual(tpl.get(), tpl.data);
+		it("returns `this.scope.value` on null or empty path", function() {
+			assert.strictEqual(tpl.get(), tpl.scope.value);
 		});
 
 		it("gets & sets shallow path", function() {
@@ -35,10 +35,10 @@ describe("Data", function() {
 		});
 
 		it("get(path) executes function value iff value at path is function", function() {
-			tpl.set("foo", function(_tpl) {
+			tpl.set("foo", function(scope) {
 				seen = true;
-				assert.strictEqual(this, tpl.data);
-				assert.strictEqual(_tpl, tpl);
+				assert.strictEqual(scope, tpl.scope);
+				assert.strictEqual(this, scope.value);
 				return true;
 			});
 
@@ -77,48 +77,6 @@ describe("Data", function() {
 		});
 	});
 
-
-	describe("#autorun()", function() {
-		var comp;
-		
-		afterEach(function() {
-			if (comp != null) {
-				comp.stop();
-				comp = null;
-			}
-		});
-
-		it("autorun() context always runs once, immediately", function() {
-			var seen = false;
-			comp = tpl.autorun(function() {
-				assert.ok(tpl.get("foo"));
-				seen = true;
-			});
-			assert.ok(seen);
-		});
-
-		it("`this` in autorun() contexts points to Temple instance", function() {
-			comp = tpl.autorun(function() {
-				assert.ok(tpl.get("foo"));
-				assert.strictEqual(this, tpl);
-			});
-		});
-
-		it("changing value at `key` after calling get(key) in a context causes context to run again", function(done) {
-			this.timeout(100);
-			var run = 2;
-
-			comp = tpl.autorun(function() {
-				assert.ok(tpl.get("foo"));
-				if (!(--run)) done();
-			});
-
-			setTimeout(function() {
-				tpl.set("foo", { bar: "baz" });
-			}, 10);
-		});
-	});
-
 	describe("#observe()", function() {
 		var o;
 
@@ -131,9 +89,8 @@ describe("Data", function() {
 
 		it("successfully adds & removes observer", function() {
 			o = tpl.observe("foo", function(){});
-			assert.ok(tpl._observers.indexOf(o) > -1);
+			assert.ok(o);
 			o.stop();
-			assert.strictEqual(tpl._observers.indexOf(o), -1);
 		});
 
 		it("observes nothing when nothing changes", function() {
@@ -230,6 +187,48 @@ describe("Data", function() {
 
 			tpl.set("foo.bar", "baz");
 			assert.ok(seen);
+		});
+	});
+
+
+	describe("#autorun()", function() {
+		var comp;
+		
+		afterEach(function() {
+			if (comp != null) {
+				comp.stop();
+				comp = null;
+			}
+		});
+
+		it("autorun() context always runs once, immediately", function() {
+			var seen = false;
+			comp = tpl.autorun(function() {
+				assert.ok(tpl.get("foo"));
+				seen = true;
+			});
+			assert.ok(seen);
+		});
+
+		it("`this` in autorun() contexts points to Temple instance", function() {
+			comp = tpl.autorun(function() {
+				assert.ok(tpl.get("foo"));
+				assert.strictEqual(this, tpl);
+			});
+		});
+
+		it("changing value at `key` after calling get(key) in a context causes context to run again", function(done) {
+			this.timeout(100);
+			var run = 2;
+
+			comp = tpl.autorun(function() {
+				assert.ok(tpl.get("foo"));
+				if (!(--run)) done();
+			});
+
+			setTimeout(function() {
+				tpl.set("foo", { bar: "baz" });
+			}, 10);
 		});
 	});
 });

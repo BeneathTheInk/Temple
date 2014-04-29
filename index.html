@@ -61,6 +61,7 @@
 				return div.innerHTML;
 			}
 
+			tpl.paint();
 			tpl.on("change", function() {
 				tpl.render();
 				console.log(toHTML());
