@@ -30,7 +30,7 @@
 		"txt": "<h1>A Comedy of Errors</h1>"
 	},
 	"complex": {
-		"js": "({\n  header: function () {\n    return \"Colors\";\n  },\n  item: [\n      {name: \"red\", current: true, url: \"#Red\"},\n      {name: \"green\", current: false, url: \"#Green\"},\n      {name: \"blue\", current: false, url: \"#Blue\"}\n  ],\n  link: function () {\n    return this[\"current\"] !== true;\n  },\n  list: function () {\n    return this.item.length !== 0;\n  },\n  empty: function () {\n    return this.item.length === 0;\n  }\n})",
+		"js": "({\n  header: function () {\n    return \"Colors\";\n  },\n  item: [\n      {name: \"red\", current: true, url: \"#Red\"},\n      {name: \"green\", current: false, url: \"#Green\"},\n      {name: \"blue\", current: false, url: \"#Blue\"}\n  ],\n  link: function () {\n    return this.get(\"current\") !== true;\n  },\n  list: function () {\n    return this.get(\"item.length\") !== 0;\n  },\n  empty: function () {\n    return this.get(\"item.length\") === 0;\n  }\n})",
 		"mustache": "<h1>{{header}}</h1>\n{{#list}}\n  <ul>\n  {{#item}}\n  {{#current}}\n  <li><strong>{{name}}</strong></li>\n  {{/current}}\n  {{#link}}\n  <li><a href=\"{{url}}\">{{name}}</a></li>\n  {{/link}}\n  {{/item}}\n  </ul>\n{{/list}}\n{{#empty}}\n  <p>The list is empty.</p>\n{{/empty}}",
 		"txt": "<h1>Colors</h1>\n  <ul>\n  <li><strong>red</strong></li>\n  <li><a href=\"#Green\">green</a></li>\n  <li><a href=\"#Blue\">blue</a></li>\n  </ul>"
 	},
@@ -50,7 +50,7 @@
 		"txt": "1 BED"
 	},
 	"dot_notation": {
-		"js": "({\n  name: \"A Book\",\n  authors: [\"John Power\", \"Jamie Walsh\"],\n  price: {\n    value: 200,\n    vat: function () {\n      return this.value * 0.2;\n    },\n    currency: {\n      symbol: '$',\n      name: 'USD'\n    }\n  },\n  availability: {\n    status: true,\n    text: \"In Stock\"\n  },\n  // And now, some truthy false values\n  truthy: {\n    zero: 0,\n    notTrue: false\n  }\n})",
+		"js": "({\n  name: \"A Book\",\n  authors: [\"John Power\", \"Jamie Walsh\"],\n  price: {\n    value: 200,\n    vat: function () {\n      return this.get(\"value\") * 0.2;\n    },\n    currency: {\n      symbol: '$',\n      name: 'USD'\n    }\n  },\n  availability: {\n    status: true,\n    text: \"In Stock\"\n  },\n  // And now, some truthy false values\n  truthy: {\n    zero: 0,\n    notTrue: false\n  }\n})",
 		"mustache": "<!-- exciting part -->\n<h1>{{name}}</h1>\n<p>Authors: <ul>{{#authors}}<li>{{.}}</li>{{/authors}}</ul></p>\n<p>Price: {{{price.currency.symbol}}}{{price.value}} {{#price.currency}}{{name}} <b>{{availability.text}}</b>{{/price.currency}}</p>\n<p>VAT: {{{price.currency.symbol}}}{{#price}}{{vat}}{{/price}}</p>\n<!-- boring part -->\n<h2>Test truthy false values:</h2>\n<p>Zero: {{truthy.zero}}</p>\n<p>False: {{truthy.notTrue}}</p>",
 		"txt": "<h1>A Book</h1>\n<p>Authors: <ul><li>John Power</li><li>Jamie Walsh</li></ul></p>\n<p>Price: $200 USD <b>In Stock</b></p>\n<p>VAT: $40</p>\n\n<h2>Test truthy false values:</h2>\n<p>Zero: 0</p>\n<p>False: false</p>"
 	},

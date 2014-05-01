@@ -4,7 +4,7 @@
   price: {
     value: 200,
     vat: function () {
-      return this.value * 0.2;
+      return this.get("value") * 0.2;
     },
     currency: {
       symbol: '$',

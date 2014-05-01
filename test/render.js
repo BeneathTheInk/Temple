@@ -45,10 +45,7 @@ describe('DOM Rendering', function () {
 					assert.throw("Oops! partial!");
 					// output = Mustache.render(test.template, test.view, { partial: test.partial });
 				} else {
-					tpl = new Temple({
-						data: test.view,
-						template: test.template
-					});
+					tpl = new Temple(test.template, test.view);
 				}
 
 				assert.equal(tpl.toHTML(), test.expect);

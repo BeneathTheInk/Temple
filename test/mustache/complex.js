@@ -8,12 +8,12 @@
       {name: "blue", current: false, url: "#Blue"}
   ],
   link: function () {
-    return this["current"] !== true;
+    return this.get("current") !== true;
   },
   list: function () {
-    return this.item.length !== 0;
+    return this.get("item.length") !== 0;
   },
   empty: function () {
-    return this.item.length === 0;
+    return this.get("item.length") === 0;
   }
 })

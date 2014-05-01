@@ -53,20 +53,12 @@
 				}
 			});
 
-			function toHTML() {
-				var div = document.createElement("div");
-				for (var i in tpl.nodes) {
-					div.appendChild(tpl.nodes[i]);
-				}
-				return div.innerHTML;
-			}
-
 			tpl.paint();
 			tpl.on("change", function() {
 				tpl.render();
-				console.log(toHTML());
+				console.log(tpl.toHTML());
 			});
-			console.log(toHTML());
+			console.log(tpl.toHTML());
 
 		</script>
 	</body>

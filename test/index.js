@@ -9,7 +9,8 @@ describe("Temple", function() {
 });
 
 describe("new Temple()", function() {
-	require("./model");
+	require("./scope");
+	require("./reactive");
 	require("./render");
 });
 
