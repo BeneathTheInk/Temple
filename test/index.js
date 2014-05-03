@@ -8,8 +8,9 @@ describe("Temple", function() {
 	require("./parse");
 });
 
+require("./scope");
+
 describe("new Temple()", function() {
-	require("./scope");
 	require("./reactive");
 	require("./render");
 });

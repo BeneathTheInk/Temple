@@ -1,6 +1,7 @@
 var assert = require("assert"),
 	parse = require("../lib/parse"),
-	inspect = require('util').inspect;
+	inspect = require('util').inspect,
+	NODE_TYPE = require("../lib/types");
 
 describe("#parse()", function() {
 
@@ -8,18 +9,18 @@ describe("#parse()", function() {
 		var template = parse("<div class=\"container\">Hello World</div>");
 		
 		assert.deepEqual(template, [{
-			type: parse.NODE_TYPE.ELEMENT,
+			type: NODE_TYPE.ELEMENT,
 			name: "div",
 			attributes: [{
-				type: parse.NODE_TYPE.ATTRIBUTE,
+				type: NODE_TYPE.ATTRIBUTE,
 				name: "class",
 				children: [{
-					type: parse.NODE_TYPE.TEXT,
+					type: NODE_TYPE.TEXT,
 					value: "container"
 				}]
 			}],
 			children: [{
-				type: parse.NODE_TYPE.TEXT,
+				type: NODE_TYPE.TEXT,
 				value: "Hello World"
 			}]
 		}]);
@@ -30,13 +31,13 @@ describe("#parse()", function() {
 		// console.log(inspect(template));
 		
 		assert.deepEqual(template, [{
-			type: parse.NODE_TYPE.INTERPOLATOR,
+			type: NODE_TYPE.INTERPOLATOR,
 			value: "hello"
 		},{
-			type: parse.NODE_TYPE.TRIPLE,
+			type: NODE_TYPE.TRIPLE,
 			value: "world"
 		},{
-			type: parse.NODE_TYPE.TRIPLE,
+			type: NODE_TYPE.TRIPLE,
 			value: "unescaped"
 		}]);
 	});
@@ -45,17 +46,17 @@ describe("#parse()", function() {
 		var template = parse("{{#good}}Hello{{/good}}{{^bad}}World{{/bad}}");
 		
 		assert.deepEqual(template, [{
-			type: parse.NODE_TYPE.SECTION,
+			type: NODE_TYPE.SECTION,
 			value: "good",
 			children: [{
-				type: parse.NODE_TYPE.TEXT,
+				type: NODE_TYPE.TEXT,
 				value: "Hello"
 			}]
 		},{
-			type: parse.NODE_TYPE.INVERTED,
+			type: NODE_TYPE.INVERTED,
 			value: "bad",
 			children: [{
-				type: parse.NODE_TYPE.TEXT,
+				type: NODE_TYPE.TEXT,
 				value: "World"
 			}]
 		}]);
@@ -65,7 +66,7 @@ describe("#parse()", function() {
 		var template = parse("{{>partial}}");
 		
 		assert.deepEqual(template, [{
-			type: parse.NODE_TYPE.PARTIAL,
+			type: NODE_TYPE.PARTIAL,
 			value: "partial"
 		}]);
 	});
@@ -74,11 +75,11 @@ describe("#parse()", function() {
 		var template = parse("<div>{{ var }}</div>");
 
 		assert.deepEqual(template, [{
-			type: parse.NODE_TYPE.ELEMENT,
+			type: NODE_TYPE.ELEMENT,
 			name: "div",
 			attributes: [],
 			children: [{
-				type: parse.NODE_TYPE.INTERPOLATOR,
+				type: NODE_TYPE.INTERPOLATOR,
 				value: "var"
 			}]
 		}]);

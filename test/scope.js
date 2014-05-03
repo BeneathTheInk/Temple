@@ -40,7 +40,7 @@ describe("Scope", function() {
 			assert.strictEqual(scope.get("foo"), true);
 		});
 
-		it("deep copies generic objects on set", function() {
+		it("deep copies plain objects on set", function() {
 			var data = { bar: { baz: "buz" } };
 			scope.set("foo", data);
 			assert.deepEqual(scope.get("foo"), data);
@@ -48,7 +48,7 @@ describe("Scope", function() {
 			assert.notStrictEqual(scope.get("foo.bar"), data.foo);
 		});
 
-		it("directly points to non-generic objects on set", function() {
+		it("directly points to non-plain objects on set", function() {
 			var data = [];
 			scope.set("foo", data);
 			assert.strictEqual(scope.get("foo"), data);
@@ -59,7 +59,7 @@ describe("Scope", function() {
 			assert.strictEqual(typeof scope.get("foo"), "undefined");
 		});
 
-		it("only unsets deeply on generic objects", function() {
+		it("only unsets deeply on plain objects", function() {
 			scope.set("foo", [ 0, 1, 2 ]);
 			assert.equal(scope.get("foo.length"), 3);
 			scope.unset("foo.length");
@@ -73,31 +73,66 @@ describe("Scope", function() {
 	});
 
 	describe("#observe()", function() {
-		var o;
-
 		afterEach(function() {
-			if (o != null) {
-				o.stop();
-				o = null;
-			}
+			scope.stopObserving();
 		});
 
-		it("successfully adds & removes observer", function() {
-			o = scope.observe("foo", function(){});
-			assert.ok(o);
-			o.stop();
+		it("successfully adds observer", function() {
+			var fn = function(){};
+			scope.observe("foo", fn);
+			assert.ok(scope._observers.some(function(o) {
+				return o.fn === fn;
+			}));
+		});
+
+		it("successfully removes observer", function() {
+			var fn = function() { throw new Error("Observer wasn't removed!"); }
+			scope.observe("foo", fn);
+			
+			assert.throws(function() {
+				scope.set("foo", "baz");
+			});
+
+			scope.stopObserving("foo", fn);
+			scope.set("foo", "bar");
+		});
+
+		it("calling stopObserving() without arguments clears all observers", function() {
+			scope.observe("foo", function(){});
+			assert.equal(scope._observers.length, 1);
+			scope.stopObserving();
+			assert.equal(scope._observers.length, 0);
+		});
+
+		it("calling stopObserving(path) clears all observers with matching path", function() {
+			scope.observe("foo", function(){});
+			scope.observe("foo", function(){});
+			scope.observe("bar", function(){});
+			assert.equal(scope._observers.length, 3);
+			scope.stopObserving("foo");
+			assert.equal(scope._observers.length, 1);
+		});
+
+		it("calling stopObserving(null, fn) clears all observers with matching function", function() {
+			var fn = function(){};
+			scope.observe("foo", fn);
+			scope.observe("bar", fn);
+			scope.observe("baz", function(){});
+			assert.equal(scope._observers.length, 3);
+			scope.stopObserving(null, fn);
+			assert.equal(scope._observers.length, 1);
 		});
 
 		it("observes nothing when nothing changes", function() {
 			var seen = false;
-			o = scope.observe("foo", function() { seen = true; });
+			scope.observe("foo", function() { seen = true; });
 			scope.set("foo", "bar");
 			assert.ok(!seen);
 		});
 
 		it("observes static path changes", function() {
 			var seen = false;
-			o = scope.observe("foo.bar", function(nval, oval, path) {
+			scope.observe("foo.bar", function(nval, oval, path) {
 				assert.strictEqual(nval, "baz");
 				assert.strictEqual(typeof oval, "undefined");
 				assert.strictEqual(path, "foo.bar");
@@ -110,7 +145,7 @@ describe("Scope", function() {
 
 		it("observes unset", function() {
 			var seen = false;
-			o = scope.observe("foo", function(nval, oval, path) {
+			scope.observe("foo", function(nval, oval, path) {
 				assert.strictEqual(typeof nval, "undefined");
 				assert.strictEqual(oval, "bar");
 				assert.strictEqual(path, "foo");
@@ -123,7 +158,7 @@ describe("Scope", function() {
 
 		it("observes dynamic path: *", function() {
 			var seen = false;
-			o = scope.observe("*", function(nval, oval, path) {
+			scope.observe("*", function(nval, oval, path) {
 				assert.deepEqual(nval, { bar: "baz" });
 				assert.strictEqual(oval, "bar");
 				assert.strictEqual(path, "foo");
@@ -136,7 +171,7 @@ describe("Scope", function() {
 
 		it("observes dynamic path: *.bar.baz", function() {
 			var seen = false;
-			o = scope.observe("*.bar.baz", function(nval, oval, path) {
+			scope.observe("*.bar.baz", function(nval, oval, path) {
 				assert.strictEqual(nval, "buz");
 				assert.strictEqual(typeof oval, "undefined");
 				assert.strictEqual(path, "foo.bar.baz");
@@ -149,7 +184,7 @@ describe("Scope", function() {
 
 		it("observes dynamic path: foo.*.baz", function() {
 			var seen = false;
-			o = scope.observe("foo.*.baz", function(nval, oval, path) {
+			scope.observe("foo.*.baz", function(nval, oval, path) {
 				assert.strictEqual(nval, "buz");
 				assert.strictEqual(typeof oval, "undefined");
 				assert.strictEqual(path, "foo.bar.baz");
@@ -162,7 +197,7 @@ describe("Scope", function() {
 
 		it("observes dynamic path: foo.bar.*", function() {
 			var seen = false;
-			o = scope.observe("foo.bar.*", function(nval, oval, path) {
+			scope.observe("foo.bar.*", function(nval, oval, path) {
 				assert.strictEqual(nval, "buz");
 				assert.strictEqual(typeof oval, "undefined");
 				assert.strictEqual(path, "foo.bar.baz");
@@ -175,7 +210,7 @@ describe("Scope", function() {
 
 		it("calling get() in an observer returns the new value", function() {
 			var seen = false;
-			o = scope.observe("foo.bar", function(nval, oval, path) {
+			scope.observe("foo.bar", function(nval, oval, path) {
 				assert.strictEqual(this.get(path), nval);
 				seen = true;
 			});
@@ -209,14 +244,14 @@ describe("Scope", function() {
 			assert.equal(child.get("foo"), "bar");
 		});
 
-		it("destroying parent scope detaches it from children", function() {
+		it("closing parent scope detaches and closes all children", function() {
 			var grandchild = child.spawn();
 			assert.strictEqual(grandchild.parent, child);
 
 			child.close();
 			assert.equal(grandchild.parent, null);
 			assert.strictEqual(child.closed, true);
-			assert.notEqual(grandchild.closed, true);
+			assert.strictEqual(grandchild.closed, true);
 			grandchild.close();
 		});
 	});
