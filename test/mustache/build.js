@@ -17,7 +17,7 @@ files.forEach(function(file) {
 	if (exclude.indexOf(id) > -1) return;
 
 	if (spec[id] == null) spec[id] = {};
-	spec[id][format.substr(1)] = fs.readFileSync(path.join(__dirname, file), "utf-8").trim();
+	spec[id][format.substr(1)] = fs.readFileSync(path.join(__dirname, file), "utf-8");
 });
 
 fs.writeFileSync(path.resolve(__dirname, "../mustache.json"), JSON.stringify(spec, null, "\t"), "utf-8");

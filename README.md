@@ -2,15 +2,9 @@
 
 A mustache-powered, reactive template framework.
 
-```html
-<script type="text/temple" id="template">
-	<span style='color: {{ color }};'>{{ message }}</span>
-</script>
-```
-
 ```javascript
 // create a template
-temple("#template")
+temple("<span style='color: {{ color }};'>{{ message }}</span>")
 
 // add data
 .scope({
@@ -25,9 +19,9 @@ temple("#template")
 // mix in some async changes
 .use(function() {
 	this.toggleColor = function() {
-		var nindex = (this.get("colorIndex") + 1) % this.get("colors.length")
-		this.set("colorIndex", nindex);
-		return nindex;
+		var newIndex = (this.get("colorIndex") + 1) % this.get("colors.length");
+		this.set("colorIndex", newIndex);
+		return newIndex;
 	}
 
 	setInterval(this.toggleColor.bind(this), 500);

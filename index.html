@@ -5,11 +5,11 @@
 		<meta charset="UTF-8" />
 		<title>Page Title</title>
 		<!--[if lt IE 9]><script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
-		
-		<script type="text/javascript" src="./dist/temple.js"></script>
 	</head>
 	<body>
-		<script type="text/temple" id="template">
+		<div id="main"></div>
+
+		<script type="text/mustache" id="template">
 			<div class="container {{#active}}active{{/active}}">
 				This is some {{ interrupted }} <i>italic text</i>.
 				
@@ -38,28 +38,20 @@
 
 		<script type="text/javascript" src="./dist/temple.js"></script>
 		<script type="text/javascript">
-			var tpl = new Temple({
-				template: template.innerText,
-				data: {
-					interrupted: "[ INTERRUPTED ]",
-					active: true,
-					block: {
-						title: "Boom!",
-						no_escape: "<h2>NOT AFRAID</h2>",
-						inverted: false
-					},
-					name: "Hello!",
-					list: [ { name: "tim" }, 1, 2 ]
-				}
+			var tpl = new Temple(template.innerText, {
+				interrupted: "[ INTERRUPTED ]",
+				active: true,
+				block: {
+					title: "Boom!",
+					no_escape: "<h2>NOT AFRAID</h2>",
+					inverted: false
+				},
+				name: "Hello!",
+				list: [ { name: "tim" }, 1, 2 ]
 			});
 
-			tpl.paint();
-			tpl.on("change", function() {
-				tpl.render();
-				console.log(tpl.toHTML());
-			});
-			console.log(tpl.toHTML());
-
+			tpl.paint("#main");
+			console.log(tpl);
 		</script>
 	</body>
 </html>
