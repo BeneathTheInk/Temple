@@ -48,10 +48,10 @@ describe("Scope", function() {
 			assert.notStrictEqual(scope.get("foo.bar"), data.foo);
 		});
 
-		it("directly points to non-plain objects on set", function() {
-			var data = [];
-			scope.set("foo", data);
-			assert.strictEqual(scope.get("foo"), data);
+		it("directly points to non-plain objects, non-adaptor values on set", function() {
+			var fn = function(){};
+			scope.set("foo", fn);
+			assert.strictEqual(scope.value.foo, fn);
 		});
 
 		it("unsets", function() {
@@ -141,6 +141,13 @@ describe("Scope", function() {
 
 			scope.set("foo", { bar: "baz" });
 			assert.ok(seen);
+		});
+
+		it("observes changes only once", function() {
+			var seen = 0;
+			scope.observe("foo", function() { seen++; });
+			scope.set("foo", { bar: "baz" });
+			assert.strictEqual(seen, 1);
 		});
 
 		it("observes unset", function() {
