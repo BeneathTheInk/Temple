@@ -40,6 +40,11 @@ describe("Scope", function() {
 			assert.strictEqual(scope.get("foo"), true);
 		});
 
+		it("sets value directly on null or empty path", function() {
+			scope.set([], "value");
+			assert.strictEqual(scope.get(), "value");
+		});
+
 		it("deep copies plain objects on set", function() {
 			var data = { bar: { baz: "buz" } };
 			scope.set("foo", data);
@@ -59,16 +64,23 @@ describe("Scope", function() {
 			assert.strictEqual(typeof scope.get("foo"), "undefined");
 		});
 
-		it("only unsets deeply on plain objects", function() {
-			scope.set("foo", [ 0, 1, 2 ]);
-			assert.equal(scope.get("foo.length"), 3);
-			scope.unset("foo.length");
-			assert.equal(scope.get("foo.length"), 3);
-		});
-
 		it("unset() sets `this.data` to undefined on null or empty path", function() {
 			scope.unset();
 			assert.strictEqual(typeof scope.data, "undefined");
+		});
+
+		it("get() accepts array as path", function() {
+			assert.strictEqual(scope.get([ "foo" ]), "bar");
+		});
+
+		it("set() accepts array as path", function() {
+			scope.set([ "foo", "bar" ], "baz")
+			assert.deepEqual(scope.get("foo"), { bar: "baz" });
+		});
+
+		it("set() accepts object for setting many paths at once", function() {
+			scope.set({ foo: { bar: "baz" } });
+			assert.deepEqual(scope.get("foo"), { bar: "baz" });
 		});
 	});
 
@@ -163,6 +175,17 @@ describe("Scope", function() {
 			assert.ok(seen);
 		});
 
+		it("calling get() in an observer returns the new value", function() {
+			var seen = false;
+			scope.observe("foo.bar", function(nval, oval, path) {
+				assert.strictEqual(this.get(path), nval);
+				seen = true;
+			});
+
+			scope.set("foo.bar", "baz");
+			assert.ok(seen);
+		});
+
 		it("observes dynamic path: *", function() {
 			var seen = false;
 			scope.observe("*", function(nval, oval, path) {
@@ -215,14 +238,73 @@ describe("Scope", function() {
 			assert.ok(seen);
 		});
 
-		it("calling get() in an observer returns the new value", function() {
+		it("observes dynamic path: **", function() {
 			var seen = false;
-			scope.observe("foo.bar", function(nval, oval, path) {
-				assert.strictEqual(this.get(path), nval);
+			scope.set("foo", { bar: "baz" });
+
+			scope.observe("**", function(nval, oval, path) {
+				assert.deepEqual(nval, { baz: "buz" });
+				assert.equal(oval, "baz");
+				assert.strictEqual(path, "foo.bar");
 				seen = true;
 			});
 
-			scope.set("foo.bar", "baz");
+			scope.set("foo.bar", { baz: "buz" });
+			assert.ok(seen);
+		});
+
+		it("observes dynamic path: **.baz", function() {
+			var seen = false;
+			
+			scope.observe("**.baz", function(nval, oval, path) {
+				assert.strictEqual(nval, "buz");
+				assert.strictEqual(typeof oval, "undefined");
+				assert.strictEqual(path, "foo.bar.baz");
+				seen = true;
+			});
+
+			scope.set("foo.bar.baz", "buz");
+			assert.ok(seen);
+		});
+
+		it("observes dynamic path: foo.**.baz", function() {
+			var seen = false;
+			scope.observe("foo.**.baz", function(nval, oval, path) {
+				assert.strictEqual(nval, "buz");
+				assert.strictEqual(typeof oval, "undefined");
+				assert.strictEqual(path, "foo.bar.bun.baz");
+				seen = true;
+			});
+
+			scope.set("foo.bar.bun.baz", "buz");
+			assert.ok(seen);
+		});
+
+		it("observes dynamic path: foo.**", function() {
+			var seen = false;
+			scope.set("foo.bar.baz", "buz");
+
+			scope.observe("foo.**", function(nval, oval, path) {
+				assert.equal(nval, "bun");
+				assert.equal(oval, "buz");
+				assert.strictEqual(path, "foo.bar.baz");
+				seen = true;
+			});
+
+			scope.set("foo.bar.baz", "bun");
+			assert.ok(seen);
+		});
+
+		it("observing path foo.** captures changes at path foo", function() {
+			var seen = false;
+			scope.observe("foo.**", function(nval, oval, path) {
+				assert.equal(nval, "buz");
+				assert.equal(oval, "bar");
+				assert.strictEqual(path, "foo");
+				seen = true;
+			});
+
+			scope.set("foo", "buz");
 			assert.ok(seen);
 		});
 	});

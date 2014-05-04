@@ -2,7 +2,7 @@ var spec = require("./mustache.json"),
 	assert = require("assert");
 
 describe('DOM Rendering', function () {
-	describe('Mustache Test Suite', function () {
+	describe.skip('Mustache Test Suite', function () {
 		function getContents(testName, ext) {
 			return spec[testName][ext];
 		}
