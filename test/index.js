@@ -15,4 +15,5 @@ describe("new Temple()", function() {
 	require("./render");
 });
 
+mocha.checkLeaks();
 mocha.run();
