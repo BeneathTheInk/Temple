@@ -64,9 +64,9 @@ describe("Scope", function() {
 			assert.strictEqual(typeof scope.get("foo"), "undefined");
 		});
 
-		it("unset() sets `this.data` to undefined on null or empty path", function() {
+		it("unset() sets `this.value` to undefined on null or empty path", function() {
 			scope.unset();
-			assert.strictEqual(typeof scope.data, "undefined");
+			assert.strictEqual(typeof scope.value, "undefined");
 		});
 
 		it("get() accepts array as path", function() {
@@ -328,9 +328,13 @@ describe("Scope", function() {
 		});
 
 		it("child scope returns parent value at path iff child value at path is undefined", function() {
-			assert.equal(child.get("bar"), "baz");
-			assert.strictEqual(typeof child.value.foo, "undefined");
-			assert.equal(child.get("foo"), "bar");
+			assert.strictEqual(child.get("bar"), "baz");
+			assert.strictEqual(child.get("foo"), "bar");
+		});
+
+		it("if path is prefixed with `this`, child scope returns exact value at path", function() {
+			assert.strictEqual(child.get("this.bar"), "baz");
+			assert.strictEqual(typeof child.get("this.foo"), "undefined");
 		});
 
 		it("closing parent scope detaches and closes all children", function() {
