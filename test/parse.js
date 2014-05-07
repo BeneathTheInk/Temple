@@ -1,14 +1,12 @@
-var assert = require("assert"),
-	parse = require("../lib/parse"),
-	inspect = require('util').inspect,
+var inspect = require('util').inspect,
 	NODE_TYPE = require("../lib/types");
 
 describe("#parse()", function() {
 
 	it("parses basic html", function() {
-		var template = parse("<div class=\"container\">Hello World</div>");
+		var template = Temple.parse("<div class=\"container\">Hello World</div>");
 		
-		assert.deepEqual(template, [{
+		expect(template).to.deep.equal([{
 			type: NODE_TYPE.ELEMENT,
 			name: "div",
 			attributes: [{
@@ -27,10 +25,10 @@ describe("#parse()", function() {
 	});
 
 	it("parses mustache variables", function() {
-		var template = parse("{{ hello }}{{{ world }}}{{& unescaped }}");
+		var template = Temple.parse("{{ hello }}{{{ world }}}{{& unescaped }}");
 		// console.log(inspect(template));
 		
-		assert.deepEqual(template, [{
+		expect(template).to.deep.equal([{
 			type: NODE_TYPE.INTERPOLATOR,
 			value: "hello"
 		},{
@@ -43,9 +41,9 @@ describe("#parse()", function() {
 	});
 
 	it("parses mustache sections", function() {
-		var template = parse("{{#good}}Hello{{/good}}{{^bad}}World{{/bad}}");
+		var template = Temple.parse("{{#good}}Hello{{/good}}{{^bad}}World{{/bad}}");
 		
-		assert.deepEqual(template, [{
+		expect(template).to.deep.equal([{
 			type: NODE_TYPE.SECTION,
 			value: "good",
 			children: [{
@@ -63,18 +61,18 @@ describe("#parse()", function() {
 	});
 
 	it("parses mustache partials", function() {
-		var template = parse("{{>partial}}");
+		var template = Temple.parse("{{>partial}}");
 		
-		assert.deepEqual(template, [{
+		expect(template).to.deep.equal([{
 			type: NODE_TYPE.PARTIAL,
 			value: "partial"
 		}]);
 	});
 
 	it("parses deeply", function() {
-		var template = parse("<div>{{ var }}</div>");
+		var template = Temple.parse("<div>{{ var }}</div>");
 
-		assert.deepEqual(template, [{
+		expect(template).to.deep.equal([{
 			type: NODE_TYPE.ELEMENT,
 			name: "div",
 			attributes: [],

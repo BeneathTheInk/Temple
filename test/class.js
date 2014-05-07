@@ -1,5 +1,3 @@
-var assert = require("assert");
-
 describe("Basic Class Properties", function() {
 
 	it("extend() should create a valid subclass", function() {
@@ -9,8 +7,8 @@ describe("Basic Class Properties", function() {
 
 		var tpl = new SubTemple();
 
-		assert.ok(tpl instanceof Temple);
-		assert.strictEqual(typeof tpl.foo, "function");
+		expect(tpl).to.be.instanceof(Temple);
+		expect(tpl.foo).to.be.a("function");
 	});
 
 });

@@ -1,22 +1,24 @@
 {
-	"name": "templejs",
-	"version": "0.1.0",
-	"main": "./lib/temple.js",
-	"scripts": {
-		"build-tests": "browserify --debug -o test/browser/tests.js test",
-		"build-js": "browserify -s Temple -o dist/temple.js lib/temple.js",
-		"build-min": "uglifyjs dist/temple.js -cm -o dist/temple.min.js",
-		"build-dev": "browserify --debug -s Temple -o dist/temple.js lib/temple.js",
-		"build": "npm run build-js && npm run build-min",
-		"test": "mocha -R spec"
-	},
-	"dependencies": {
-		"hogan.js": "2.0.0",
-		"underscore": "1.6.0"
-	},
-	"devDependencies": {
-		"browserify": "3.44.2",
-		"mocha": "1.18.2",
-		"uglify-js": "2.4.13"
-	}
+  "name": "templejs",
+  "version": "0.1.0",
+  "main": "./lib/temple.js",
+  "scripts": {
+    "build-tests": "browserify --debug -o test/browser/tests.js test",
+    "build-js": "browserify --insert-global-vars '__filename,__dirname' -s Temple -o dist/temple.js lib/temple.js",
+    "build-min": "uglifyjs dist/temple.js -cm -o dist/temple.min.js",
+    "build-dev": "browserify -r underscore --debug -s Temple -o dist/temple.js lib/temple.js",
+    "build": "npm run build-js && npm run build-min",
+    "test": "mocha -R spec"
+  },
+  "dependencies": {
+    "hogan.js": "2.0.0",
+    "underscore": "1.6.0"
+  },
+  "devDependencies": {
+    "browserify": "3.44.2",
+    "mocha": "1.18.2",
+    "uglify-js": "2.4.13",
+    "chai": "^1.9.1",
+    "jquery": "^2.1.1"
+  }
 }
