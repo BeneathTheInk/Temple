@@ -8,7 +8,7 @@ temple("<span style='color: {{ color }};'>{{ message }}</span>")
 
 // add data
 .scope({
-	colors: [ "#FF74B8", "#C286DE" ],
+	colors: [ "#FF0000", "#00FF00", "#0000FF" ],
 	colorIndex: 0,
 	message: "Hello World",
 	color: function() {
@@ -25,6 +25,36 @@ temple("<span style='color: {{ color }};'>{{ message }}</span>")
 	}
 
 	setInterval(this.toggleColor.bind(this), 500);
+})
+
+// apply to DOM
+.paint(document.body);
+```
+
+```javascript
+// create a template
+temple("{{ hour }}:{{ minute }}:{{ second }}")
+
+// mix in some async changes
+.use(function() {
+	this.refreshTime = function() {
+		var date = new Date;
+		
+		this.set({
+			hour: formatDigit(date.getHours()),
+			minute: formatDigit(date.getMinutes()),
+			second: formatDigit(date.getSeconds())
+		});
+	}
+
+	this.refreshTime();
+	setInterval(this.refreshTime.bind(this), 500);
+
+	function formatDigit(digit) {
+		if (typeof digit == "number") digit = digit.toString();
+		if (digit.length < 2) digit = "0" + digit;
+		return digit;
+	}
 })
 
 // apply to DOM
