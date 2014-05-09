@@ -1,4 +1,5 @@
 describe("#autorun()", function() {
+	this.timeout(500);
 	var tpl, comp;
 
 	before(function() {
@@ -33,11 +34,11 @@ describe("#autorun()", function() {
 	});
 
 	it("changing value at `key` after calling get(key) in a context causes context to run again", function(done) {
-		this.timeout(500);
 		var run = 2;
 
 		comp = tpl.autorun(function() {
-			expect(tpl.get("foo")).to.be.ok;
+			try { expect(tpl.get("foo")).to.be.ok; }
+			catch(e) { return done(e); }
 			if (!(--run)) done();
 		});
 
@@ -46,5 +47,23 @@ describe("#autorun()", function() {
 		}, 10);
 	});
 
-	it("autorun() context reruns for parent value changes");
+	it("autorun() context reruns for parent value changes", function(done) {
+		var child = tpl.scope().spawn(tpl.get("foo"), "foo"),
+			run = 2;
+
+		function donedone(e) {
+			child.close();
+			done(e);
+		}
+
+		comp = tpl.autorun(function() {
+			try { expect(child.get("foo")).to.be.ok; }
+			catch(e) { return donedone(e); }
+			if (!(--run)) donedone();
+		});
+
+		setTimeout(function() {
+			tpl.set("foo", { bar: "baz" });
+		}, 10);
+	});
 });
