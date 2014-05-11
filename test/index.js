@@ -1,6 +1,6 @@
 var chai = require("chai");
 global.expect = chai.expect;
-global.Temple = require("../lib/temple");
+global.Temple = require("../");
 
 mocha.setup('bdd');
 
