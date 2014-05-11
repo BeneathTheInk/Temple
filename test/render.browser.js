@@ -237,6 +237,12 @@ describe("#render(), #paint() & the Live DOM", function() {
 			expect(nodes[0].getAttribute("x-attr")).to.equal("Foo & \"Bar\" <span>");
 		});
 
+		it("renders section attribute", function() {
+			var nodes = render("<div x-attr='{{#section}}Hello World{{/section}}'></div>", { section: true });
+			expect(nodes).to.have.length(1);
+			expect(nodes[0].getAttribute("x-attr")).to.equal("Hello World");
+		});
+
 		it("updates attribute when value changes", function(done) {
 			var nodes = render("<div x-attr='{{ val }}'></div>", { val: "Hello World" });
 			tpl.set("val", "foo");

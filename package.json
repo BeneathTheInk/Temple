@@ -3,11 +3,7 @@
 	"version": "0.1.0",
 	"main": "./lib/temple.js",
 	"scripts": {
-		"build-tests": "browserify --debug -o test/browser/tests.js test",
-		"build-js": "browserify --insert-global-vars '__filename,__dirname' -s Temple -o dist/temple.js lib/temple.js",
-		"build-min": "uglifyjs dist/temple.js -cm -o dist/temple.min.js",
-		"build-dev": "browserify -r underscore --debug -s Temple -o dist/temple.js lib/temple.js",
-		"build": "npm run build-js && npm run build-min",
+		"build": "gulp",
 		"test": "mocha -R spec"
 	},
 	"dependencies": {
@@ -18,6 +14,12 @@
 		"browserify": "3.44.2",
 		"mocha": "1.18.2",
 		"uglify-js": "2.4.13",
-		"chai": "1.9.1"
+		"chai": "1.9.1",
+		"gulp": "3.6.2",
+		"through": "2.3.4",
+		"gulp-uglify": "0.3.0",
+		"gulp-rename": "1.2.0",
+		"gulp-util": "2.2.14",
+		"pegjs": "0.8.0"
 	}
 }
