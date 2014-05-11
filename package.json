@@ -7,7 +7,7 @@
 		"build-js": "browserify --insert-global-vars '__filename,__dirname' -s Temple -o dist/temple.js .",
 		"build-min": "uglifyjs dist/temple.js -c warnings=false -m -o dist/temple.min.js",
 		"build-dev": "browserify --debug -s Temple -o dist/temple.js .",
-		"build": "npm run build-js && npm run build-min",
+		"build": "mkdir -p dist && npm run build-js && npm run build-min",
 		"test": "mocha -R spec"
 	},
 	"dependencies": {
