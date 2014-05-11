@@ -339,4 +339,66 @@ describe("#render(), #paint() & the Live DOM", function() {
 		});
 	});
 
+	describe("#find() & #findAll()", function() {
+
+		it("finds top-level element", function() {
+			render("<div></div>");
+			expect(tpl.find("div")).to.be.an.element.with.tagName("div");
+		});
+
+		it("finds nested element", function() {
+			render("<div><span></span></div>");
+			expect(tpl.find("span")).to.be.an.element.with.tagName("span");
+		});
+
+		it("finds element in section", function() {
+			render("<div>{{#section}}<span></span>{{/section}}</div>", { section: true });
+			expect(tpl.find("span")).to.be.an.element.with.tagName("span");
+		});
+
+		it("finds element after change in section", function(done) {
+			render("<div>{{#section}}<span></span>{{/section}}</div>", { section: false });
+			expect(tpl.find("span")).to.not.exist;
+			tpl.set("section", true);
+
+			renderWait(function() {
+				expect(tpl.find("span")).to.be.an.element.with.tagName("span");
+			}, done);
+		});
+
+		it("finds all top-level elements", function() {
+			render("<div></div><div></div>");
+			var nodes = tpl.findAll("div");
+			expect(nodes).to.have.length(2);
+			nodes.forEach(function(node) { expect(node).to.be.an.element.with.tagName("div"); });
+		});
+
+		it("finds all nested elements", function() {
+			render("<div><span><span></span></span></div><div><span></span></div>");
+			var nodes = tpl.findAll("span");
+			expect(nodes).to.have.length(3);
+			nodes.forEach(function(node) { expect(node).to.be.an.element.with.tagName("span"); });
+		});
+
+		it("finds all elements in section", function() {
+			render("<div>{{#section}}<span><span></span></span>{{/section}}</div>", { section: true });
+			var nodes = tpl.findAll("span");
+			expect(nodes).to.have.length(2);
+			nodes.forEach(function(node) { expect(node).to.be.an.element.with.tagName("span"); });
+		});
+
+		it("finds all elements after change in section", function(done) {
+			render("<div>{{#section}}<span><span></span></span>{{/section}}</div>", { section: false });
+			expect(tpl.findAll("span")).to.have.length(0);
+			tpl.set("section", true);
+
+			renderWait(function() {
+				var nodes = tpl.findAll("span");
+				expect(nodes).to.have.length(2);
+				nodes.forEach(function(node) { expect(node).to.be.an.element.with.tagName("span"); });
+			}, done);
+		});
+
+	});
+
 });

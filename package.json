@@ -1,6 +1,6 @@
 {
 	"name": "templejs",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"main": "./lib/temple.js",
 	"scripts": {
 		"build-tests": "browserify --debug -o test/browser/tests.js test",
