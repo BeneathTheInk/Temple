@@ -8,33 +8,31 @@
 			"name": "Tyler Johnson",
 			"email": "tyler@beneaththeink.com",
 			"url": "http://github.com/tyler-johnson"
-		} 
+		}
 	],
 	"repository": {
-		"type" : "git",
-  		"url" : "https://github.com/BeneathTheInk/Temple.js.git"
+		"type": "git",
+		"url": "https://github.com/BeneathTheInk/Temple.js.git"
 	},
 	"main": "./lib/temple.js",
-	"scripts": {
-		"build-tests": "browserify --debug -o test/browser/tests.js test",
-		"build-js": "browserify --insert-global-vars '__filename,__dirname' -s Temple -o dist/temple.js .",
-		"build-min": "uglifyjs dist/temple.js -c warnings=false -m -o dist/temple.min.js",
-		"build-dev": "browserify --debug -s Temple -o dist/temple.js .",
-		"build": "mkdir -p dist && npm run build-js && npm run build-min",
-		"test": "mocha -R spec"
-	},
 	"dependencies": {
 		"hogan.js": "2.0.0",
 		"underscore": "1.6.0"
 	},
 	"devDependencies": {
 		"browserify": "3.44.2",
+		"browserify-pegjs": "0.8.0-2",
 		"mocha": "1.18.2",
 		"chai": "1.9.1",
-		"browserify-pegjs": "0.8.0-2"
+		"grunt": "0.4.5",
+		"grunt-browserify": "2.0.8",
+		"grunt-contrib-uglify": "0.4.0",
+		"grunt-wrap2000": "0.1.0"
 	},
 	"browserify": {
-		"transform": [ "browserify-pegjs" ]
+		"transform": [
+			"browserify-pegjs"
+		]
 	},
 	"license": "MIT",
 	"keywords": [
@@ -46,6 +44,7 @@
 		"data binding",
 		"binding",
 		"declarative",
-		"view model"
+		"view model",
+		"reactive"
 	]
 }
