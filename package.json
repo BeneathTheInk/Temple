@@ -1,6 +1,19 @@
 {
 	"name": "templejs",
-	"version": "0.1.1",
+	"version": "0.2.0",
+	"description": "Sensible templating for the modern browser.",
+	"author": "Beneath the Ink <info@beneaththeink.com>",
+	"contributors": [
+		{
+			"name": "Tyler Johnson",
+			"email": "tyler@beneaththeink.com",
+			"url": "http://github.com/tyler-johnson"
+		} 
+	],
+	"repository": {
+		"type" : "git",
+  		"url" : "https://github.com/BeneathTheInk/Temple.js.git"
+	},
 	"main": "./lib/temple.js",
 	"scripts": {
 		"build-tests": "browserify --debug -o test/browser/tests.js test",
@@ -22,5 +35,17 @@
 	},
 	"browserify": {
 		"transform": [ "browserify-pegjs" ]
-	}
+	},
+	"license": "MIT",
+	"keywords": [
+		"mustache",
+		"DOM",
+		"html",
+		"template",
+		"templating",
+		"data binding",
+		"binding",
+		"declarative",
+		"view model"
+	]
 }
