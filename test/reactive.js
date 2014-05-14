@@ -66,4 +66,27 @@ describe("#autorun()", function() {
 			tpl.set("foo", { bar: "baz" });
 		}, 10);
 	});
+
+	it("autorun() context reruns for changes to value when previous get() returned a parent scope's value", function(done) {
+		var child = tpl.scope().spawn(tpl.get("foo"), "foo"),
+			run = 2;
+
+		function donedone(e) {
+			child.close();
+			done(e);
+		}
+
+		comp = tpl.autorun(function() {
+			try {
+				if (run == 2) expect(child.get("foo")).to.equal("bar");
+				if (run == 1) expect(child.get("foo")).to.deep.equal({ bar: "baz" });
+			}
+			catch(e) { return donedone(e); }
+			if (!(--run)) donedone();
+		});
+
+		setTimeout(function() {
+			child.set("foo", { bar: "baz" });
+		}, 10);
+	});
 });
