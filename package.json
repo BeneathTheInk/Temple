@@ -1,6 +1,6 @@
 {
 	"name": "templejs",
-	"version": "0.2.1",
+	"version": "0.2.2",
 	"description": "Sensible templating for the modern browser.",
 	"author": "Beneath the Ink <info@beneaththeink.com>",
 	"contributors": [
