@@ -253,6 +253,97 @@ describe("#render(), #paint() & the Live DOM", function() {
 		});
 	});
 
+	describe("Decorators", function() {
+		it("calls decorator when element is created", function() {
+			tpl = new Temple("<div custom='{{ val }}'></div>", { val: "Hello World" });
+			var seen = 0;
+
+			tpl.decorate("custom", function(el) {
+				expect(this).to.equal(tpl);
+				expect(el).to.be.an.element.with.tagName("div");
+				seen++;
+
+				return {
+					update: function(val) {
+						expect(this).to.be.instanceof(Temple.Scope);
+						expect(val).to.equal("Hello World");
+						seen++;
+					},
+					destroy: function() {
+						expect(this).to.equal(tpl);
+						seen++;
+					}
+				}
+			});
+
+			tpl.paint(doc);
+			tpl.takedown();
+
+			expect(seen).to.equal(3);
+		});
+
+		it("calls update() when data changes", function(done) {
+			tpl = new Temple("<div custom='{{ val }}'></div>", { val: "Hello World" });
+			var seen = 0;
+
+			tpl.decorate("custom", function() {
+				return { update: function(val) {
+					if (seen === 0) expect(val).to.equal("Hello World");
+					if (seen === 1) expect(val).to.equal("Foo Bar");
+					seen++;
+				} }
+			});
+
+			tpl.paint(doc);
+			tpl.set("val", "Foo Bar");
+
+			renderWait(function() {
+				expect(seen).to.equal(2);
+			}, done);
+		});
+
+		it("calls destroy() when element is removed", function() {
+			tpl = new Temple("<div custom='{{ val }}'></div>", { val: "Hello World" });
+			var seen = false;
+
+			tpl.decorate("custom", function() {
+				return { destroy: function() {
+					seen = true;
+				} }
+			});
+
+			tpl.paint(doc);
+			tpl.takedown();
+
+			expect(seen).to.be.ok;
+		});
+
+		it("calls decorator nested in section", function() {
+			tpl = new Temple("{{#section}}<div custom='{{ val }}'></div>{{/section}}", { val: "Hello World", section: true });
+			var seen = false;
+
+			tpl.decorate("custom", function() {
+				seen = true;
+			});
+
+			tpl.paint(doc);
+			expect(seen).to.be.ok;
+		});
+
+		it("calls decorator nested in element", function() {
+			tpl = new Temple("<div><span custom='{{ val }}'></span></div>", { val: "Hello World", section: true });
+			var seen = false;
+
+			tpl.decorate("custom", function(el) {
+				expect(el).to.be.an.element.with.tagName("span");
+				seen = true;
+			});
+
+			tpl.paint(doc);
+			expect(seen).to.be.ok;
+		});
+	});
+
 	describe("Text Nodes", function() {
 		it("renders text node", function() {
 			var nodes = render("Hello World");

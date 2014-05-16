@@ -1,14 +1,35 @@
-# Temple.js
+# Temple
 
-A mustache-powered, reactive template framework.
+Sensible templating for the modern browser.
+
+* __Modern__ - Pure [Mustache](http://mustache.github.io/) + HTML.
+* __Reactive__ - Powered by a live DOM that automatically updates as the data changes.
+* __Built to Scale__ - Works great for projects of all sizes.
+* __Extensible__ - The API only provides the basics, allowing you to add what you need.
+
+__Note: This library is under active development and the API may change without notice. Use at your own risk!__
+
+## Install
+
+Download the latest version from our [release page](https://github.com/BeneathTheInk/Temple.js/releases) and use via a script tag. The variable `Temple` will be attached to `window`.
+
+```html
+<script type="text/javascript" src="temple.js"></script>
+```
+
+If using Browserify or Node.js, you can install via NPM and use via `require("templejs")`.
+
+	$ npm install templejs
+
+## Basic Example
 
 ```javascript
 // create a template
-temple("<span style='color: {{ color }};'>{{ message }}</span>")
+Temple("<span style='color: {{ color }};'>{{ message }}</span>")
 
 // add data
-.scope({
-	colors: [ "#FF0000", "#00FF00", "#0000FF" ],
+.set({
+	colors: [ "red", "blue", "green" ],
 	colorIndex: 0,
 	message: "Hello World",
 	color: function() {
@@ -16,7 +37,7 @@ temple("<span style='color: {{ color }};'>{{ message }}</span>")
 	}
 })
 
-// mix in some async changes
+// mix in some reactive changes
 .use(function() {
 	this.toggleColor = function() {
 		var newIndex = (this.get("colorIndex") + 1) % this.get("colors.length");
@@ -25,36 +46,6 @@ temple("<span style='color: {{ color }};'>{{ message }}</span>")
 	}
 
 	setInterval(this.toggleColor.bind(this), 500);
-})
-
-// apply to DOM
-.paint(document.body);
-```
-
-```javascript
-// create a template
-temple("{{ hour }}:{{ minute }}:{{ second }}")
-
-// mix in some async changes
-.use(function() {
-	this.refreshTime = function() {
-		var date = new Date;
-		
-		this.set({
-			hour: formatDigit(date.getHours()),
-			minute: formatDigit(date.getMinutes()),
-			second: formatDigit(date.getSeconds())
-		});
-	}
-
-	this.refreshTime();
-	setInterval(this.refreshTime.bind(this), 500);
-
-	function formatDigit(digit) {
-		if (typeof digit == "number") digit = digit.toString();
-		if (digit.length < 2) digit = "0" + digit;
-		return digit;
-	}
 })
 
 // apply to DOM
