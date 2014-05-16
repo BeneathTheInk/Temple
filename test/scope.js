@@ -129,8 +129,7 @@ describe("Scope", function() {
 
 		it("observes nothing when nothing changes", function() {
 			var seen = false;
-			console.log(scope.value, scope.get("foo"));
-			scope.observe("foo", function() { console.log(arguments); seen = true; });
+			scope.observe("foo", function() { seen = true; });
 			scope.set("foo", "bar");
 			expect(seen).to.not.be.ok;
 		});

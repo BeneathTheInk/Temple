@@ -48,7 +48,7 @@ describe("#autorun()", function() {
 	});
 
 	it("autorun() context reruns for parent value changes", function(done) {
-		var child = tpl.scope().spawn(tpl.get("foo"), "foo"),
+		var child = tpl.spawn("foo"),
 			run = 2;
 
 		function donedone(e) {
@@ -68,7 +68,7 @@ describe("#autorun()", function() {
 	});
 
 	it("autorun() context reruns for changes to value when previous get() returned a parent scope's value", function(done) {
-		var child = tpl.scope().spawn(tpl.get("foo"), "foo"),
+		var child = tpl.spawn("foo"),
 			run = 2;
 
 		function donedone(e) {
