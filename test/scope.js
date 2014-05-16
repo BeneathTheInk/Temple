@@ -15,8 +15,8 @@ describe("Scope", function() {
 			expect(scope.get()).to.deep.equal({ foo: "bar" });
 		});
 
-		it("returns `scope.value` on null or empty path", function() {
-			expect(scope.get()).to.equal(scope.value);
+		it("returns result of `scope.value` on null or empty path", function() {
+			expect(scope.get()).to.equal(scope.value.value);
 		});
 
 		it("gets & sets shallow path", function() {
@@ -30,6 +30,8 @@ describe("Scope", function() {
 		});
 
 		it("get(path) executes function value iff value at path is function", function() {
+			scope.set("foo.bar", "baz");
+
 			scope.set("foo", function() {
 				expect(this).to.equal(scope);
 				return true;
@@ -43,18 +45,10 @@ describe("Scope", function() {
 			expect(scope.get()).to.equal("value");
 		});
 
-		it("deep copies plain objects on set", function() {
-			var data = { bar: { baz: "buz" } };
-			scope.set("foo", data);
-			expect(scope.get("foo")).to.deep.equal(data);
-			expect(scope.get("foo")).to.not.equal(data);
-			expect(scope.get("foo.bar")).to.not.equal(data.foo);
-		});
-
-		it("directly points to non-plain objects, non-adaptor values on set", function() {
+		it("directly points to values on set", function() {
 			var fn = function(){};
 			scope.set("foo", fn);
-			expect(scope.value.foo).to.equal(fn);
+			expect(scope.value.value.foo).to.equal(fn);
 		});
 
 		it("unsets", function() {
@@ -135,7 +129,8 @@ describe("Scope", function() {
 
 		it("observes nothing when nothing changes", function() {
 			var seen = false;
-			scope.observe("foo", function() { seen = true; });
+			console.log(scope.value, scope.get("foo"));
+			scope.observe("foo", function() { console.log(arguments); seen = true; });
 			scope.set("foo", "bar");
 			expect(seen).to.not.be.ok;
 		});
@@ -181,6 +176,19 @@ describe("Scope", function() {
 			});
 
 			scope.set("foo.bar", "baz");
+			expect(seen).to.be.ok;
+		});
+
+		it("observes empty path", function() {
+			var seen = false;
+			scope.observe("", function(nval, oval, path) {
+				expect(nval).to.equal("foo");
+				expect(oval).to.deep.equal({ foo: "bar" });
+				expect(path).to.equal("");
+				seen = true;
+			});
+
+			scope.set("", "foo");
 			expect(seen).to.be.ok;
 		});
 
@@ -307,16 +315,16 @@ describe("Scope", function() {
 		});
 	});
 
-	describe("#spawn() & nested scope", function() {
+	describe("#spawn() & children scope", function() {
 		var child;
 
 		beforeEach(function() {
-			child = scope.spawn();
-			child.set("bar", "baz");
+			child = scope.spawn("foo");
 		});
 
 		afterEach(function() {
-			child.close();
+			scope.stopObserving();
+			child.destroy();
 			child = null;
 		});
 
@@ -325,25 +333,107 @@ describe("Scope", function() {
 			expect(child.parent).to.equal(scope);
 		});
 
-		it("child scope returns parent value at path iff child value at path is undefined", function() {
-			expect(child.get("bar")).to.equal("baz");
-			expect(child.get("foo")).to.equal("bar");
+		it("changes to parent are observed on child", function() {
+			var seen = false;
+			child.observe("", function(nval, oval) {
+				expect(nval).to.equal("baz");
+				expect(oval).to.equal("bar");
+				seen = true;
+			});
+
+			scope.set("foo", "baz");
+			expect(seen).to.be.ok;
 		});
 
-		it("if path is prefixed with `this`, child scope returns exact value at path", function() {
-			expect(child.get("this.bar")).to.equal("baz");
-			expect(child.get("this.foo")).to.be.an("undefined");
+		it("deep changes to parent are observed on child", function() {
+			var seen = false;
+			scope.set("foo.bar", "baz");
+
+			child.observe("bar", function(nval, oval) {
+				expect(nval).to.equal("bam");
+				expect(oval).to.equal("baz");
+				seen = true;
+			});
+
+			scope.set("foo.bar", "bam");
+			expect(seen).to.be.ok;
+		});
+
+		it("changes to child are observed on parent", function() {
+			var seen = false;
+			scope.observe("foo.bar", function(nval, oval) {
+				expect(nval).to.equal("baz");
+				expect(oval).to.be.undefined;
+				seen = true;
+			});
+
+			child.set("bar", "baz");
+			expect(seen).to.be.ok;
+		});
+
+		it("deep changes to child are observed on parent", function() {
+			var seen = false;
+			child.set("bar", "baz");
+
+			scope.observe("foo.bar", function(nval, oval) {
+				expect(nval).to.equal("bam");
+				expect(oval).to.equal("baz");
+				seen = true;
+			});
+
+			child.set("bar", "bam");
+			expect(seen).to.be.ok;
+		});
+
+		it("observes parent changes, even if original value was undefined", function() {
+			var grandchild = child.spawn("bar"),
+				seen = false;
+
+			grandchild.observe("baz", function(nval, oval) {
+				expect(nval).to.equal("bam");
+				expect(oval).to.be.undefined;
+				seen = true;
+			});
+
+			child.set("bar.baz", "bam");
+			expect(seen).to.be.ok;
+			grandchild.destroy();
 		});
 
 		it("closing parent scope detaches and closes all children", function() {
 			var grandchild = child.spawn();
 			expect(grandchild.parent).to.equal(child);
 
-			child.close();
+			child.destroy();
 			expect(grandchild.parent).not.exist;
-			expect(child.closed).to.equal(true);
-			expect(grandchild.closed).to.equal(true);
-			grandchild.close();
+			expect(child.destroyed).to.equal(true);
+			expect(grandchild.destroyed).to.equal(true);
+			grandchild.destroy();
+		});
+	});
+
+	describe("#fallback()", function() {
+		var fallback;
+
+		beforeEach(function() {
+			fallback = new Temple.Scope({ bar: "baz" });
+			scope.fallback(fallback);
+		});
+
+		afterEach(function() {
+			scope.removeFallback(fallback);
+			fallback.destroy();
+			fallback = null;
+		});
+
+		it("scope returns fallback value at path iff scope value at path is undefined", function() {
+			expect(scope.get("foo")).to.equal("bar");
+			expect(scope.get("bar")).to.equal("baz");
+		});
+
+		it("if path is prefixed with `this`, scope returns exact value at path", function() {
+			expect(scope.get("this.foo")).to.equal("bar");
+			expect(scope.get("this.bar")).to.be.undefined;
 		});
 	});
 });

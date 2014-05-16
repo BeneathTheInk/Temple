@@ -52,7 +52,7 @@ describe("#autorun()", function() {
 			run = 2;
 
 		function donedone(e) {
-			child.close();
+			child.destroy();
 			done(e);
 		}
 
@@ -72,7 +72,7 @@ describe("#autorun()", function() {
 			run = 2;
 
 		function donedone(e) {
-			child.close();
+			child.destroy();
 			done(e);
 		}
 
