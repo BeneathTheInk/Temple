@@ -135,7 +135,7 @@ describe("#render(), #paint() & the Live DOM", function() {
 		});
 
 		it("updates single item in array when deep value is changed", function(done) {
-			render("{{#list}}{{ foo }}{{/list}}", { list: [ 0, { foo: "bar" }, 2 ] });
+			var nodes = render("{{#list}}{{ foo }}{{/list}}", { list: [ 0, { foo: "bar" }, 2 ] });
 			tpl.set("list.1.foo", "Hello World");
 
 			renderWait(function() {
