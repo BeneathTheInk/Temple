@@ -255,7 +255,7 @@ describe("#render(), #paint() & the Live DOM", function() {
 
 	describe("Decorators", function() {
 		it("calls decorator when element is created", function() {
-			tpl = new Temple("<div custom='{{ val }}'></div>", { val: "Hello World" });
+			tpl = new Temple("<div custom='A fancy attribute'></div>");
 			var seen = 0;
 
 			tpl.decorate("custom", function(el) {
@@ -266,7 +266,7 @@ describe("#render(), #paint() & the Live DOM", function() {
 				return {
 					update: function(val) {
 						expect(this).to.be.instanceof(Temple.Scope);
-						expect(val).to.equal("Hello World");
+						expect(val).to.equal('A fancy attribute');
 						seen++;
 					},
 					destroy: function() {
@@ -283,13 +283,13 @@ describe("#render(), #paint() & the Live DOM", function() {
 		});
 
 		it("calls update() when data changes", function(done) {
-			tpl = new Temple("<div custom='{{ val }}'></div>", { val: "Hello World" });
+			tpl = new Temple("<div custom='key: {{ val }}'></div>", { val: "Hello World" });
 			var seen = 0;
 
-			tpl.decorate("custom", function() {
-				return { update: function(val) {
-					if (seen === 0) expect(val).to.equal("Hello World");
-					if (seen === 1) expect(val).to.equal("Foo Bar");
+			tpl.decorate("custom", function(el, t) {
+				return { update: function(o) {
+					if (seen === 0) expect(o).to.deep.equal({ key: "Hello World" });
+					if (seen === 1) expect(o).to.deep.equal({ key: "Foo Bar" });
 					seen++;
 				} }
 			});
