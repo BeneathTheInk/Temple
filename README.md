@@ -1,4 +1,4 @@
-# Temple
+# Temple.js
 
 Sensible templating for the modern browser.
 
@@ -21,7 +21,7 @@ If using Browserify or Node.js, you can install via NPM and use via `require("te
 
 	$ npm install templejs
 
-## Basic Example
+## Example
 
 ```javascript
 // create a template
