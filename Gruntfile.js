@@ -10,6 +10,15 @@ module.exports = function(grunt) {
 					bundleOptions: { standalone: "Temple" }
 				}
 			},
+			dev: {
+				src: "lib/temple.js",
+				dest: "dist/temple.dev.js",
+				options: {
+					watch: true,
+					keepAlive: true,
+					bundleOptions: { debug: true, standalone: "Temple" }
+				}
+			},
 			test: {
 				src: "test/index.js",
 				dest: "test/browser/tests.js",
