@@ -1,4 +1,4 @@
-# Temple.js
+# Temple
 
 Sensible templating for the modern browser.
 

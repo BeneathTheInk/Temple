@@ -16,7 +16,7 @@ describe("Scope", function() {
 		});
 
 		it("returns result of `scope.value` on null or empty path", function() {
-			expect(scope.get()).to.equal(scope.value.value);
+			expect(scope.get()).to.equal(scope.value);
 		});
 
 		it("gets & sets shallow path", function() {
@@ -48,17 +48,17 @@ describe("Scope", function() {
 		it("directly points to values on set", function() {
 			var fn = function(){};
 			scope.set("foo", fn);
-			expect(scope.value.value.foo).to.equal(fn);
+			expect(scope.value.foo).to.equal(fn);
 		});
 
 		it("unsets", function() {
 			scope.unset("foo");
-			expect(scope.get("foo")).to.be.an("undefined");
+			expect(scope.get("foo")).to.be.undefined;
 		});
 
 		it("unset() sets `this.value` to undefined on null or empty path", function() {
 			scope.unset();
-			expect(scope.value).to.be.an("undefined");
+			expect(scope.value).to.be.undefined;
 		});
 
 		it("get() accepts array as path", function() {
@@ -136,10 +136,17 @@ describe("Scope", function() {
 
 		it("observes static path changes", function() {
 			var seen = false;
-			scope.observe("foo.bar", function(nval, oval, path) {
-				expect(nval).to.equal("baz");
-				expect(oval).to.be.an("undefined");
-				expect(path).to.equal("foo.bar");
+			scope.observe("foo.bar", function(chg) {
+				expect(this).to.equal(scope);
+				
+				expect(chg).to.deep.equal({
+					scope: scope,
+					path: "foo.bar",
+					type: "add",
+					value: "baz",
+					oldValue: undefined
+				});
+
 				seen = true;
 			});
 
@@ -156,10 +163,15 @@ describe("Scope", function() {
 
 		it("observes unset", function() {
 			var seen = false;
-			scope.observe("foo", function(nval, oval, path) {
-				expect(nval).to.be.an("undefined");
-				expect(oval).to.equal("bar");
-				expect(path).to.equal("foo");
+			scope.observe("foo", function(chg) {
+				expect(chg).to.deep.equal({
+					scope: scope,
+					path: "foo",
+					type: "delete",
+					value: undefined,
+					oldValue: "bar"
+				});
+
 				seen = true;
 			});
 
@@ -169,8 +181,8 @@ describe("Scope", function() {
 
 		it("calling get() in an observer returns the new value", function() {
 			var seen = false;
-			scope.observe("foo.bar", function(nval, oval, path) {
-				expect(this.get(path)).to.equal(nval);
+			scope.observe("foo.bar", function(chg) {
+				expect(this.get(chg.path)).to.equal(chg.value);
 				seen = true;
 			});
 
@@ -180,10 +192,15 @@ describe("Scope", function() {
 
 		it("observes empty path", function() {
 			var seen = false;
-			scope.observe("", function(nval, oval, path) {
-				expect(nval).to.equal("foo");
-				expect(oval).to.deep.equal({ foo: "bar" });
-				expect(path).to.equal("");
+			scope.observe("", function(chg) {
+				expect(chg).to.deep.equal({
+					scope: scope,
+					path: "",
+					type: "update",
+					value: "foo",
+					oldValue: { foo: "bar" }
+				});
+
 				seen = true;
 			});
 
@@ -193,10 +210,15 @@ describe("Scope", function() {
 
 		it("observes dynamic path: *", function() {
 			var seen = false;
-			scope.observe("*", function(nval, oval, path) {
-				expect(nval).to.deep.equal({ bar: "baz" });
-				expect(oval).to.equal("bar");
-				expect(path).to.equal("foo");
+			scope.observe("*", function(chg) {
+				expect(chg).to.deep.equal({
+					scope: scope,
+					path: "foo",
+					type: "update",
+					value: { bar: "baz" },
+					oldValue: "bar"
+				});
+
 				seen = true;
 			});
 
@@ -206,10 +228,15 @@ describe("Scope", function() {
 
 		it("observes dynamic path: *.bar.baz", function() {
 			var seen = false;
-			scope.observe("*.bar.baz", function(nval, oval, path) {
-				expect(nval).to.equal("buz");
-				expect(oval).to.be.an("undefined");
-				expect(path).to.equal("foo.bar.baz");
+			scope.observe("*.bar.baz", function(chg) {
+				expect(chg).to.deep.equal({
+					scope: scope,
+					path: "foo.bar.baz",
+					type: "add",
+					value: "buz",
+					oldValue: undefined
+				});
+
 				seen = true;
 			});
 
@@ -219,10 +246,15 @@ describe("Scope", function() {
 
 		it("observes dynamic path: foo.*.baz", function() {
 			var seen = false;
-			scope.observe("foo.*.baz", function(nval, oval, path) {
-				expect(nval).to.equal("buz");
-				expect(oval).to.be.an("undefined");
-				expect(path).to.equal("foo.bar.baz");
+			scope.observe("foo.*.baz", function(chg) {
+				expect(chg).to.deep.equal({
+					scope: scope,
+					path: "foo.bar.baz",
+					type: "add",
+					value: "buz",
+					oldValue: undefined
+				});
+
 				seen = true;
 			});
 
@@ -232,10 +264,15 @@ describe("Scope", function() {
 
 		it("observes dynamic path: foo.bar.*", function() {
 			var seen = false;
-			scope.observe("foo.bar.*", function(nval, oval, path) {
-				expect(nval).to.equal("buz");
-				expect(oval).to.be.an("undefined");
-				expect(path).to.equal("foo.bar.baz");
+			scope.observe("foo.bar.*", function(chg) {
+				expect(chg).to.deep.equal({
+					scope: scope,
+					path: "foo.bar.baz",
+					type: "add",
+					value: "buz",
+					oldValue: undefined
+				});
+
 				seen = true;
 			});
 
@@ -247,10 +284,15 @@ describe("Scope", function() {
 			var seen = false;
 			scope.set("foo", { bar: "baz" });
 
-			scope.observe("**", function(nval, oval, path) {
-				expect(nval).to.deep.equal({ baz: "buz" });
-				expect(oval).to.equal("baz");
-				expect(path).to.equal("foo.bar");
+			scope.observe("**", function(chg) {
+				expect(chg).to.deep.equal({
+					scope: scope,
+					path: "foo.bar",
+					type: "update",
+					value: { baz: "buz" },
+					oldValue: "baz"
+				});
+
 				seen = true;
 			});
 
@@ -261,10 +303,15 @@ describe("Scope", function() {
 		it("observes dynamic path: **.baz", function() {
 			var seen = false;
 			
-			scope.observe("**.baz", function(nval, oval, path) {
-				expect(nval).to.equal("buz");
-				expect(oval).to.be.an("undefined");
-				expect(path).to.equal("foo.bar.baz");
+			scope.observe("**.baz", function(chg) {
+				expect(chg).to.deep.equal({
+					scope: scope,
+					path: "foo.bar.baz",
+					type: "add",
+					value: "buz",
+					oldValue: undefined
+				});
+
 				seen = true;
 			});
 
@@ -274,10 +321,15 @@ describe("Scope", function() {
 
 		it("observes dynamic path: foo.**.baz", function() {
 			var seen = false;
-			scope.observe("foo.**.baz", function(nval, oval, path) {
-				expect(nval).to.equal("buz");
-				expect(oval).to.be.an("undefined");
-				expect(path).to.equal("foo.bar.bun.baz");
+			scope.observe("foo.**.baz", function(chg) {
+				expect(chg).to.deep.equal({
+					scope: scope,
+					path: "foo.bar.bun.baz",
+					type: "add",
+					value: "buz",
+					oldValue: undefined
+				});
+
 				seen = true;
 			});
 
@@ -289,10 +341,15 @@ describe("Scope", function() {
 			var seen = false;
 			scope.set("foo.bar.baz", "buz");
 
-			scope.observe("foo.**", function(nval, oval, path) {
-				expect(nval).to.equal("bun");
-				expect(oval).to.equal("buz");
-				expect(path).to.equal("foo.bar.baz");
+			scope.observe("foo.**", function(chg) {
+				expect(chg).to.deep.equal({
+					scope: scope,
+					path: "foo.bar.baz",
+					type: "update",
+					value: "bun",
+					oldValue: "buz"
+				});
+
 				seen = true;
 			});
 
@@ -302,112 +359,20 @@ describe("Scope", function() {
 
 		it("observing path foo.** captures changes at path foo", function() {
 			var seen = false;
-			scope.observe("foo.**", function(nval, oval, path) {
-				expect(nval).to.equal("buz");
-				expect(oval).to.equal("bar");
-				expect(path).to.equal("foo");
+			scope.observe("foo.**", function(chg) {
+				expect(chg).to.deep.equal({
+					scope: scope,
+					path: "foo",
+					type: "update",
+					value: "buz",
+					oldValue: "bar"
+				});
+
 				seen = true;
 			});
 
 			scope.set("foo", "buz");
 			expect(seen).to.be.ok;
-		});
-	});
-
-	describe("#spawn() & children scope", function() {
-		var child;
-
-		beforeEach(function() {
-			child = scope.spawn("foo");
-		});
-
-		afterEach(function() {
-			scope.stopObserving();
-			child.destroy();
-			child = null;
-		});
-
-		it("scope.spawn() returns an instance of Temple.Scope whose parent is scope", function() {
-			expect(child).to.be.instanceof(Temple.Scope);
-			expect(child.parent).to.equal(scope);
-		});
-
-		it("changes to parent are observed on child", function() {
-			var seen = false;
-			child.observe("", function(nval, oval) {
-				expect(nval).to.equal("baz");
-				expect(oval).to.equal("bar");
-				seen = true;
-			});
-
-			scope.set("foo", "baz");
-			expect(seen).to.be.ok;
-		});
-
-		it("deep changes to parent are observed on child", function() {
-			var seen = false;
-			scope.set("foo.bar", "baz");
-
-			child.observe("bar", function(nval, oval) {
-				expect(nval).to.equal("bam");
-				expect(oval).to.equal("baz");
-				seen = true;
-			});
-
-			scope.set("foo.bar", "bam");
-			expect(seen).to.be.ok;
-		});
-
-		it("changes to child are observed on parent", function() {
-			var seen = false;
-			scope.observe("foo.bar", function(nval, oval) {
-				expect(nval).to.equal("baz");
-				expect(oval).to.be.undefined;
-				seen = true;
-			});
-
-			child.set("bar", "baz");
-			expect(seen).to.be.ok;
-		});
-
-		it("deep changes to child are observed on parent", function() {
-			var seen = false;
-			child.set("bar", "baz");
-
-			scope.observe("foo.bar", function(nval, oval) {
-				expect(nval).to.equal("bam");
-				expect(oval).to.equal("baz");
-				seen = true;
-			});
-
-			child.set("bar", "bam");
-			expect(seen).to.be.ok;
-		});
-
-		it("observes parent changes, even if original value was undefined", function() {
-			var grandchild = child.spawn("bar"),
-				seen = false;
-
-			grandchild.observe("baz", function(nval, oval) {
-				expect(nval).to.equal("bam");
-				expect(oval).to.be.undefined;
-				seen = true;
-			});
-
-			child.set("bar.baz", "bam");
-			expect(seen).to.be.ok;
-			grandchild.destroy();
-		});
-
-		it("closing parent scope detaches and closes all children", function() {
-			var grandchild = child.spawn();
-			expect(grandchild.parent).to.equal(child);
-
-			child.destroy();
-			expect(grandchild.parent).not.exist;
-			expect(child.destroyed).to.equal(true);
-			expect(grandchild.destroyed).to.equal(true);
-			grandchild.destroy();
 		});
 	});
 
@@ -421,11 +386,11 @@ describe("Scope", function() {
 
 		afterEach(function() {
 			scope.removeFallback(fallback);
-			fallback.destroy();
-			fallback = null;
 		});
 
 		it("scope returns fallback value at path iff scope value at path is undefined", function() {
+			console.log(fallback.getScope("foo"));
+			console.log(scope.getScope("bar"));
 			expect(scope.get("foo")).to.equal("bar");
 			expect(scope.get("bar")).to.equal("baz");
 		});

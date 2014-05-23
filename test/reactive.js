@@ -47,46 +47,50 @@ describe("#autorun()", function() {
 		}, 10);
 	});
 
-	it("autorun() context reruns for parent value changes", function(done) {
-		var child = tpl.spawn("foo"),
+	it("autorun() context reruns for fallback changes", function(done) {
+		var fb = new Temple.Scope({ baz: "buz" }),
 			run = 2;
 
 		function donedone(e) {
-			child.destroy();
+			tpl.removeFallback(fb);
 			done(e);
 		}
 
+		tpl.fallback(fb);
+
 		comp = tpl.autorun(function() {
-			try { expect(child.get("foo")).to.be.ok; }
+			try { expect(tpl.get("baz")).to.be.ok; }
 			catch(e) { return donedone(e); }
 			if (!(--run)) donedone();
 		});
 
 		setTimeout(function() {
-			tpl.set("foo", { bar: "baz" });
+			fb.set("baz", { bar: "baz" });
 		}, 10);
 	});
 
-	it("autorun() context reruns for changes to value when previous get() returned a parent scope's value", function(done) {
-		var child = tpl.spawn("foo"),
+	it("autorun() context reruns for changes to value when previous get() returned a fallback scope's value", function(done) {
+		var fb = new Temple.Scope({ baz: "buz" }),
 			run = 2;
 
 		function donedone(e) {
-			child.destroy();
+			tpl.removeFallback(fb);
 			done(e);
 		}
 
+		tpl.fallback(fb);
+
 		comp = tpl.autorun(function() {
 			try {
-				if (run == 2) expect(child.get("foo")).to.equal("bar");
-				if (run == 1) expect(child.get("foo")).to.deep.equal({ bar: "baz" });
+				if (run == 2) expect(tpl.get("baz")).to.equal("buz");
+				if (run == 1) expect(tpl.get("baz")).to.deep.equal({ bar: "baz" });
 			}
 			catch(e) { return donedone(e); }
 			if (!(--run)) donedone();
 		});
 
 		setTimeout(function() {
-			child.set("foo", { bar: "baz" });
+			tpl.set("baz", { bar: "baz" });
 		}, 10);
 	});
 });
