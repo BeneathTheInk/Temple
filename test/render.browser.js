@@ -11,7 +11,7 @@ describe("#render(), #paint() & the Live DOM", function() {
 	});
 
 	afterEach(function() {
-		if (tpl != null) tpl.takedown();
+		if (tpl != null) tpl.erase();
 		expect(doc.childNodes.length).to.equal(0);
 	});
 
@@ -277,7 +277,7 @@ describe("#render(), #paint() & the Live DOM", function() {
 			});
 
 			tpl.paint(doc);
-			tpl.takedown();
+			tpl.erase();
 
 			expect(seen).to.equal(3);
 		});
@@ -313,7 +313,7 @@ describe("#render(), #paint() & the Live DOM", function() {
 			});
 
 			tpl.paint(doc);
-			tpl.takedown();
+			tpl.erase();
 
 			expect(seen).to.be.ok;
 		});
