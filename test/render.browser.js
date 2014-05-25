@@ -331,7 +331,7 @@ describe("#render(), #paint() & the Live DOM", function() {
 		});
 
 		it("calls decorator nested in element", function() {
-			tpl = new Temple("<div><span custom='{{ val }}'></span></div>", { val: "Hello World", section: true });
+			tpl = new Temple("<div><span custom='{{ val }}'></span></div>", { val: "Hello World" });
 			var seen = false;
 
 			tpl.decorate("custom", function(el) {
@@ -341,6 +341,18 @@ describe("#render(), #paint() & the Live DOM", function() {
 
 			tpl.paint(doc);
 			expect(seen).to.be.ok;
+		});
+
+		it("stops decorating", function() {
+			tpl = new Temple("<span custom='{{ val }}'></span>", { val: "Hello World" });
+			var seen = false,
+				decorator = function(el) { seen = true; };
+
+			tpl.decorate("custom", decorator);
+			tpl.stopDecorating("custom", decorator);
+
+			tpl.paint(doc);
+			expect(seen).to.not.be.ok;
 		});
 	});
 

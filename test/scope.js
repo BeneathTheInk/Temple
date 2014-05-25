@@ -389,8 +389,6 @@ describe("Scope", function() {
 		});
 
 		it("scope returns fallback value at path iff scope value at path is undefined", function() {
-			console.log(fallback.getScope("foo"));
-			console.log(scope.getScope("bar"));
 			expect(scope.get("foo")).to.equal("bar");
 			expect(scope.get("bar")).to.equal("baz");
 		});
