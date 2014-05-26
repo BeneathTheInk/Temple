@@ -1,5 +1,4 @@
-var inspect = require('util').inspect,
-	NODE_TYPE = require("../lib/types");
+var NODE_TYPE = Temple.NODE_TYPE;
 
 describe("#parse()", function() {
 
@@ -26,7 +25,6 @@ describe("#parse()", function() {
 
 	it("parses mustache variables", function() {
 		var template = Temple.parse("{{ hello }}{{{ world }}}{{& unescaped }}");
-		// console.log(inspect(template));
 		
 		expect(template).to.deep.equal([{
 			type: NODE_TYPE.INTERPOLATOR,

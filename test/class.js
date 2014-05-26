@@ -1,4 +1,4 @@
-describe("Basic Class Properties", function() {
+describe("Class Properties", function() {
 
 	it("extend() should create a valid subclass", function() {
 		var SubTemple = Temple.extend({

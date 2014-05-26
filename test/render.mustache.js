@@ -1,7 +1,6 @@
-var spec = require("./mustache.json"),
-	assert = require("assert");
-
 describe.skip('Mustache Test Suite', function () {
+	var spec = window.MustacheTestContent;
+
 	function getContents(testName, ext) {
 		return spec[testName][ext];
 	}
@@ -30,32 +29,36 @@ describe.skip('Mustache Test Suite', function () {
 		return test;
 	}
 
-	testNames = Object.keys(spec).filter(function (name) {
-		return spec[name].js != null;
-	});
+	function trimComments(html) {
+		return html.replace(/\<\!\-\-\$[0-9]+\-\-\>/g, "");
+	}
 
-	testNames.forEach(function (testName) {
+	Object.keys(spec).filter(function (name) {
+		return spec[name].js != null;
+	}).forEach(function (testName) {
 		var test = getTest(testName);
 
-		var fn = function() {
+		function tester() {
 			var tpl;
 
 			if (test.partial) {
-				assert.throw("Oops! partial!");
+				throw new Error("Oops! partial!");
 				// output = Mustache.render(test.template, test.view, { partial: test.partial });
 			} else {
 				tpl = new Temple(test.template, test.view);
 			}
 
-			assert.equal(tpl.toHTML(), test.expect);
+			expect(trimComments(tpl.toHTML()) + "\n").to.equal(test.expect);
 		}
 
-		fn.toString = function() {
-			return  test.template + "\n====\n" +
-				getContents(test.name, "js") + "\n====\n" +
-				test.expect + "\n";
+		tester.toString = function() {
+			return [
+				test.template,
+				getContents(test.name, "js"),
+				test.expect
+			].join("\n====\n") + "\n";
 		}
 
-		it("knows how to render '" + testName.split("_").join(" ") + "'", fn);
+		it("knows how to render '" + testName.split("_").join(" ") + "'", tester);
 	});
 });

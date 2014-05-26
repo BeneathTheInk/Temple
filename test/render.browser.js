@@ -1,6 +1,3 @@
-var _ = require("underscore"),
-	chai = require("chai");
-
 describe("#render(), #paint() & the Live DOM", function() {
 	var tpl, doc;
 
@@ -22,7 +19,11 @@ describe("#render(), #paint() & the Live DOM", function() {
 	}
 
 	function getNodes() {
-		return _.toArray(doc.childNodes);
+		var nodes = [];
+		for (var i = 0; i < doc.childNodes.length; i++) {
+			nodes.push(doc.childNodes[i]);
+		}
+		return nodes;
 	}
 
 	function renderWait(fn, done) {

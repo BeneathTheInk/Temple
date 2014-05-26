@@ -8,6 +8,7 @@
       {name: "blue", current: false, url: "#Blue"}
   ],
   link: function () {
+    console.log(this);
     return this.get("current") !== true;
   },
   list: function () {

@@ -1,4 +1,4 @@
-describe("#autorun()", function() {
+describe("#autorun() & #depend()", function() {
 	this.timeout(500);
 	var tpl, comp;
 

@@ -20,4 +20,6 @@ files.forEach(function(file) {
 	spec[id][format.substr(1)] = fs.readFileSync(path.join(__dirname, file), "utf-8");
 });
 
-fs.writeFileSync(path.resolve(__dirname, "../mustache.json"), JSON.stringify(spec, null, "\t"), "utf-8");
+var contents = "window.MustacheTestContent = (" + JSON.stringify(spec, null, "\t") + ");";
+
+fs.writeFileSync(path.resolve(__dirname, "../mustache.js"), contents, "utf-8");
