@@ -129,7 +129,7 @@ describe("Model", function() {
 				expect(this).to.equal(model);
 				
 				expect(chg).to.deep.equal({
-					model: model,
+					model: model.getModel("foo.bar"),
 					path: "foo.bar",
 					type: "add",
 					value: "baz",
@@ -154,7 +154,7 @@ describe("Model", function() {
 			var seen = false;
 			model.observe("foo", function(chg) {
 				expect(chg).to.deep.equal({
-					model: model,
+					model: model.getModel("foo"),
 					path: "foo",
 					type: "delete",
 					value: undefined,
@@ -201,7 +201,7 @@ describe("Model", function() {
 			var seen = false;
 			model.observe("*", function(chg) {
 				expect(chg).to.deep.equal({
-					model: model,
+					model: model.getModel("foo"),
 					path: "foo",
 					type: "update",
 					value: { bar: "baz" },
@@ -219,7 +219,7 @@ describe("Model", function() {
 			var seen = false;
 			model.observe("*.bar.baz", function(chg) {
 				expect(chg).to.deep.equal({
-					model: model,
+					model: model.getModel("foo.bar.baz"),
 					path: "foo.bar.baz",
 					type: "add",
 					value: "buz",
@@ -237,7 +237,7 @@ describe("Model", function() {
 			var seen = false;
 			model.observe("foo.*.baz", function(chg) {
 				expect(chg).to.deep.equal({
-					model: model,
+					model: model.getModel("foo.bar.baz"),
 					path: "foo.bar.baz",
 					type: "add",
 					value: "buz",
@@ -255,7 +255,7 @@ describe("Model", function() {
 			var seen = false;
 			model.observe("foo.bar.*", function(chg) {
 				expect(chg).to.deep.equal({
-					model: model,
+					model: model.getModel("foo.bar.baz"),
 					path: "foo.bar.baz",
 					type: "add",
 					value: "buz",
@@ -275,7 +275,7 @@ describe("Model", function() {
 
 			model.observe("**", function(chg) {
 				expect(chg).to.deep.equal({
-					model: model,
+					model: model.getModel("foo.bar"),
 					path: "foo.bar",
 					type: "update",
 					value: { baz: "buz" },
@@ -294,7 +294,7 @@ describe("Model", function() {
 			
 			model.observe("**.baz", function(chg) {
 				expect(chg).to.deep.equal({
-					model: model,
+					model: model.getModel("foo.bar.baz"),
 					path: "foo.bar.baz",
 					type: "add",
 					value: "buz",
@@ -312,7 +312,7 @@ describe("Model", function() {
 			var seen = false;
 			model.observe("foo.**.baz", function(chg) {
 				expect(chg).to.deep.equal({
-					model: model,
+					model: model.getModel("foo.bar.bun.baz"),
 					path: "foo.bar.bun.baz",
 					type: "add",
 					value: "buz",
@@ -332,7 +332,7 @@ describe("Model", function() {
 
 			model.observe("foo.**", function(chg) {
 				expect(chg).to.deep.equal({
-					model: model,
+					model: model.getModel("foo.bar.baz"),
 					path: "foo.bar.baz",
 					type: "update",
 					value: "bun",
@@ -350,7 +350,7 @@ describe("Model", function() {
 			var seen = false;
 			model.observe("foo.**", function(chg) {
 				expect(chg).to.deep.equal({
-					model: model,
+					model: model.getModel("foo"),
 					path: "foo",
 					type: "update",
 					value: "buz",

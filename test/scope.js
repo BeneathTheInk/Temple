@@ -12,6 +12,7 @@ describe("Scope", function() {
 	});
 
 	afterEach(function() {
+		scope.stopObserving();
 		scope.removeModel(fallback);
 		fallback = null;
 	});
@@ -46,6 +47,63 @@ describe("Scope", function() {
 	it("if path is prefixed with `this`, model returns exact value at path", function() {
 		expect(scope.get("this.foo")).to.equal("bar");
 		expect(scope.get("this.bar")).to.be.undefined;
+	});
+
+	it("stops observing", function() {
+		var fn = function() { throw new Error("Observer wasn't removed!"); }
+		scope.observe("foo", fn);
+		
+		expect(function() {
+			scope.set("foo", "baz");
+		}).to.throw(Error);
+
+		scope.stopObserving("foo", fn);
+		scope.set("foo", "bar");
+	});
+
+	it("observes changes to fallback value", function() {
+		var seen = false;
+
+		scope.observe("bar", function(summary) {
+			expect(this).to.equal(scope);
+			seen = true;
+		});
+
+		fallback.set("bar", "bam");
+		expect(seen).to.be.ok;
+	});
+
+	it("observes changes to local value when the value was found in fallback", function() {
+		var seen = false;
+
+		scope.observe("bar", function(summary) {
+			seen = true;
+		});
+
+		scope.set("bar", "bam");
+		expect(seen).to.be.ok;
+	});
+
+	it("doesn't observes changes to fallback when the value is in local model", function() {
+		var seen = false;
+
+		scope.observe("foo", function(summary) {
+			seen = true;
+		});
+
+		fallback.set("foo", "bam");
+		expect(seen).to.not.be.ok;
+	});
+
+	it("observes unsets on local value", function() {
+		var seen = false;
+
+		scope.observe("foo", function(summary) {
+			seen = true;
+		});
+
+		scope.unset("foo");
+		expect(seen).to.be.ok;
 	});
 
 });
