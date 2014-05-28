@@ -9,359 +9,57 @@ describe("Model", function() {
 		model.set("foo", "bar");
 	});
 
-	describe("#get() & #set()", function() {
-		it("sets data on construction", function() {
-			var model = new Temple.Model({ foo: "bar" });
-			expect(model.get()).to.deep.equal({ foo: "bar" });
-		});
-
-		it("returns result of `model.value` on null or empty path", function() {
-			expect(model.get()).to.equal(model.value);
-		});
-
-		it("gets & sets shallow path", function() {
-			model.set("foo", { bar: "baz" });
-			expect(model.get("foo")).to.deep.equal({ bar: "baz" });
-		});
-
-		it("gets & sets deep path", function() {
-			model.set("foo.bar", "baz");
-			expect(model.get("foo.bar")).to.equal("baz");
-		});
-
-		it("sets value directly on null or empty path", function() {
-			model.set([], "value");
-			expect(model.get()).to.equal("value");
-		});
-
-		it("directly points to values on set", function() {
-			var fn = function(){};
-			model.set("foo", fn);
-			expect(model.value.foo).to.equal(fn);
-		});
-
-		it("unsets", function() {
-			model.unset("foo");
-			expect(model.get("foo")).to.be.undefined;
-		});
-
-		it("unset() sets `this.value` to undefined on null or empty path", function() {
-			model.unset();
-			expect(model.value).to.be.undefined;
-		});
-
-		it("get() accepts array as path", function() {
-			expect(model.get([ "foo" ])).to.equal("bar");
-		});
-
-		it("set() accepts array as path", function() {
-			model.set([ "foo", "bar" ], "baz")
-			expect(model.get("foo")).to.deep.equal({ bar: "baz" });
-		});
-
-		it("set() accepts object for setting many paths at once", function() {
-			model.set({ foo: { bar: "baz" } });
-			expect(model.get("foo")).to.deep.equal({ bar: "baz" });
-		});
+	it("sets data on construction", function() {
+		var model = new Temple.Model({ foo: "bar" });
+		expect(model.get()).to.deep.equal({ foo: "bar" });
 	});
 
-	describe("#observe()", function() {
-		afterEach(function() {
-			model.stopObserving();
-		});
+	it("returns result of `model.value` on null or empty path", function() {
+		expect(model.get()).to.equal(model.value);
+	});
 
-		it("successfully adds observer", function() {
-			var fn = function(){};
-			model.observe("foo", fn);
-			expect(model._observers.some(function(o) {
-				return o.fn === fn;
-			})).to.be.ok;
-		});
+	it("gets & sets shallow path", function() {
+		model.set("foo", { bar: "baz" });
+		expect(model.get("foo")).to.deep.equal({ bar: "baz" });
+	});
 
-		it("successfully removes observer", function() {
-			var fn = function() { throw new Error("Observer wasn't removed!"); }
-			model.observe("foo", fn);
-			
-			expect(function() {
-				model.set("foo", "baz");
-			}).to.throw(Error);
+	it("gets & sets deep path", function() {
+		model.set("foo.bar", "baz");
+		expect(model.get("foo.bar")).to.equal("baz");
+	});
 
-			model.stopObserving("foo", fn);
-			model.set("foo", "bar");
-		});
+	it("sets value directly on null or empty path", function() {
+		model.set([], "value");
+		expect(model.get()).to.equal("value");
+	});
 
-		it("calling stopObserving() without arguments clears all observers", function() {
-			model.observe("foo", function(){});
-			expect(model._observers).to.have.length(1);
-			model.stopObserving();
-			expect(model._observers).to.have.length(0);
-		});
+	it("directly points to values on set", function() {
+		var fn = function(){};
+		model.set("foo", fn);
+		expect(model.value.foo).to.equal(fn);
+	});
 
-		it("calling stopObserving(path) clears all observers with matching path", function() {
-			model.observe("foo", function(){});
-			model.observe("foo", function(){});
-			model.observe("bar", function(){});
-			expect(model._observers).to.have.length(3);
-			model.stopObserving("foo");
-			expect(model._observers).to.have.length(1);
-		});
+	it("unsets", function() {
+		model.unset("foo");
+		expect(model.get("foo")).to.be.undefined;
+	});
 
-		it("calling stopObserving(null, fn) clears all observers with matching function", function() {
-			var fn = function(){};
-			model.observe("foo", fn);
-			model.observe("bar", fn);
-			model.observe("baz", function(){});
-			expect(model._observers).to.have.length(3);
-			model.stopObserving(null, fn);
-			expect(model._observers).to.have.length(1);
-		});
+	it("unset() sets `this.value` to undefined on null or empty path", function() {
+		model.unset();
+		expect(model.value).to.be.undefined;
+	});
 
-		it("observes nothing when nothing changes", function() {
-			var seen = false;
-			model.observe("foo", function() { seen = true; });
-			model.set("foo", "bar");
-			expect(seen).to.not.be.ok;
-		});
+	it("get() accepts array as path", function() {
+		expect(model.get([ "foo" ])).to.equal("bar");
+	});
 
-		it("observes static path changes", function() {
-			var seen = false;
-			model.observe("foo.bar", function(chg) {
-				expect(this).to.equal(model);
-				
-				expect(chg).to.deep.equal({
-					model: model,
-					path: "foo.bar",
-					type: "add",
-					value: "baz",
-					oldValue: undefined
-				});
+	it("set() accepts array as path", function() {
+		model.set([ "foo", "bar" ], "baz")
+		expect(model.get("foo")).to.deep.equal({ bar: "baz" });
+	});
 
-				seen = true;
-			});
-
-			model.set("foo", { bar: "baz" });
-			expect(seen).to.be.ok;
-		});
-
-		it("observes changes only once", function() {
-			var seen = 0;
-			model.observe("foo", function() { seen++; });
-			model.set("foo", { bar: "baz" });
-			expect(seen).to.equal(1);
-		});
-
-		it("observes unset", function() {
-			var seen = false;
-			model.observe("foo", function(chg) {
-				expect(chg).to.deep.equal({
-					model: model,
-					path: "foo",
-					type: "delete",
-					value: undefined,
-					oldValue: "bar"
-				});
-
-				seen = true;
-			});
-
-			model.unset("foo");
-			expect(seen).to.be.ok;
-		});
-
-		it("calling get() in an observer returns the new value", function() {
-			var seen = false;
-			model.observe("foo.bar", function(chg) {
-				expect(this.get(chg.path)).to.equal(chg.value);
-				seen = true;
-			});
-
-			model.set("foo.bar", "baz");
-			expect(seen).to.be.ok;
-		});
-
-		it("observes empty path", function() {
-			var seen = false;
-			model.observe("", function(chg) {
-				expect(chg).to.deep.equal({
-					model: model,
-					path: "",
-					type: "update",
-					value: "foo",
-					oldValue: { foo: "bar" }
-				});
-
-				seen = true;
-			});
-
-			model.set("", "foo");
-			expect(seen).to.be.ok;
-		});
-
-		it("observes dynamic path: *", function() {
-			var seen = false;
-			model.observe("*", function(chg) {
-				expect(chg).to.deep.equal({
-					model: model,
-					path: "foo",
-					type: "update",
-					value: { bar: "baz" },
-					oldValue: "bar"
-				});
-
-				seen = true;
-			});
-
-			model.set("foo", { bar: "baz" });
-			expect(seen).to.be.ok;
-		});
-
-		it("observes dynamic path: *.bar.baz", function() {
-			var seen = false;
-			model.observe("*.bar.baz", function(chg) {
-				expect(chg).to.deep.equal({
-					model: model,
-					path: "foo.bar.baz",
-					type: "add",
-					value: "buz",
-					oldValue: undefined
-				});
-
-				seen = true;
-			});
-
-			model.set("foo.bar.baz", "buz");
-			expect(seen).to.be.ok;
-		});
-
-		it("observes dynamic path: foo.*.baz", function() {
-			var seen = false;
-			model.observe("foo.*.baz", function(chg) {
-				expect(chg).to.deep.equal({
-					model: model,
-					path: "foo.bar.baz",
-					type: "add",
-					value: "buz",
-					oldValue: undefined
-				});
-
-				seen = true;
-			});
-
-			model.set("foo.bar.baz", "buz");
-			expect(seen).to.be.ok;
-		});
-
-		it("observes dynamic path: foo.bar.*", function() {
-			var seen = false;
-			model.observe("foo.bar.*", function(chg) {
-				expect(chg).to.deep.equal({
-					model: model,
-					path: "foo.bar.baz",
-					type: "add",
-					value: "buz",
-					oldValue: undefined
-				});
-
-				seen = true;
-			});
-
-			model.set("foo.bar.baz", "buz");
-			expect(seen).to.be.ok;
-		});
-
-		it("observes dynamic path: **", function() {
-			var seen = false;
-			model.set("foo", { bar: "baz" });
-
-			model.observe("**", function(chg) {
-				expect(chg).to.deep.equal({
-					model: model,
-					path: "foo.bar",
-					type: "update",
-					value: { baz: "buz" },
-					oldValue: "baz"
-				});
-
-				seen = true;
-			});
-
-			model.set("foo.bar", { baz: "buz" });
-			expect(seen).to.be.ok;
-		});
-
-		it("observes dynamic path: **.baz", function() {
-			var seen = false;
-			
-			model.observe("**.baz", function(chg) {
-				expect(chg).to.deep.equal({
-					model: model,
-					path: "foo.bar.baz",
-					type: "add",
-					value: "buz",
-					oldValue: undefined
-				});
-
-				seen = true;
-			});
-
-			model.set("foo.bar.baz", "buz");
-			expect(seen).to.be.ok;
-		});
-
-		it("observes dynamic path: foo.**.baz", function() {
-			var seen = false;
-			model.observe("foo.**.baz", function(chg) {
-				expect(chg).to.deep.equal({
-					model: model,
-					path: "foo.bar.bun.baz",
-					type: "add",
-					value: "buz",
-					oldValue: undefined
-				});
-
-				seen = true;
-			});
-
-			model.set("foo.bar.bun.baz", "buz");
-			expect(seen).to.be.ok;
-		});
-
-		it("observes dynamic path: foo.**", function() {
-			var seen = false;
-			model.set("foo.bar.baz", "buz");
-
-			model.observe("foo.**", function(chg) {
-				expect(chg).to.deep.equal({
-					model: model,
-					path: "foo.bar.baz",
-					type: "update",
-					value: "bun",
-					oldValue: "buz"
-				});
-
-				seen = true;
-			});
-
-			model.set("foo.bar.baz", "bun");
-			expect(seen).to.be.ok;
-		});
-
-		it("observing path foo.** captures changes at path foo", function() {
-			var seen = false;
-			model.observe("foo.**", function(chg) {
-				expect(chg).to.deep.equal({
-					model: model,
-					path: "foo",
-					type: "update",
-					value: "buz",
-					oldValue: "bar"
-				});
-
-				seen = true;
-			});
-
-			model.set("foo", "buz");
-			expect(seen).to.be.ok;
-		});
+	it("set() accepts object for setting many paths at once", function() {
+		model.set({ foo: { bar: "baz" } });
+		expect(model.get("foo")).to.deep.equal({ bar: "baz" });
 	});
 });

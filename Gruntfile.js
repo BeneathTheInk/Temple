@@ -18,6 +18,13 @@ module.exports = function(grunt) {
 					keepAlive: true,
 					bundleOptions: { debug: true, standalone: "Temple" }
 				}
+			},
+			test: {
+				src: "lib/temple.js",
+				dest: "dist/temple.dev.js",
+				options: {
+					bundleOptions: { debug: true, standalone: "Temple" }
+				}
 			}
 		},
 		wrap2000: {
@@ -25,8 +32,12 @@ module.exports = function(grunt) {
 				src: 'dist/temple.js',
 				dest: 'dist/temple.js'
 			},
+			test: {
+				src: 'dist/temple.dev.js',
+				dest: 'dist/temple.dev.js'
+			},
 			options: {
-				header: "/*\n * Temple.js\n * (c) 2014 Beneath the Ink, Inc.\n * MIT License\n * Version <%= pkg.version %>\n */\n"
+				header: "/*\n * Temple\n * (c) 2014 Beneath the Ink, Inc.\n * MIT License\n * Version <%= pkg.version %>\n */\n"
 			}
 		},
 		uglify: {
@@ -42,6 +53,7 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-wrap2000');
 
 	grunt.registerTask('dist', [ 'browserify:dist', 'wrap2000:dist', 'uglify:dist' ]);
+	grunt.registerTask('test', [ 'browserify:test', 'wrap2000:test' ]);
 	grunt.registerTask('dev', [ 'browserify:dev' ]);
 
 	grunt.registerTask('default', [ 'dist' ]);
