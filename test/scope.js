@@ -8,16 +8,16 @@ describe("Scope", function() {
 	beforeEach(function() {
 		scope.set("foo", "bar");
 		fallback = new Temple.Model({ bar: "baz" });
-		scope.addFallback(fallback);
+		scope.addModel(fallback);
 	});
 
 	afterEach(function() {
-		scope.removeFallback(fallback);
+		scope.removeModel(fallback);
 		fallback = null;
 	});
 
 	it("creates a model on constructor if a model isn't passed", function() {
-		expect(scope.model).to.be.instanceof(Temple.Model);
+		expect(scope.models[0]).to.be.instanceof(Temple.Model);
 	});
 
 	it("get(path) executes function value iff value at path is function", function() {
@@ -30,12 +30,12 @@ describe("Scope", function() {
 	});
 
 	it("adds fallback model", function() {
-		expect(scope.fallbacks).to.deep.equal([ fallback ]);
+		expect(scope.models[1]).to.deep.equal(fallback);
 	});
 
 	it("removes fallback model", function() {
-		scope.removeFallback(fallback);
-		expect(scope.fallbacks).to.be.empty;
+		scope.removeModel(fallback);
+		expect(scope.models).to.have.length(1);
 	});
 
 	it("scope returns fallback value at path iff model value at path is undefined", function() {

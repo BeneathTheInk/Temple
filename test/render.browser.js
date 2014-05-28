@@ -193,7 +193,7 @@ describe("#render(), #paint() & the Live DOM", function() {
 				renderWait(function() {
 					op[2](getNodes());
 				}, done);
-			});
+			});			
 		});
 	});
 

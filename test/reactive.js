@@ -52,11 +52,11 @@ describe("#autorun() & #depend()", function() {
 			run = 2;
 
 		function donedone(e) {
-			tpl.removeFallback(fb);
+			tpl.removeModel(fb);
 			done(e);
 		}
 
-		tpl.addFallback(fb);
+		tpl.addModel(fb);
 
 		comp = tpl.autorun(function() {
 			try { expect(tpl.get("baz")).to.be.ok; }
@@ -74,11 +74,11 @@ describe("#autorun() & #depend()", function() {
 			run = 2;
 
 		function donedone(e) {
-			tpl.removeFallback(fb);
+			tpl.removeModel(fb);
 			done(e);
 		}
 
-		tpl.addFallback(fb);
+		tpl.addModel(fb);
 
 		comp = tpl.autorun(function() {
 			try {
