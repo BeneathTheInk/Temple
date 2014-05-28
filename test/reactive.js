@@ -48,7 +48,7 @@ describe("#autorun() & #depend()", function() {
 	});
 
 	it("autorun() context reruns for fallback changes", function(done) {
-		var fb = new Temple.Scope({ baz: "buz" }),
+		var fb = new Temple.Model({ baz: "buz" }),
 			run = 2;
 
 		function donedone(e) {
@@ -56,7 +56,7 @@ describe("#autorun() & #depend()", function() {
 			done(e);
 		}
 
-		tpl.fallback(fb);
+		tpl.addFallback(fb);
 
 		comp = tpl.autorun(function() {
 			try { expect(tpl.get("baz")).to.be.ok; }
@@ -70,7 +70,7 @@ describe("#autorun() & #depend()", function() {
 	});
 
 	it("autorun() context reruns for changes to value when previous get() returned a fallback scope's value", function(done) {
-		var fb = new Temple.Scope({ baz: "buz" }),
+		var fb = new Temple.Model({ baz: "buz" }),
 			run = 2;
 
 		function donedone(e) {
@@ -78,7 +78,7 @@ describe("#autorun() & #depend()", function() {
 			done(e);
 		}
 
-		tpl.fallback(fb);
+		tpl.addFallback(fb);
 
 		comp = tpl.autorun(function() {
 			try {

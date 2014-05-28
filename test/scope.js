@@ -35,7 +35,6 @@ describe("Scope", function() {
 
 	it("removes fallback model", function() {
 		scope.removeFallback(fallback);
-		console.log(scope.fallbacks);
 		expect(scope.fallbacks).to.be.empty;
 	});
 
