@@ -25,7 +25,7 @@ If using Browserify or Node.js, you can install via NPM and use via `require("te
 
 ```javascript
 // create a template
-Temple("<span style='color: {{ color }};'>{{ message }}</span>")
+new Temple("<span style='color: {{ color }};'>{{ message }}</span>")
 
 // add data
 .set({
