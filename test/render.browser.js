@@ -2,6 +2,7 @@ describe("#render(), #paint() & the Live DOM", function() {
 	var tpl, doc;
 
 	this.timeout(1000);
+	this.slow(200);
 
 	before(function() {
 		doc = document.createDocumentFragment();
@@ -30,7 +31,7 @@ describe("#render(), #paint() & the Live DOM", function() {
 		setTimeout(function() {
 			try { fn(); done(); }
 			catch(e) { done(e); }
-		}, 10);
+		}, 50);
 	}
 
 	chai.Assertion.addProperty('element', function() {
