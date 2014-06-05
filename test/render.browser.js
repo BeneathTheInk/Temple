@@ -1,4 +1,4 @@
-describe("#render(), #paint() & the Live DOM", function() {
+describe.skip("#render(), #paint() & the Live DOM", function() {
 	var tpl, doc;
 
 	this.timeout(1000);

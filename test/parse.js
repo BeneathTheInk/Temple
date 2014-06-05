@@ -1,6 +1,6 @@
 var NODE_TYPE = Temple.NODE_TYPE;
 
-describe("#parse()", function() {
+describe.skip("#parse()", function() {
 
 	it("parses basic html", function() {
 		var template = Temple.parse("<div class=\"container\">Hello World</div>");
