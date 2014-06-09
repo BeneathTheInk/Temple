@@ -208,6 +208,17 @@ describe("Mustache", function() {
 			}, done);
 		});
 
+		it("updates empty list when an item is added to it", function(done) {
+			render("{{#list}}{{ this }}{{/list}}", { list: [] });
+			tpl.get("list").push("Hello World");
+
+			renderWait(function() {
+				var nodes = getNodes();
+				expect(nodes).to.have.length(3);
+				expect(nodes[0]).to.be.textNode.with.nodeValue("Hello World");
+			}, done);
+		});
+
 		// array operations
 		[	[ "splice", [ 1, 1, 3 ], function(nodes) {
 				expect(nodes).to.have.length(5);
@@ -313,6 +324,188 @@ describe("Mustache", function() {
 			renderWait(function() {
 				expect(nodes[0].getAttribute("x-attr")).to.equal("foo");
 			}, done);
+		});
+	});
+
+	describe("Decorators", function() {
+		function render(template, scope) {
+			tpl = new Temple.Mustache(template, scope);
+			return getNodes();
+		}
+
+		it("calls decorator when element is created", function() {
+			render("<div custom='A fancy attribute'></div>");
+			var seen = 0;
+
+			tpl.decorate("custom", function(el) {
+				expect(this).to.equal(tpl);
+				expect(el).to.be.an.element.with.tagName("div");
+				seen++;
+
+				return {
+					update: function(val) {
+						expect(this).to.be.instanceof(Temple.Scope);
+						expect(val).to.equal('A fancy attribute');
+						seen++;
+					},
+					destroy: function() {
+						expect(this).to.equal(tpl);
+						seen++;
+					}
+				}
+			});
+
+			tpl.paint(doc);
+			tpl.erase();
+
+			expect(seen).to.equal(3);
+		});
+
+		it("calls update() when data changes", function(done) {
+			render("<div custom='{{ val }}'></div>", { val: "Hello World" });
+			var seen = 0;
+
+			tpl.decorate("custom", function(el, t) {
+				return { update: function(o) {
+					if (seen === 0) expect(o).to.equal("Hello World");
+					if (seen === 1) expect(o).to.equal("Foo Bar");
+					seen++;
+				} }
+			});
+
+			tpl.paint(doc);
+			tpl.set("val", "Foo Bar");
+
+			renderWait(function() {
+				expect(seen).to.equal(2);
+			}, done);
+		});
+
+		it("calls destroy() when element is removed", function() {
+			render("<div custom='{{ val }}'></div>", { val: "Hello World" });
+			var seen = false;
+
+			tpl.decorate("custom", function() {
+				return { destroy: function() {
+					seen = true;
+				} }
+			});
+
+			tpl.paint(doc);
+			tpl.erase();
+
+			expect(seen).to.be.ok;
+		});
+
+		it("parses boolean argument", function() {
+			render("<span custom='true'></span>", { val: "World" });
+			var seen = false;
+
+			tpl.decorate("custom", function() {
+				return {
+					parse: "text",
+					update: function(val) {
+						expect(val).to.equal(true);
+						seen = true;
+					}
+				}
+			});
+
+			tpl.paint(doc);
+			expect(seen).to.be.ok;
+		});
+
+		it("parses numeric argument", function() {
+			render("<span custom='1234.56'></span>", { val: "World" });
+			var seen = false;
+
+			tpl.decorate("custom", function() {
+				return {
+					parse: "text",
+					update: function(val) {
+						expect(val).to.equal(1234.56);
+						seen = true;
+					}
+				}
+			});
+
+			tpl.paint(doc);
+			expect(seen).to.be.ok;
+		});
+
+		it("parses string argument", function() {
+			render("<span custom='\"Hello \\\\\"World\\\\\"\"'></span>", { val: "World" });
+			var seen = false;
+
+			tpl.decorate("custom", function() {
+				return {
+					parse: "text",
+					update: function(val) {
+						expect(val).to.equal('Hello "World"');
+						seen = true;
+					}
+				}
+			});
+
+			tpl.paint(doc);
+			expect(seen).to.be.ok;
+		});
+
+		it("parses several arguments", function() {
+			render("<span custom='\"Hello\", {{ val }}, true'></span>", { val: "World" });
+			var seen = false;
+
+			tpl.decorate("custom", function() {
+				return {
+					parse: "text",
+					update: function(a1, a2, a3) {
+						expect(a1).to.equal("Hello");
+						expect(a2).to.equal("World");
+						expect(a3).to.equal(true);
+						seen = true;
+					}
+				}
+			});
+
+			tpl.paint(doc);
+			expect(seen).to.be.ok;
+		});
+
+		it("calls decorator nested in section", function() {
+			render("{{#section}}<div custom='{{ val }}'></div>{{/section}}", { val: "Hello World", section: true });
+			var seen = false;
+
+			tpl.decorate("custom", function() {
+				seen = true;
+			});
+
+			tpl.paint(doc);
+			expect(seen).to.be.ok;
+		});
+
+		it("calls decorator nested in element", function() {
+			render("<div><span custom='{{ val }}'></span></div>", { val: "Hello World" });
+			var seen = false;
+
+			tpl.decorate("custom", function(el) {
+				expect(el).to.be.an.element.with.tagName("span");
+				seen = true;
+			});
+
+			tpl.paint(doc);
+			expect(seen).to.be.ok;
+		});
+
+		it("stops decorating", function() {
+			render("<span custom='{{ val }}'></span>", { val: "Hello World" });
+			var seen = false,
+				decorator = function(el) { seen = true; };
+
+			tpl.decorate("custom", decorator);
+			tpl.stopDecorating("custom", decorator);
+
+			tpl.paint(doc);
+			expect(seen).to.not.be.ok;
 		});
 	});
 
