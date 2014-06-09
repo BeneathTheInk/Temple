@@ -2,12 +2,12 @@
 
 Sensible templating for the modern browser.
 
-* __Modern__ - Pure [Mustache](http://mustache.github.io/) + HTML.
 * __Reactive__ - Powered by a live DOM that automatically updates as the data changes.
 * __Built to Scale__ - Works great for projects of all sizes.
-* __Extensible__ - The API only provides the basics, allowing you to add what you need.
+* __Extensible__ - The API only provides the basic building blocks, allowing you to build exactly what you need.
+* __Modern__ - *Optional* [Mustache](http://mustache.github.io/) + HTML language parser and renderer.
 
-__Note: This library is under active development and the API may change without notice. Use at your own risk!__
+__Note: This library is under active development. Use at your own risk!__
 
 ## Install
 
@@ -25,7 +25,7 @@ If using Browserify or Node.js, you can install via NPM and use via `require("te
 
 ```javascript
 // create a template
-new Temple("<span style='color: {{ color }};'>{{ message }}</span>")
+new Temple.Mustache("<span style='color: {{ color }};'>{{ message }}</span>")
 
 // add data
 .set({
