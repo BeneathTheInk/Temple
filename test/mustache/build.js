@@ -22,4 +22,4 @@ files.forEach(function(file) {
 
 var contents = "window.MustacheTestContent = (" + JSON.stringify(spec, null, "\t") + ");";
 
-fs.writeFileSync(path.resolve(__dirname, "../mustache.js"), contents, "utf-8");
+fs.writeFileSync(path.resolve(__dirname, "../mustache-tests.js"), contents, "utf-8");
