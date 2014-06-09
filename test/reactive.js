@@ -1,5 +1,6 @@
 describe("#autorun() & #depend()", function() {
 	this.timeout(500);
+	this.slow(200);
 	var tpl, comp;
 
 	before(function() {
