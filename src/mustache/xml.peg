@@ -15,12 +15,13 @@ textNode
 
 // Comment Nodes
 commentNode
-	= "<!--" v:("-->" / .)* {
-		if (v[v.length - 1] !== "-->")
-			throw new Error("Unexpected end of input. Comment tag wasn't closed.");
-
-		return { type: "comment", value: v.slice(0, -1).join("").trim() };
+	= "<!--" v:commentValue "-->" {
+		return { type: "comment", value: v.trim() };
 	}
+	
+commentValue
+	= & "-->"
+	/ l:. r:commentValue? { return l + (r != null ? r : ""); }
 
 // Element Nodes
 elementNode

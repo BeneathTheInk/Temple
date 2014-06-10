@@ -165,7 +165,7 @@ function compileElements(nodes, tree) {
 		}
 	}).reduce(function(m, el) {
 		if (Array.isArray(el)) m = m.concat(el);
-		else m.push(el);
+		else if (el != null) m.push(el);
 		return m;
 	}, []);
 }

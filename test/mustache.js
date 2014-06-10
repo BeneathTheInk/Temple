@@ -108,6 +108,20 @@ describe("Mustache", function() {
 			});
 		});
 
+		it("parses comments", function() {
+			var template = Temple.Mustache.parse("<!-- comment --><div></div>");
+
+			expect(template).to.deep.equal({
+				type: NODE_TYPE.ROOT,
+				children: [{
+					type: NODE_TYPE.ELEMENT,
+					name: "div",
+					attributes: [],
+					children: []
+				}]
+			});
+		});
+
 		it("parses deeply", function() {
 			var template = Temple.Mustache.parse("<div>{{ var }}</div>");
 
