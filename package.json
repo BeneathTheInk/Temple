@@ -1,6 +1,6 @@
 {
 	"name": "templejs",
-	"version": "0.2.7",
+	"version": "0.2.8-alpha",
 	"description": "Sensible templating for the modern browser.",
 	"author": "Beneath the Ink <info@beneaththeink.com>",
 	"contributors": [
@@ -12,7 +12,7 @@
 	],
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/BeneathTheInk/Temple.js.git"
+		"url": "https://github.com/BeneathTheInk/Temple.git"
 	},
 	"main": "./lib/temple.js",
 	"dependencies": {
@@ -36,6 +36,7 @@
 	"license": "MIT",
 	"keywords": [
 		"mustache",
+		"view",
 		"DOM",
 		"html",
 		"template",
