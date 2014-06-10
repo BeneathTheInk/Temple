@@ -284,6 +284,75 @@ describe("Mustache", function() {
 		});
 	});
 
+	describe("Inverted Sections", function(argument) {
+		it("renders inverted section when value is false", function() {
+			var nodes = render("{{^section}}Hello World{{/section}}", { section: false });
+			expect(nodes).to.have.length(2);
+			expect(nodes[0]).to.be.textNode.with.nodeValue("Hello World");
+		});
+
+		it("renders inverted section when value is empty array", function() {
+			var nodes = render("{{^section}}Hello World{{/section}}", { section: [] });
+			expect(nodes).to.have.length(2);
+			expect(nodes[0]).to.be.textNode.with.nodeValue("Hello World");
+		});
+
+		it("doesn't render inverted section when value is true", function() {
+			var nodes = render("{{^section}}Hello World{{/section}}", { section: true });
+			expect(nodes).to.have.length(1);
+			expect(nodes[0]).to.be.comment;
+		});
+
+		it("removes inverted section when value is changed to true", function(done) {
+			render("{{^section}}Hello World{{/section}}", { section: false });
+			tpl.set("section", true);
+
+			renderWait(function() {
+				var nodes = getNodes();
+				expect(nodes).to.have.length(1);
+				expect(nodes[0]).to.be.comment;
+			}, done);
+		});
+
+		it("updates inverted section when value is changed to false", function(done) {
+			render("{{^section}}Hello World{{/section}}", { section: true });
+			tpl.set("section", false);
+
+			renderWait(function() {
+				var nodes = getNodes();
+				expect(nodes).to.have.length(2);
+				expect(nodes[0]).to.be.textNode.with.nodeValue("Hello World");
+			}, done);
+		});
+
+		it("updates non-empty list when all items are removed from it", function(done) {
+			render("{{^list}}Hello World{{/list}}", { list: [ 0 ] });
+			tpl.get("list").pop();
+
+			renderWait(function() {
+				var nodes = getNodes();
+				expect(nodes).to.have.length(2);
+				expect(nodes[0]).to.be.textNode.with.nodeValue("Hello World");
+			}, done);
+		});
+
+		it("renders inverted section in element", function() {
+			var nodes = render("<div>{{^section}}Hello World{{/section}}</div>", { section: false });
+			expect(nodes).to.have.length(1);
+			expect(nodes[0]).to.be.element;
+			expect(nodes[0].childNodes).to.have.length(2);
+			expect(nodes[0].childNodes[0]).to.be.textNode.with.nodeValue("Hello World");
+		});
+
+		it("renders inverted section in section", function() {
+			var nodes = render("{{#s1}}{{^s2}}Hello World{{/s2}}{{/s1}}", { s1: true, s2: false });
+			expect(nodes).to.have.length(3);
+			expect(nodes[0]).to.be.textNode.with.nodeValue("Hello World");
+			expect(nodes[1]).to.be.comment;
+			expect(nodes[2]).to.be.comment;
+		});
+	});
+
 	describe("Elements", function() {
 		it("renders element", function() {
 			var nodes = render("<div></div>");
