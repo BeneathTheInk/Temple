@@ -5,7 +5,7 @@ var Temple = require("../temple"),
 	parse = require("./parse"),
 	util = require("../util"),
 	Section = require("./section"),
-	ArgParser = require("./arguments.pegjs");
+	ArgParser = require("./arguments.js");
 
 module.exports = Temple.extend({
 	constructor: function(template, data) {

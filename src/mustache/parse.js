@@ -1,11 +1,12 @@
 var Hogan = require("hogan.js"),
-	xml = require('./xml.pegjs'),
+	xml = require('./xml.js'),
 	NODE_TYPE = require("../types"),
 	HTML_DELIMITERS = [ "[#@!", "!@#]" ];
 
 var parse =
 module.exports = function(text, delimiters) {
 	var tree = toTree(text.trim(), delimiters);
+	
 	return {
 		type: NODE_TYPE.ROOT,
 		children: compileXML(tree)
@@ -21,8 +22,8 @@ function parseXML(tree) {
 		d = HTML_DELIMITERS;
 
 	tree.forEach(function(node, index) {
-		if (typeof node === "string" || node instanceof String) {
-			src += "" + node;
+		if (node.tag === "_t") {
+			src += node.text.toString();
 		} else {
 			src += d[0] + index + d[1];
 		}
@@ -71,10 +72,14 @@ function compileStash(nodes, isXML) {
 	var processNodes = isXML ? compileXML : compileStash;
 
 	return nodes.reduce(function(m, part) {
-		if (typeof part === "string" || part instanceof String) {
-			appendText(m, "" + part);
+		if (typeof part === "string") {
+			appendText(m, part);
 		} else {
 			switch (part.tag) {
+				case "_t":
+					appendText(m, part.text.toString());
+					break;
+
 				case "\n":
 					appendText(m, "\n");
 					break;

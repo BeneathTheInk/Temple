@@ -2,21 +2,36 @@ module.exports = function(grunt) {
 
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
+		clean: [ "lib/", "dist/*.js" ],
+		copy: {
+			main: {
+				files: [{
+					expand: true,
+					cwd: "src/",
+					src: [ "**/*.js" ],
+					dest: "lib/",
+					filter: 'isFile'
+				}]
+			}
+		},
+		peg: {
+			main: {
+				files: [{
+					expand: true,
+					cwd: "src/",
+					src: [ "**/*.peg" ],
+					dest: "lib/",
+					ext: ".js",
+					filter: 'isFile'
+				}]
+			}
+		},
 		browserify: {
 			dist: {
 				src: "lib/temple.js",
 				dest: "dist/temple.js",
 				options: {
 					bundleOptions: { standalone: "Temple" }
-				}
-			},
-			dev: {
-				src: "lib/temple.js",
-				dest: "dist/temple.dev.js",
-				options: {
-					watch: true,
-					keepAlive: true,
-					bundleOptions: { debug: true, standalone: "Temple" }
 				}
 			},
 			test: {
@@ -45,16 +60,28 @@ module.exports = function(grunt) {
 				src: "dist/temple.js",
 				dest: "dist/temple.min.js"
 			}
+		},
+		watch: {
+			main: {
+				files: [ "src/**/*.js", "src/**/*.peg" ],
+				tasks: [ "build", "browserify:test" ],
+				options: { spawn: false }
+			}
 		}
 	});
 
+	grunt.loadNpmTasks('grunt-contrib-watch');
+	grunt.loadNpmTasks('grunt-contrib-clean');
+	grunt.loadNpmTasks('grunt-peg');
+	grunt.loadNpmTasks('grunt-contrib-copy');
 	grunt.loadNpmTasks('grunt-browserify');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-wrap2000');
 
-	grunt.registerTask('dist', [ 'browserify:dist', 'wrap2000:dist', 'uglify:dist' ]);
-	grunt.registerTask('test', [ 'browserify:test', 'wrap2000:test' ]);
-	grunt.registerTask('dev', [ 'browserify:dev' ]);
+	grunt.registerTask('build', [ 'copy', 'peg' ]);
+	grunt.registerTask('dist', [ 'clean', 'build', 'browserify:dist', 'wrap2000:dist', 'uglify:dist' ]);
+	grunt.registerTask('test', [ 'clean', 'build', 'browserify:test', 'wrap2000:test' ]);
+	grunt.registerTask('dev', [ 'clean', 'build', 'browserify:test', "watch" ]);
 
 	grunt.registerTask('default', [ 'dist' ]);
 

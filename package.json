@@ -16,22 +16,20 @@
 	},
 	"main": "./lib/temple.js",
 	"dependencies": {
-		"hogan.js": "2.0.0",
+		"hogan.js": "3.0.1",
 		"underscore": "1.6.0"
 	},
 	"devDependencies": {
-		"browserify": "3.44.2",
-		"browserify-pegjs": "0.8.0-2",
-		"mocha": "1.18.2",
+		"browserify": "4.1.9",
 		"grunt": "0.4.5",
-		"grunt-browserify": "2.0.8",
+		"grunt-browserify": "2.1.0",
+		"grunt-contrib-clean": "0.5.0",
+		"grunt-contrib-copy": "0.5.0",
 		"grunt-contrib-uglify": "0.4.0",
-		"grunt-wrap2000": "0.1.0"
-	},
-	"browserify": {
-		"transform": [
-			"browserify-pegjs"
-		]
+		"grunt-contrib-watch": "0.6.1",
+		"grunt-peg": "1.4.0",
+		"grunt-wrap2000": "0.1.0",
+		"mocha": "1.20.1"
 	},
 	"license": "MIT",
 	"keywords": [

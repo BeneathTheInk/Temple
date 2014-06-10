@@ -33,7 +33,7 @@ describe("Mustache", function() {
 
 		it("parses basic html", function() {
 			var template = Temple.Mustache.parse("<div class=\"container\">Hello World</div>");
-			
+
 			expect(template).to.deep.equal({
 				type: NODE_TYPE.ROOT,
 				children: [{
