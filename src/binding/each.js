@@ -125,6 +125,7 @@ module.exports = Binding.extend({
 			keys = model.keys(),
 			toRemove = [];
 
+		this.execDirectives(scope);
 		this.dependOn(scope);
 
 		keys.forEach(function(k) {

@@ -39,6 +39,7 @@ exports.erase = function() {
 	return this;
 }
 
+exports.toString =
 exports.toHTML = function() {
 	var binding, html;
 

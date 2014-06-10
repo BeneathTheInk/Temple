@@ -8,7 +8,7 @@ util.subclass.call(EventEmitter, {
 	constructor: function() {
 		this.children = [];
 		this._comps = {};
-		this._decorators = [];
+		this._directives = {};
 
 		var children = _.toArray(arguments);
 		if (children.length) this.addChild(children);
@@ -92,43 +92,47 @@ util.subclass.call(EventEmitter, {
 		return this;
 	},
 
-	decorate: function(fn) {
-		if (typeof fn !== "function") throw new Error("Expecting function for decorator.");
-		this._decorators.push(fn);
+	directive: function(fn) {
+		if (typeof fn !== "function") throw new Error("Expecting function for computation.");
+		this._directives[_.uniqueId("d")] = fn;
 		return this;
 	},
 
-	// removes a decorator
-	stopDecorating: function(fn) {
+	killDirective: function(fn) {
 		if (fn == null) {
-			this._decorators.forEach(function(fn) {
-				this.stopDecorating(fn);
+			_.each(this._directives, function(fn) {
+				this.killDirective(fn);
 			}, this);
 
-			this._decorators = [];
+			this._directives = {};
 		}
 
 		else {
-			this._decorators = this._decorators.filter(function(d, index) {
-				if (d === fn) {
-					this.stopComputation("d" + index);
-					return false;
-				}
-
-				return true;
+			_.reduce(this._directives, function(m, d, id) {
+				if (d === fn) m.push(id);
+				return m;
+			}, []).forEach(function(id) {
+				this.stopComputation(id);
+				delete this._directives[id];
 			}, this);
 		}
+
+		return this;
+	},
+
+	execDirectives: function(scope) {
+		_.each(this._directives, function(fn, id) {
+			this.autorun(id, function(comp) {
+				fn.call(this, scope, comp);
+			});
+		}, this);
 
 		return this;
 	},
 
 	render: function(scope) {
-		// first decorators
-		this._decorators.forEach(function(fn, index) {
-			this.autorun("d" + index, function(comp) {
-				fn.call(this, scope, comp);
-			});
-		}, this);
+		// first directives
+		this.execDirectives(scope);
 
 		// then children
 		this.children.slice(0).forEach(function(child) {

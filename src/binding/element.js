@@ -54,7 +54,7 @@ module.exports = Binding.extend({
 		if (!_.isFunction(value)) throw new Error("Expecting string or function for attribute value");
 		if (!_.isString(name)) throw new Error("Expecting string for attribute name");
 
-		this.decorate(function(scope) {
+		this.directive(function(scope) {
 			var val = value.call(this, scope);
 			val = val != null ? val.toString() : "";
 			this.node.setAttribute(name, val);

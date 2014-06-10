@@ -72,11 +72,11 @@ describe("Bindings", function() {
 			expect(seen).to.equal(1);
 		});
 
-		it("calls decorator when render is called", function() {
+		it("calls directive when render is called", function() {
 			var scope = new Temple.Scope(),
 				seen = false;
 
-			binding.decorate(function(s) {
+			binding.directive(function(s) {
 				expect(s).to.equal(scope);
 				expect(this).to.equal(binding);
 				seen = true;
@@ -86,10 +86,10 @@ describe("Bindings", function() {
 			expect(seen).to.be.ok;
 		});
 
-		it("removes decorator", function() {
-			var fn = function(){ throw new Error("Decorator wasn't removed"); }
-			binding.decorate(fn);
-			binding.stopDecorating(fn);
+		it("removes directive", function() {
+			var fn = function(){ throw new Error("Directive wasn't removed"); }
+			binding.directive(fn);
+			binding.killDirective(fn);
 			binding.render(new Temple.Scope());
 		});
 
