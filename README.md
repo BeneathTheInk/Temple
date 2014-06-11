@@ -1,17 +1,17 @@
 # Temple
 
-Sensible templating for the modern browser.
+A sensible view API, built for the modern web.
 
 * __Reactive__ - Powered by a live DOM that automatically updates as the data changes.
-* __Built to Scale__ - Works great for projects of all sizes.
+* __Built for Scale__ - Works great for projects of all sizes.
 * __Extensible__ - The API only provides the basic building blocks, allowing you to build exactly what you need.
-* __Modern__ - *Optional* [Mustache](http://mustache.github.io/) + HTML language parser and renderer.
+* __To DSL or not to DSL__ - Includes an *optional* [Mustache](http://mustache.github.io/) + HTML language parser and renderer.
 
 __Note: This library is under active development. Use at your own risk!__
 
 ## Install
 
-Download the latest version from our [release page](https://github.com/BeneathTheInk/Temple.js/releases) and use via a script tag. The variable `Temple` will be attached to `window`.
+Download the latest version from our [release page](https://github.com/BeneathTheInk/Temple/releases) and use via a script tag. The variable `Temple` will be attached to `window`.
 
 ```html
 <script type="text/javascript" src="temple.js"></script>
@@ -19,7 +19,9 @@ Download the latest version from our [release page](https://github.com/BeneathTh
 
 If using Browserify or Node.js, you can install via NPM and use via `require("templejs")`.
 
-	$ npm install templejs
+```shell
+$ npm install templejs
+```
 
 ## Example
 
