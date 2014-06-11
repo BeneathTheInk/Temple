@@ -6,8 +6,10 @@ exports.isPlainObject = function(obj) {
 	return obj != null && obj.__proto__ === Object.prototype;
 }
 
+// tests obj as a subclass of parent
+// here, a class is technically a subclass of itself
 exports.isSubClass = function(parent, obj) {
-	return obj === parent || obj.prototype instanceof parent;
+	return obj === parent || (obj != null && obj.prototype instanceof parent);
 }
 
 // the subclassing function found in Backbone

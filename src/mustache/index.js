@@ -7,8 +7,12 @@ var Temple = require("../temple"),
 	Section = require("./section"),
 	ArgParser = require("./arguments.js");
 
+var Mustache =
 module.exports = Temple.extend({
 	constructor: function(template, data) {
+		this._partials = {};
+		this._components = {};
+
 		// parse and add template
 		template = template || _.result(this, "template");
 		if (template != null) this.setTemplate(template);
@@ -16,6 +20,10 @@ module.exports = Temple.extend({
 		// check for class level decorators
 		var decorators = _.result(this, "decorators");
 		if (_.isObject(decorators)) this.decorate(decorators);
+
+		// check for class level partials
+		var partials = _.result(this, "partials");
+		if (_.isObject(partials)) this.setPartial(partials);
 
 		Temple.call(this, data);
 	},
@@ -86,6 +94,39 @@ module.exports = Temple.extend({
 		}
 
 		return this;
+	},
+
+	// sets partial by name
+	setPartial: function(name, partial) {
+		if (_.isObject(name) && partial == null) {
+			_.each(name, function(p, n) { this.setPartial(n, p); }, this);
+			return this;
+		}
+
+		if (!_.isString(name) && name !== "")
+			throw new Error("Expecting non-empty string for partial name.");
+		
+		if (_.isString(partial)) partial = parse(partial);
+		if (_.isObject(partial) && partial.type === NODE_TYPE.ROOT) partial = Mustache.extend({ template: partial });
+		if (partial != null && !util.isSubClass(Temple, partial))
+			throw new Error("Expecting string template, parsed template or Temple subclass for partial.");
+
+		if (partial == null) {
+			delete this._partials[name];
+			partial = void 0;
+		} else {
+			this._partials[name] = partial;
+		}
+
+		this.emit("partial", name, partial);
+		this.emit("partial:" + name, partial);
+		
+		return this;
+	},
+
+	// returns all the component instances as specified by partial name
+	getComponents: function(name) {
+		return this._components[name] || [];
 	},
 
 	_attrToDecorator: function(attr, binding) {
@@ -177,6 +218,27 @@ module.exports = Temple.extend({
 			case NODE_TYPE.SECTION:
 				var body = function() { return temple._processTemplate(template.children); }
 				return new Section(template.value, body, template.type === NODE_TYPE.INVERTED);
+
+			case NODE_TYPE.PARTIAL:
+				var name = template.value,
+					partial = this._partials[name],
+					comps = this._components,
+					comp;
+
+				if (partial != null) {
+					comp = new partial;
+					comp.parent = this;
+					
+					if (comps[name] == null) comps[name] = [];
+					comps[name].push(comp);
+
+					comp.once("destroy", function() {
+						var index = comps[name].indexOf(comp);
+						if (~index) comps[name].splice(index, 1);
+					});
+					
+					return new Binding.Component(comp);
+				}
 
 			default:
 				console.log(template);

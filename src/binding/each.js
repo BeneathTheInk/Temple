@@ -6,7 +6,6 @@ var _ = require("underscore"),
 	Scope = require("../scope"),
 	Model = require("../model");
 
-var Each =
 module.exports = Binding.extend({
 	constructor: function(path, body) {
 		if (!_.isString(path))

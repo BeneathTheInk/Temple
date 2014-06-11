@@ -11,7 +11,11 @@ describe("Mustache", function() {
 	});
 
 	afterEach(function() {
-		if (tpl != null) tpl.erase();
+		if (tpl != null) {
+			tpl.erase();
+			tpl = null;
+		}
+
 		expect(doc.childNodes.length).to.equal(0);
 	});
 
@@ -675,6 +679,71 @@ describe("Mustache", function() {
 			var nodes = render("{{#section}}{{{ val }}}{{/section}}", { section: true, val: "<span>" });
 			expect(nodes).to.have.length(3);
 			expect(nodes[0]).to.be.an.element.with.tagName("span");
+		});
+	});
+
+	describe("Partials", function() {
+		it("sets a string partial", function() {
+			tpl = new Temple.Mustache("{{> partial }}");
+			tpl.setPartial("partial", "<h1>{{ value }}</h1>");
+		});
+
+		it("sets a parsed template partial", function() {
+			tpl = new Temple.Mustache("{{> partial }}");
+			tpl.setPartial("partial", Temple.Mustache.parse("<h1>{{ value }}</h1>"));
+		});
+
+		it("sets a subclass of temple partial", function() {
+			tpl = new Temple.Mustache("{{> partial }}");
+			tpl.setPartial("partial", Temple.Mustache.extend({ template: "<h1>{{ value }}</h1>" }));
+		});
+
+		it("unsets a partial on null", function() {
+			tpl = new Temple.Mustache("{{> partial }}");
+			tpl.setPartial("partial", null);
+		});
+
+		it("renders partial into component", function() {
+			tpl = new Temple.Mustache("{{> partial }}", { value: "Hello World" });
+			tpl.setPartial("partial", "<h1>{{ value }}</h1>");
+			tpl.paint(doc);
+
+			var nodes = getNodes();
+			expect(nodes).to.have.length(1);
+			expect(nodes[0]).to.be.element.with.tagName("h1");
+			expect(nodes[0].childNodes[0]).to.be.textNode.with.nodeValue("Hello World");
+		});
+
+		it("find component by partial name", function() {
+			tpl = new Temple.Mustache("{{> partial }}", { value: "Hello World" });
+			tpl.setPartial("partial", "<h1>{{ value }}</h1>");
+			tpl.paint(doc);
+
+			var comps = tpl.getComponents("partial");
+			expect(comps).to.have.length(1);
+			expect(comps[0]).to.be.instanceof(Temple);
+		});
+
+		it("renders partial in element", function() {
+			tpl = new Temple.Mustache("<h1>{{> partial }}</h1>", { value: "Hello World" });
+			tpl.setPartial("partial", "{{ value }}");
+			tpl.paint(doc);
+
+			var nodes = getNodes();
+			expect(nodes).to.have.length(1);
+			expect(nodes[0]).to.be.element.with.tagName("h1");
+			expect(nodes[0].childNodes[0]).to.be.textNode.with.nodeValue("Hello World");
+		});
+
+		it("renders partial in section", function() {
+			tpl = new Temple.Mustache("{{#section}}{{> partial }}{{/section}}", { value: "Hello World", section: true });
+			tpl.setPartial("partial", "<h1>{{ value }}</h1>");
+			tpl.paint(doc);
+
+			var nodes = getNodes();
+			expect(nodes).to.have.length(2);
+			expect(nodes[0]).to.be.element.with.tagName("h1");
+			expect(nodes[0].childNodes[0]).to.be.textNode.with.nodeValue("Hello World");
 		});
 	});
 
