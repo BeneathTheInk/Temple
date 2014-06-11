@@ -385,4 +385,85 @@ describe("Bindings", function() {
 		});
 	});
 
+	describe("Component", function() {
+		var doc;
+
+		beforeEach(function() {
+			doc = document.createDocumentFragment();
+		});
+
+		it("renders Temple class", function() {
+			var View = Temple.extend({
+				render: function() {
+					return new Temple.Binding.Text(function(scope) {
+						return scope.get("foo");
+					});
+				}
+			});
+
+			binding = new Temple.Binding.Component(View);
+			binding.render(new Temple.Scope({ foo: "Hello World" }));
+			binding.appendTo(doc);
+
+			expect(binding.toString()).to.equal("Hello World");
+		});
+
+		it("renders instance of Temple", function() {
+			var tpl = new Temple();
+			tpl.render = function() {
+				return new Temple.Binding.Text("Hello World");
+			}
+
+			binding = new Temple.Binding.Component(tpl);
+			binding.render(new Temple.Scope());
+			binding.appendTo(doc);
+
+			expect(binding.toString()).to.equal("Hello World");
+		});
+
+		it("updates component value when parent value changes", function(done) {
+			var View = Temple.extend({
+				render: function() {
+					return new Temple.Binding.Text(function(scope) {
+						return scope.get("foo");
+					});
+				}
+			});
+
+			var scope = new Temple.Scope({ foo: "bar" });
+			binding = new Temple.Binding.Component(View);
+			binding.render(scope);
+			binding.appendTo(doc);
+			scope.set("foo", "Hello World");
+
+			renderWait(function() {
+				expect(binding.toString()).to.equal("Hello World");
+			}, done);
+		});
+
+		it("erases the component on destruction", function() {
+			var erased = false;
+
+			var View = Temple.extend({
+				initialize: function() {
+					this.once("erase", function() {
+						erased = true;
+					});
+				},
+				render: function() {
+					return new Temple.Binding.Text(function(scope) {
+						return scope.get("foo");
+					});
+				}
+			});
+
+			binding = new Temple.Binding.Component(View);
+			binding.render(new Temple.Scope());
+			binding.appendTo(doc);
+			binding.destroy();
+
+			expect(erased).to.be.ok;
+		});
+	});
+
 });

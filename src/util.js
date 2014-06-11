@@ -6,6 +6,10 @@ exports.isPlainObject = function(obj) {
 	return obj != null && obj.__proto__ === Object.prototype;
 }
 
+exports.isSubClass = function(parent, obj) {
+	return obj === parent || obj.prototype instanceof parent;
+}
+
 // the subclassing function found in Backbone
 var subclass =
 exports.subclass = function(protoProps, staticProps) {

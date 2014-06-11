@@ -190,8 +190,9 @@ util.subclass.call(EventEmitter, {
 });
 
 // Load the real bindings
-Binding.Text	= require("./text");
-Binding.Element	= require("./element");
-Binding.HTML	= require("./html");
-Binding.Context	= require("./context");
-Binding.Each	= require("./each");
+Binding.Text		= require("./text");
+Binding.Element		= require("./element");
+Binding.HTML		= require("./html");
+Binding.Context		= require("./context");
+Binding.Each		= require("./each");
+Binding.Component	= require("./component");

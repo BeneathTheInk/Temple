@@ -10,7 +10,11 @@ exports.forceUpdate = function() {
 
 exports.paint = function(parent, beforeNode) {
 	if (this.binding == null) {
-		this.binding = this.render();
+		var binding = this.render();
+		if (Array.isArray(binding)) binding = new Binding(binding);
+		if (!(binding instanceof Binding)) throw new Error("Expecting template render method to return an instance of Binding.");
+		this.binding = binding;
+
 		this.forceUpdate();
 		this.emit("render", this.binding);
 	}
@@ -65,22 +69,3 @@ exports.destroy = function() {
 	this.erase();
 	return Scope.prototype.destroy.apply(this, arguments);
 }
-
-// exports.setPartial = function(name, partial) {
-// 	if (_.isObject(name)) {
-// 		_.each(name, function(p, n) { this.setPartial(n, p); }, this);
-// 		return this;
-// 	}
-
-// 	if (_.isString(partial)) partial = parse(partial);
-// 	this._partials[name] = partial;
-// 	this.emit("partial:" + name, partial);
-	
-// 	return this;
-// }
-
-// exports.removePartial = function(name) {
-// 	delete this._partials[name];
-// 	this.emit("partial:" + name);
-// 	return this;
-// }
