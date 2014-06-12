@@ -1,6 +1,6 @@
 # Temple
 
-A sensible view API, built for the modern web.
+A JavaScript view framework built for the modern web.
 
 * __Reactive__ - Powered by a live DOM that automatically updates as the data changes.
 * __Built for Scale__ - Works great for projects of all sizes.

@@ -1,7 +1,7 @@
 {
 	"name": "templejs",
 	"version": "0.2.8",
-	"description": "A sensible view API, built for the modern web.",
+	"description": "A JavaScript view framework built for the modern web.",
 	"author": "Beneath the Ink <info@beneaththeink.com>",
 	"contributors": [
 		{

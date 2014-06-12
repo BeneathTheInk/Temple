@@ -25,7 +25,8 @@ commentValue
 
 // Element Nodes
 elementNode
-	= start:elementStart nodes:html end:elementEnd {
+	= start:elementSelfClosed
+	/ start:elementStart nodes:html end:elementEnd {
 		if (start.name.toLowerCase() !== end.toLowerCase()) {
 			throw new Error("Element tag mismatch: " + start.name + " !== " + end);
 		}
@@ -33,6 +34,16 @@ elementNode
 		start.type = "element";
 		start.children = nodes;
 		return start;
+	}
+
+elementSelfClosed
+	= "<" tagname:key attributes:(attribute)* "/>" {
+		return {
+			name: tagname,
+			attributes: attributes,
+			children: [],
+			type: "element"
+		};
 	}
 
 elementStart
