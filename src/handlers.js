@@ -59,7 +59,6 @@ var arrayHandler = _.defaults({
 	},
 
 	set: function(arr, path, val) {
-		//console.log(arguments);
 		arr[path] = val;
 		return true;
 	},

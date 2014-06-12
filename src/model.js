@@ -44,7 +44,7 @@ module.exports = util.subclass.call(EventEmitter, {
 	// secondary usage is to execute a handler method with arguments
 	handle: function(handler) {
 		if (_.isObject(handler)) {
-			handler = _.extend({}, defaultHandler, handler);
+			handler = _.extend({}, handlers.default, handler);
 			this._handlers.unshift(handler);
 			return this;
 		}
@@ -69,10 +69,10 @@ module.exports = util.subclass.call(EventEmitter, {
 
 		var child, parent, val;
 		parent = this;
-		val = this.handle("get", path);
-		child = new (this.constructor)(val);
 		
+		child = new (this.constructor)();
 		child.parent = parent;
+		child.set([], this.handle("get", path));
 		child.on("change", onChange);
 		
 		return child;
@@ -126,7 +126,11 @@ module.exports = util.subclass.call(EventEmitter, {
 	},
 
 	// the own properties of the model's value
-	keys: function() { return this.handle("keys"); },
+	keys: function(parts) {
+		parts = util.splitPath(parts);
+		if (parts.length) return this.getModel(parts).keys();
+		return this.handle("keys");
+	},
 
 	// sets a value at path, deeply
 	set: function(parts, value, options) {
@@ -212,7 +216,7 @@ module.exports = util.subclass.call(EventEmitter, {
 	// creates a focused handle function from model and value
 	createHandle: function(model, val) {
 		var handler = model._handler(val);
-
+		
 		return function(m) {
 			var args = _.toArray(arguments).slice(1);
 			args.unshift(val);
