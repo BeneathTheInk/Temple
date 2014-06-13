@@ -50,11 +50,7 @@ var arrayHandler = _.defaults({
 		util.patchArray(arr);
 		
 		arr.observe(this._arrayObserver = (function(index, nval, oval) {
-			var options = { remove: nval === void 0 },
-				path = index.toString();
-
-			this.set(path, nval, _.extend(options, { notify: false }));
-			this.notify(path, nval, oval, options);
+			this.notify(index.toString(), nval, oval, { remove: nval === void 0 });
 		}).bind(this));
 	},
 

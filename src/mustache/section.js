@@ -53,8 +53,13 @@ module.exports = Binding.extend({
 		this.autorun("render", function(comp) {
 			this.destroyBinding();
 
-			var val = scope.get(this.path),
-				isEmpty = Section.isEmpty(val);
+			var model = (scope.findModel(this.path) || scope).getModel(this.path),
+				val = model.handle("toArray"),
+				isEmpty;
+
+			scope.depend(this.path);
+			if (!_.isArray(val)) val = scope.get(this.path);
+			isEmpty = Section.isEmpty(val);
 			
 			if (isEmpty && this.inverted) {
 				this.binding = new Binding.Context(this.path, this.body(0));

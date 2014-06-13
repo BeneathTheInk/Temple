@@ -177,13 +177,22 @@ module.exports = util.subclass.call(EventEmitter, {
 	// let's the model and its children know that something changed
 	notify: function(path, nval, oval, options) {
 		var silent, summary, child, childOptions, nval;
+		options = options || {};
 
 		// notify only works on the model at path
 		if (!_.isArray(path) || path.length) {
 			return this.getModel(path).notify([], nval, oval, options);
 		}
 
-		options = options || {};
+		// update the current value if hasn't been already
+		if (nval !== this.value) {
+			if (_.isUndefined(oval)) oval = this.value;
+			this.set([], nval, _.extend(options, { notify: false }));
+		}
+
+		// if the values are identical, why are we here?
+		if (nval === oval) return;
+
 		childOptions = _.extend({ reset: true }, options, { bubble: false });
 		summary = {
 			model: this,
@@ -218,9 +227,10 @@ module.exports = util.subclass.call(EventEmitter, {
 		var handler = model._handler(val);
 		
 		return function(m) {
-			var args = _.toArray(arguments).slice(1);
-			args.unshift(val);
-			return handler[m].apply(model, args);
+			var args = _.toArray(arguments).slice(1),
+				method = handler[m];
+
+			return !_.isFunction(method) ? method : method.apply(model, [ val ].concat(args));
 		}
 	}
 
