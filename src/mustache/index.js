@@ -55,12 +55,24 @@ module.exports = Temple.extend({
 
 		if (typeof name !== "string" || name === "") throw new Error("Expecting non-empty string for decorator name.");
 		if (typeof fn !== "function") throw new Error("Expecting function for decorator.");
-		
+
 		if (this._decorators == null) this._decorators = {};
 		if (this._decorators[name] == null) this._decorators[name] = [];
-		this._decorators[name].push(fn);
+		if (!~this._decorators[name].indexOf(fn)) this._decorators[name].push(fn);
 		
 		return this;
+	},
+
+	// finds all decorators, locally and in parent
+	findDecorators: function(name) {
+		var d = [];
+		
+		if (this._decorators != null && _.isArray(this._decorators[name]))
+			d = d.concat(this._decorators[name]);
+
+		if (this.parent != null) d = d.concat(this.parent.findDecorators(name));
+		
+		return _.unique(d);
 	},
 
 	// removes a decorator
@@ -124,17 +136,28 @@ module.exports = Temple.extend({
 		return this;
 	},
 
+	// looks through parents for partial
+	findPartial: function(name) {
+		var partial = this._partials[name];
+
+		if (partial == null && this.parent != null) {
+			partial = this.parent.findPartial(name);
+		}
+
+		return partial;
+	},
+
 	// returns all the component instances as specified by partial name
 	getComponents: function(name) {
 		return this._components[name] || [];
 	},
 
 	_attrToDecorator: function(attr, binding) {
-		var decorators = this._decorators && this._decorators[attr.name],
+		var decorators = this.findDecorators(attr.name),
 			temple = this,
 			processed, targs, directive;
 		
-		if (Array.isArray(decorators) && decorators.length) {
+		if (decorators.length) {
 			processed = decorators.map(function(fn) {
 				return fn.call(temple, binding.node, attr.children);
 			}).filter(function(d) {
@@ -221,7 +244,7 @@ module.exports = Temple.extend({
 
 			case NODE_TYPE.PARTIAL:
 				var name = template.value,
-					partial = this._partials[name],
+					partial = this.findPartial(name),
 					comps = this._components,
 					comp;
 
@@ -239,6 +262,8 @@ module.exports = Temple.extend({
 					
 					return new Binding.Component(comp);
 				}
+
+				break;
 
 			default:
 				console.log(template);

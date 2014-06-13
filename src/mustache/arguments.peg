@@ -1,4 +1,6 @@
 {
+	var util = require("../util");
+
 	function flatten(arr) {
 		return arr.reduce(function(m, v) {
 			if (Array.isArray(v)) m = m.concat(flatten(v));
@@ -26,7 +28,12 @@ value = ws v:
 
 // Variables
 variable
-	= "{{" s:(escape / [^}])+ "}}" { return options.scope.get(s.join("").trim()); }
+	= "{{" s:(escape / [^}])+ "}}" {
+		var path = s.join("").trim();
+		// unfortunately, we must listen to changes at all deep paths
+		options.scope.depend(util.joinPathParts(path, "**"));
+		return options.scope.get(path);
+	}
 
 // Literals
 boolean

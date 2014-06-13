@@ -73,7 +73,9 @@ module.exports = Binding.extend({
 		for (k in this.nodes) {
 			node = this.nodes[k];
 			if (util.matchSelector(node, selector)) return node;
-			if (queryResult = node.querySelector(selector)) return queryResult;
+			if (_.isFunction(node.querySelector)) {
+				if (queryResult = node.querySelector(selector)) return queryResult;
+			}
 		}
 
 		return null;
@@ -90,8 +92,10 @@ module.exports = Binding.extend({
 				matches.push(node);
 			}
 			
-			queryResult = _.toArray(node.querySelector(selector));
-			if (queryResult.length) matches = matches.concat(queryResult);
+			if (_.isFunction(node.querySelector)) {
+				queryResult = _.toArray(node.querySelector(selector));
+				if (queryResult.length) matches = matches.concat(queryResult);
+			}
 		}
 
 		return matches;

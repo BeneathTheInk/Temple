@@ -40,6 +40,14 @@ module.exports = Binding.extend({
 		return this.view.toString();
 	},
 
+	find: function(selector) {
+		return this.view.find(selector);
+	},
+
+	findAll: function(selector) {
+		return this.view.findAll(selector);
+	},
+
 	destroy: function() {
 		this.clean();
 		this.view.erase();
