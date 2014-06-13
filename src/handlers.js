@@ -48,13 +48,18 @@ var arrayHandler = _.defaults({
 
 	construct: function(arr) {
 		util.patchArray(arr);
+		this.set("length", arr.length);
 		
 		arr.observe(this._arrayObserver = (function(index, nval, oval) {
 			this.notify(index.toString(), nval, oval, { remove: nval === void 0 });
+			this.notify("length", arr.length);
 		}).bind(this));
 	},
 
 	set: function(arr, path, val) {
+		// sets on length *should* be ok but we need to notify
+		// of any new or removed values. for now, ignored
+		if (path === "length") return false;
 		arr[path] = val;
 		return true;
 	},

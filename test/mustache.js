@@ -12,7 +12,7 @@ describe("Mustache", function() {
 
 	afterEach(function() {
 		if (tpl != null) {
-			tpl.erase();
+			tpl.destroy();
 			tpl = null;
 		}
 
@@ -237,6 +237,16 @@ describe("Mustache", function() {
 			}, done);
 		});
 
+		it("removes section when list becomes empty", function(done) {
+			render("{{#list}}{{ this }}{{/list}}", { list: [ 0 ] });
+			tpl.get("list").shift();
+
+			renderWait(function() {
+				var nodes = getNodes();
+				expect(nodes).to.have.length(1);
+			}, done);
+		});
+
 		// array operations
 		[	[ "splice", [ 1, 1, 3 ], function(nodes) {
 				expect(nodes).to.have.length(5);
@@ -285,6 +295,17 @@ describe("Mustache", function() {
 					op[2](getNodes());
 				}, done);
 			});			
+		});
+
+		it("updates for array length change", function(done) {
+			render("{{# list.length }}Hello World{{/ list.length }}", { list: [] });
+			tpl.get("list").push(1);
+
+			renderWait(function() {
+				var nodes = getNodes();
+				expect(nodes).to.have.length(2);
+				expect(nodes[0]).to.be.textNode.with.nodeValue("Hello World");
+			}, done);
 		});
 	});
 

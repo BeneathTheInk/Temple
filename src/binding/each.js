@@ -102,7 +102,7 @@ module.exports = Binding.extend({
 				this.render(scope);
 			} else if (s.type === "delete") {
 				this.removeRow(extra[0]);
-			} else {
+			} else if (_.contains(scope.keys(parts), extra[0])) {
 				this.updateRow(extra[0], scope);
 				this.refreshRows();
 			}
