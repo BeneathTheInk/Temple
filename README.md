@@ -5,7 +5,7 @@ A JavaScript view framework built for the modern web.
 * __Reactive__ - Powered by a live DOM that automatically updates as the data changes.
 * __Built for Scale__ - Works great for projects of all sizes.
 * __Extensible__ - The API only provides the basic building blocks, allowing you to build exactly what you need.
-* __To DSL or not to DSL__ - Includes an *optional* [Mustache](http://mustache.github.io/) + HTML language parser and renderer.
+* __Mustache__ - Includes an *optional* [Mustache](http://mustache.github.io/) + XML language parser and renderer.
 
 __Note: This library is under active development. Use at your own risk!__
 

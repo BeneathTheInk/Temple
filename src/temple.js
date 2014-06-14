@@ -23,7 +23,7 @@ var Temple =
 module.exports = Scope.extend(proto);
 
 // class properties/methods
-Temple.VERSION = "0.2.9-rc1";
+Temple.VERSION = "0.2.9";
 Temple.util = util;
 
 Temple.Deps = require("./deps");
