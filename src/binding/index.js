@@ -1,198 +1,91 @@
 var _ = require("underscore"),
 	util = require("../util"),
 	Deps = require("../deps"),
-	EventEmitter = require("events").EventEmitter;
+	Scope = require("../scope");
 
-var Binding = module.exports =
-util.subclass.call(EventEmitter, {
+var Binding =
+module.exports = Scope.extend({
+	
 	constructor: function() {
+		var args = _.toArray(arguments).slice(0),
+			model;
+
+		if (!(args[0] instanceof Binding)) {
+			model = args.shift();
+		}
+
 		this.children = [];
 		this._comps = {};
 		this._directives = {};
 
-		var children = _.toArray(arguments);
-		if (children.length) this.addChild(children);
+		if (args.length) this.addChild(args);
+		Scope.call(this, model);
+	},
+
+	// Creates a child binding from klass, with arguments. Uses
+	// a bit of trickery to get the parent in the object before
+	// construction, making it preferable over using 'new'.
+	createChild: function(klass) {
+		if (!util.isSubClass(Binding, klass))
+			throw new Error("Can only create children from subclasses of Binding.");
+
+		var args = _.toArray(arguments).slice(1);
+
+		var child = Object.create(klass.prototype);
+		child.parent = this;
+		klass.apply(child, args);
+
+		// must be added as a child
+		this.addChild(child);
+
+		return child;
 	},
 
 	addChild: function(child) {
-		_.flatten(_.toArray(arguments)).forEach(function(child) {
-			if (!(child instanceof Binding))
-				throw new Error("Can only add instances of Binding as children.");
+		if (_.isArray(child)) {
+			child.forEach(this.addChild, this);
+			return this;
+		}
 
-			if (child.parent != null) {
-				if (child.parent !== this) throw new Error("Child binding already has a parent.");
-				return this;
-			}
+		if (!(child instanceof Binding))
+			throw new Error("Expected array or instances of Binding for children.");
 
-			var self, removeChild, destroyChild;
+		// ensure the binding is not already a child
+		if (~this.children.indexOf(child)) return this;
 
-			this.children.push(child);
-			self = child.parent = this;
+		// ensure binding doesn't already have a parent
+		if (child.parent != null && child.parent !== this)
+			throw new Error("Child binding already has a parent.");
 
-			child.on("destroy", child._parentDestroyEvent = function() {
-				self.removeChild(child);
-			});
+		this.children.push(child);
+		var self = child.parent = this;
 
-			this.emit("child:add", child);
-		}, this);
+		child.on("destroy", child._parentDestroyEvent = function() {
+			self.removeChild(child);
+		});
+
+		this.emit("child:add", child);
 
 		return this;
+
 	},
 
 	removeChild: function(child) {
-		_.flatten(_.toArray(arguments)).forEach(function(child) {
-			var index = this.children.indexOf(child);
-			if (~index) {
-				this.children.splice(index, 1);
-				child.removeListener("destroy", child._parentDestroyEvent);
-				this.emit("child:remove", child);
-			}
-		}, this);
-
-		return this;
-	},
-
-	// runs fn when deps change
-	autorun: function(name, fn) {
-		if (_.isFunction(name) && fn == null) {
-			fn = name;
-			name = _.uniqueId("f");
+		if (_.isArray(child)) {
+			child.forEach(this.removeChild, this);
+			return this;
 		}
 
-		if (!_.isString(name)) throw new Error("Expecting string for computation identifier.");
-		if (!_.isFunction(fn)) throw new Error("Expecting function for computation.");
-
-		this.stopComputation(name);
-		var self = this;
-
-		return this._comps[name] = Deps.autorun(function(comp) {
-			fn.call(self, comp);
-			
-			comp.onInvalidate(function() {
-				if (comp.stopped && self._comps[name] === comp) {
-					delete self._comps[name];
-				}
-			});
-		});
-	},
-
-	stopComputation: function(name) {
-		if (name == null) {
-			_.each(this._comps, function(c) {
-				c.stop();
-			});
-
-			this._comps = {};
-		}
-
-		else if (this._comps[name] != null) {
-			this._comps[name].stop();
-		}
-
-		return this;
-	},
-
-	directive: function(fn) {
-		if (typeof fn !== "function") throw new Error("Expecting function for computation.");
-		this._directives[_.uniqueId("d")] = fn;
-		return this;
-	},
-
-	killDirective: function(fn) {
-		if (fn == null) {
-			_.each(this._directives, function(fn) {
-				this.killDirective(fn);
-			}, this);
-
-			this._directives = {};
-		}
-
-		else {
-			_.reduce(this._directives, function(m, d, id) {
-				if (d === fn) m.push(id);
-				return m;
-			}, []).forEach(function(id) {
-				this.stopComputation(id);
-				delete this._directives[id];
-			}, this);
-		}
-
-		return this;
-	},
-
-	execDirectives: function(scope) {
-		_.each(this._directives, function(fn, id) {
-			this.autorun(id, function(comp) {
-				fn.call(this, scope, comp);
-			});
-		}, this);
-
-		return this;
-	},
-
-	render: function(scope) {
-		// first directives
-		this.execDirectives(scope);
-
-		// then children
-		this.children.slice(0).forEach(function(child) {
-			child.render(scope);
-		});
-
-		return this;
-	},
-
-	appendTo: function(parent, before) {
-		this.children.slice(0).forEach(function(child) {
-			child.appendTo(parent, before);
-		});
-
-		return this;
-	},
-
-	find: function(selector) {
-		var el = null;
+		var index = this.children.indexOf(child);
 		
-		this.children.some(function(child) {
-			return !!(el = child.find(selector));
-		});
+		if (~index) {
+			this.children.splice(index, 1);
+			child.removeListener("destroy", child._parentDestroyEvent);
+			delete child._parentDestroyEvent;
+			this.emit("child:remove", child);
+		}
 
-		return el;
-	},
-
-	findAll: function(selector) {
-		var els = []
-
-		this.children.forEach(function(child) {
-			els = els.concat(child.findAll(selector));
-		});
-
-		return els;
-	},
-
-	toString: function() {
-		return this.children.slice(0).map(function(child) {
-			return child.toString();
-		}).join("");
-	},
-
-	destroy: function() {
-		this.children.slice(0).forEach(function(child) {
-			child.destroy();
-		});
-
-		this.stopComputation();
-		this.emit("destroy");
 		return this;
 	}
-}, {
-	extend: util.subclass
-});
 
-// Load the real bindings
-Binding.Text		= require("./text");
-Binding.Element		= require("./element");
-Binding.HTML		= require("./html");
-Binding.Context		= require("./context");
-Binding.Each		= require("./each");
-Binding.Component	= require("./component");
+});
