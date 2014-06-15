@@ -1,33 +1,36 @@
-var EventEmitter = require("events").EventEmitter,
-	_ = require("underscore"),
+var _ = require("underscore"),
 	util = require("./util"),
-	Scope = require("./scope"),
 	Binding = require("./binding");
 
-// base prototype
-var proto = {
+// export
+var Temple =
+module.exports = Binding.extend({
 	use: function(fn) {
 		var args = _.toArray(arguments).slice(1);
 		fn.apply(this, args);
 		return this;
+	},
+
+	render: function() {
+		throw new Error("No render method implemented.");
+	},
+
+	paint: function() {
+		if (!this._rendered) {
+			this.appendChild(this.render());
+			this._rendered = true;
+		}
+
+		return Binding.prototype.paint.apply(this, arguments);
 	}
-};
-
-// render methods
-_.each(require("./render"), function(method, key) {
-	proto[key] = method;
 });
-
-// export
-var Temple =
-module.exports = Scope.extend(proto);
 
 // class properties/methods
 Temple.VERSION = "0.2.9";
 Temple.util = util;
 
 Temple.Deps = require("./deps");
-Temple.Scope = Scope;
+Temple.Scope = require("./scope");
 Temple.Model = require("./model");
 
 Temple.Mustache = require("./mustache");

@@ -4,8 +4,6 @@ var _ = require("underscore"),
 	Model = require("./model"),
 	Deps = require("./deps");
 
-
-
 var Scope =
 module.exports = function(model) {
 	// convert data to model if isn't one already
@@ -16,6 +14,7 @@ module.exports = function(model) {
 	}
 
 	this.models = [];
+	this._comps = {};
 	this._observers = [];
 	this._deps = [];
 	this._hidden = {};
@@ -89,36 +88,31 @@ _.extend(Scope.prototype, Events, {
 
 	// returns the first model whose value at path isn't undefined
 	findModel: function(path) {
-		return _.find(this.models, function(model) {
-			return !_.isUndefined(model.get(path));
-		});
+		var model, i;
+
+		for (i in this.models) {
+			model = this.models[i];
+			if (model.get(path) !== void 0)
+				return model;
+		}
+
+		return this.models[0];
 	},
 
 	get: function(parts) {
-		var val, model;
+		var val;
 
+		if (Deps.active) this.depend(parts);
 		parts = util.splitPath(parts);
 
 		if (parts[0] === "this") {
 			parts.shift();
-			val = this.models[0].get(parts);
+			val = this.getModel(parts).get();
 		}
 
 		else {
-			model = this.findModel(parts);
-			if (model != null) val = model.get(parts);
-
-			// check hidden values
-			if (_.isUndefined(val) && parts.length) {
-				val = util.get(this._hidden, parts);
-			}
+			val = this.findModel(parts).get(parts);
 		}
-
-		// execute functions
-		if (_.isFunction(val)) val = val.call(this);
-
-		// always depend
-		if (Deps.active) this.depend(parts);
 
 		return val;
 	},
@@ -138,9 +132,44 @@ _.extend(Scope.prototype, Events, {
 		return this;
 	},
 
-	// reruns fn anytime dependencies change
-	autorun: function(fn) {
-		return Deps.autorun(fn.bind(this));
+	// runs fn when deps change
+	autorun: function(name, fn) {
+		if (_.isFunction(name) && fn == null) {
+			fn = name;
+			name = _.uniqueId("f");
+		}
+
+		if (!_.isString(name)) throw new Error("Expecting string for computation identifier.");
+		if (!_.isFunction(fn)) throw new Error("Expecting function for computation.");
+
+		this.stopComputation(name);
+		var self = this;
+
+		return this._comps[name] = Deps.autorun(function(comp) {
+			fn.call(self, comp);
+			
+			comp.onInvalidate(function() {
+				if (comp.stopped && self._comps[name] === comp) {
+					delete self._comps[name];
+				}
+			});
+		});
+	},
+
+	stopComputation: function(name) {
+		if (name == null) {
+			_.each(this._comps, function(c) {
+				c.stop();
+			});
+
+			this._comps = {};
+		}
+
+		else if (this._comps[name] != null) {
+			this._comps[name].stop();
+		}
+
+		return this;
 	},
 
 	// calls fn when path changes
@@ -287,17 +316,11 @@ _.extend(Scope.prototype, Events, {
 		return this;
 	},
 
-	// set a hidden value
-	setHidden: function(path, value) {
-		if (_.isUndefined(value)) delete this._hidden[path];
-		else this._hidden[path] = value;
-		return this;
-	},
-
 	// cleans up the scope so it can be properly garbage collected
 	destroy: function() {
-		this.removeModel(this.models.slice(0));
+		this.stopComputation();
 		this.stopObserving();
+		this.removeModel(this.models.slice(0));
 		this.trigger("destroy");
 		return this;
 	}

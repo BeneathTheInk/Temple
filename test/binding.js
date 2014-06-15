@@ -15,13 +15,13 @@ describe("Bindings", function() {
 		});
 
 		it("adds children bindings", function() {
-			binding.addChild(new Temple.Binding());
+			binding.appendChild(new Temple.Binding());
 			expect(binding.children).to.have.length(1);
 		});
 
 		it("removes children bindings", function() {
 			var child = new Temple.Binding();
-			binding.addChild(child);
+			binding.appendChild(child);
 			binding.removeChild(child);
 			expect(binding.children).to.have.length(0);
 		});
@@ -30,10 +30,10 @@ describe("Bindings", function() {
 			var other = new Temple.Binding(),
 				child = new Temple.Binding();
 
-			other.addChild(child);
+			other.appendChild(child);
 
 			expect(function() {
-				binding.addChild(child);
+				binding.appendChild(child);
 			}).to.throw(Error);
 		});
 
@@ -72,27 +72,6 @@ describe("Bindings", function() {
 			expect(seen).to.equal(1);
 		});
 
-		it("calls directive when render is called", function() {
-			var scope = new Temple.Scope(),
-				seen = false;
-
-			binding.directive(function(s) {
-				expect(s).to.equal(scope);
-				expect(this).to.equal(binding);
-				seen = true;
-			});
-
-			binding.render(scope);
-			expect(seen).to.be.ok;
-		});
-
-		it("removes directive", function() {
-			var fn = function(){ throw new Error("Directive wasn't removed"); }
-			binding.directive(fn);
-			binding.killDirective(fn);
-			binding.render(new Temple.Scope());
-		});
-
 		it("emits destroy event on destruction", function() {
 			binding.once("destroy", function() { throw new Error; });
 
@@ -129,7 +108,7 @@ describe("Bindings", function() {
 
 	describe("Element", function() {
 		beforeEach(function() {
-			binding = new Temple.Binding.Element("div");
+			binding = new Temple.Element("div");
 		});
 
 		it("appends element to parent node", function() {
@@ -137,33 +116,32 @@ describe("Bindings", function() {
 			expect(binding.node).to.have.tagName("div");
 
 			var cont = document.createElement("div");
-			binding.appendTo(cont);
+			binding.paint(cont);
 
 			expect(cont.childNodes[0]).to.equal(binding.node);
 		});
 
 		it("find returns element on matching selector", function() {
 			var cont = document.createElement("span");
-			binding.appendTo(cont);
+			binding.paint(cont);
 			expect(binding.find("div")).to.equal(binding.node);
 		});
 
 		it("sets string attribute", function() {
 			binding.attr("class", "active");
-			binding.render(new Temple.Scope());
+			binding.paint();
 			expect(binding.node.getAttribute("class")).to.equal("active");
 		});
 
 		it("sets reactive attribute", function(done) {
-			binding.attr("class", function(scope) {
-				return scope.get("className");
+			binding.set({ className: "active" });
+			binding.attr("class", function() {
+				return this.get("className");
 			});
-
-			var scope = new Temple.Scope({ className: "active" });
-			binding.render(scope);
+			binding.paint();
 			
 			expect(binding.node.getAttribute("class")).to.equal("active");
-			scope.set("className", "inactive");
+			binding.set("className", "inactive");
 
 			renderWait(function() {
 				expect(binding.node.getAttribute("class")).to.equal("inactive");
@@ -171,23 +149,21 @@ describe("Bindings", function() {
 		});
 
 		it("sets mixed object of attributes", function() {
+			binding.set({ color: "red" });
 			binding.attr({
 				"class": "active",
-				style: function(scope) {
-					return "color: " + scope.get("color") + ";";
+				style: function() {
+					return "color: " + this.get("color") + ";";
 				}
 			});
-
-			var scope = new Temple.Scope({ color: "red" });
-			binding.render(scope);
+			binding.paint();
 
 			expect(binding.node.getAttribute("class")).to.equal("active");
 			expect(binding.node.style.color).to.equal("red");
 		});
 
 		it("removes element from DOM on destruction", function() {
-			var cont = document.createElement("span");
-			binding.appendTo(cont);
+			binding.paint();
 			binding.destroy();
 			expect(binding.node.parentNode).to.be.null;
 		});
@@ -195,26 +171,20 @@ describe("Bindings", function() {
 
 	describe("Text", function() {
 		it("appends text node to parent", function() {
-			binding = new Temple.Binding.Text("Hello World");
-			binding.render(new Temple.Scope());
+			var cont = document.createElement("div");
+			binding = new Temple.Text("Hello World").paint(cont);
 
 			expect(binding.node).to.be.textNode.with.nodeValue("Hello World");
-			
-			var cont = document.createElement("div");
-			binding.appendTo(cont);
 			expect(cont.childNodes[0]).to.equal(binding.node);
 		});
 
 		it("updates value reactively", function(done) {
-			binding = new Temple.Binding.Text(function(scope) {
-				return scope.get("foo");
-			});
-
-			var scope = new Temple.Scope({ foo: "bar" });
-			binding.render(scope);
+			binding = new Temple.Text(function() {
+				return this.get("foo");
+			}, { foo: "bar" }).paint();
 
 			expect(binding.node).to.be.textNode.with.nodeValue("bar");
-			scope.set("foo", "Hello World");
+			binding.set("foo", "Hello World");
 
 			renderWait(function() {
 				expect(binding.node).to.have.nodeValue("Hello World");
@@ -222,9 +192,7 @@ describe("Bindings", function() {
 		});
 
 		it("removes text node from DOM on destruction", function() {
-			binding = new Temple.Binding.Text("Hello World");
-			var cont = document.createElement("div");
-			binding.appendTo(cont);
+			binding = new Temple.Text("Hello World").paint();
 			binding.destroy();
 			expect(binding.node.parentNode).to.be.null;
 		});

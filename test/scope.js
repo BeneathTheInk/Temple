@@ -21,7 +21,7 @@ describe("Scope", function() {
 		expect(scope.models[0]).to.be.instanceof(Temple.Model);
 	});
 
-	it("get(path) executes function value iff value at path is function", function() {
+	it.skip("get(path) executes function value iff value at path is function", function() {
 		scope.set("foo", function() {
 			expect(this).to.equal(scope);
 			return "Hello World";
