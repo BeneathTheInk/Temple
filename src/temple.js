@@ -31,5 +31,4 @@ Temple.Scope = Scope;
 Temple.Model = require("./model");
 
 Temple.Mustache = require("./mustache");
-Temple.NODE_TYPE = require("./types");
 Temple.Binding = Binding;

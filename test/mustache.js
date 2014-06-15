@@ -1,4 +1,4 @@
-var NODE_TYPE = Temple.NODE_TYPE;
+var NODE_TYPE = Temple.Mustache.NODE_TYPE;
 
 describe("Mustache", function() {
 	var tpl, doc;

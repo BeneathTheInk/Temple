@@ -1,21 +1,23 @@
 var _ = require("underscore"),
 	util = require("./util"),
-	EventEmitter = require("events").EventEmitter,
+	Events = require("./events"),
 	handlers = require("./handlers");
 
 var Model =
-module.exports = util.subclass.call(EventEmitter, {
+module.exports = function(value) {
+	this._handlers = [];
+	this.children = {};
+	this.set([], value);
+}
 
-	constructor: function(value) {
-		EventEmitter.call(this);
-		this.setMaxListeners(0);
-		
-		this._handlers = [];
-		this.children = {};
-		
-		this.set([], value);
-	},
+Model.extend = util.subclass;
+Model._defaultHandlers = handlers;
 
+Model.isModel = function(obj) {
+	return obj instanceof Model;
+}
+
+_.extend(Model.prototype, Events, {
 	// returns the correct handler based on a value
 	_handler: function(val) {
 		var handler;
@@ -40,6 +42,19 @@ module.exports = util.subclass.call(EventEmitter, {
 		return handler != null ? handler : handlers.default;
 	},
 
+	// creates a focused handle function from value
+	createHandle: function(val) {
+		var handler = this._handler(val),
+			self = this;
+		
+		return function(m) {
+			var args = _.toArray(arguments).slice(1),
+				method = handler[m];
+
+			return !_.isFunction(method) ? method : method.apply(self, [ val ].concat(args));
+		}
+	},
+
 	// adds a handler to use on any future model values
 	// secondary usage is to execute a handler method with arguments
 	handle: function(handler) {
@@ -54,7 +69,7 @@ module.exports = util.subclass.call(EventEmitter, {
 
 			// create if doesn't exist
 			if (handler == "construct" || !_.isFunction(handle) || handle.value !== this.value) {
-				handle = Model.createHandle(this, this.value);
+				handle = this.createHandle(this.value);
 				handle.value = this.value;
 				this.__handle__ = handle;
 			}
@@ -99,7 +114,7 @@ module.exports = util.subclass.call(EventEmitter, {
 				}
 			}
 		
-			parent.emit("change", _.defaults({
+			parent.trigger("change", _.defaults({
 				keypath: [ path ].concat(summary.keypath)
 			}, summary), options);
 		}
@@ -208,30 +223,8 @@ module.exports = util.subclass.call(EventEmitter, {
 		}, this);
 
 		// announce the change
-		this.emit("change", summary, options);
+		this.trigger("change", summary, options);
 
 		return summary;
-	},
-
-}, {
-
-	extend: util.subclass,
-	_defaultHandlers: require("./handlers"),
-
-	isModel: function(obj) {
-		return obj instanceof Model;
-	},
-
-	// creates a focused handle function from model and value
-	createHandle: function(model, val) {
-		var handler = model._handler(val);
-		
-		return function(m) {
-			var args = _.toArray(arguments).slice(1),
-				method = handler[m];
-
-			return !_.isFunction(method) ? method : method.apply(model, [ val ].concat(args));
-		}
 	}
-
 });

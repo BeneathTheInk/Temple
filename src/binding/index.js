@@ -7,17 +7,12 @@ var Binding =
 module.exports = Scope.extend({
 	
 	constructor: function() {
-		var args = _.toArray(arguments).slice(0),
-			model;
-
-		if (!(args[0] instanceof Binding)) {
-			model = args.shift();
-		}
-
 		this.children = [];
 		this._comps = {};
 		this._directives = {};
 
+		var model, args = _.toArray(arguments).slice(0);
+		if (!(args[0] instanceof Binding)) model = args.shift();
 		if (args.length) this.addChild(args);
 		Scope.call(this, model);
 	},
@@ -64,7 +59,7 @@ module.exports = Scope.extend({
 			self.removeChild(child);
 		});
 
-		this.emit("child:add", child);
+		this.trigger("child:add", child);
 
 		return this;
 
@@ -80,9 +75,9 @@ module.exports = Scope.extend({
 		
 		if (~index) {
 			this.children.splice(index, 1);
-			child.removeListener("destroy", child._parentDestroyEvent);
+			child.off("destroy", child._parentDestroyEvent);
 			delete child._parentDestroyEvent;
-			this.emit("child:remove", child);
+			this.trigger("child:remove", child);
 		}
 
 		return this;

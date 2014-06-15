@@ -1,6 +1,6 @@
 var Hogan = require("hogan.js"),
 	xml = require('./xml.js'),
-	NODE_TYPE = require("../types"),
+	NODE_TYPE = require("./types"),
 	HTML_DELIMITERS = [ "[#@!", "!@#]" ];
 
 var parse =

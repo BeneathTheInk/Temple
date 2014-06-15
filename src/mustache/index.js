@@ -1,6 +1,6 @@
 var Temple = require("../temple"),
 	Binding = require("../binding"),
-	NODE_TYPE = require("../types"),
+	NODE_TYPE = require("./types"),
 	_ = require("underscore"),
 	parse = require("./parse"),
 	util = require("../util"),
@@ -312,7 +312,8 @@ module.exports = Temple.extend({
 		}
 	}
 }, {
-	parse: parse
+	parse: parse,
+	NODE_TYPE: NODE_TYPE
 });
 
 function convertTemplateToArgs(template) {

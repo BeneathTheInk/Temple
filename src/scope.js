@@ -1,31 +1,35 @@
 var _ = require("underscore"),
 	util = require("./util"),
-	EventEmitter = require("events").EventEmitter,
+	Events = require("./events"),
 	Model = require("./model"),
 	Deps = require("./deps");
 
-var proto = {
 
-	constructor: function(model) {
-		EventEmitter.call(this);
-		this.setMaxListeners(0);
 
-		// convert data to model if isn't one already
-		if (!Scope.isScope(model) && !Model.isModel(model)) {
-			var data = model;
-			model = new Model(_.result(this, "defaults"));
-			if (!_.isUndefined(data)) model.set([], data);
-		}
+var Scope =
+module.exports = function(model) {
+	// convert data to model if isn't one already
+	if (!Scope.isScope(model) && !Model.isModel(model)) {
+		var data = model;
+		model = new Model(_.result(this, "defaults"));
+		if (!_.isUndefined(data)) model.set([], data);
+	}
 
-		this.models = [];
-		this._observers = [];
-		this._deps = [];
-		this._hidden = {};
+	this.models = [];
+	this._observers = [];
+	this._deps = [];
+	this._hidden = {};
 
-		this.addModel(model);
-		this.initialize();
-	},
+	this.addModel(model);
+	this.initialize();
+}
 
+Scope.extend = util.subclass;
+Scope.isScope = function(obj) {
+	return obj instanceof Scope;
+}
+
+_.extend(Scope.prototype, Events, {
 	initialize: function() {},
 
 	createScopeFromPath: function(path) {
@@ -52,7 +56,7 @@ var proto = {
 					model.on("change", ob.onChange);
 				});
 
-				this.emit("model:add", model);
+				this.trigger("model:add", model);
 			}
 		}
 
@@ -73,10 +77,10 @@ var proto = {
 
 				// strip observers
 				this._observers.forEach(function(ob) {
-					model.removeListener("change", ob.onChange);
+					model.off("change", ob.onChange);
 				});
 
-				this.emit("model:remove", model);
+				this.trigger("model:remove", model);
 			}
 		}
 
@@ -224,12 +228,12 @@ var proto = {
 
 			// getters for retrieving values at path
 			ngetter = function(obj, path) {
-				return Model.createHandle(model, obj)("get", path);
+				return model.createHandle(obj)("get", path);
 			}
 
 			if (model === pmodel) ogetter = ngetter;
 			else ogetter = function(obj, path) {
-				return Model.createHandle(pmodel, obj)("get", path);
+				return pmodel.createHandle(obj)("get", path);
 			}
 			
 			// fire the callback on each path that changed
@@ -273,7 +277,7 @@ var proto = {
 
 		obs.forEach(function(o) {
 			this.models.forEach(function(m) {
-				m.removeListener("change", o.onChange);
+				m.off("change", o.onChange);
 			});
 
 			var index = this._observers.indexOf(o);
@@ -294,16 +298,15 @@ var proto = {
 	destroy: function() {
 		this.removeModel(this.models.slice(0));
 		this.stopObserving();
-		this.emit("destroy");
+		this.trigger("destroy");
 		return this;
 	}
-
-};
+});
 
 // chainable proxy methods
 [ "handle", "set", "unset" ]
 .forEach(function(method) {
-	proto[method] = function() {
+	Scope.prototype[method] = function() {
 		var model = this.models[0];
 		model[method].apply(model, arguments);
 		return this;
@@ -313,21 +316,10 @@ var proto = {
 // proxy methods which don't return this
 [ "getModel", "keys", "notify" ]
 .forEach(function(method) {
-	proto[method] = function() {
+	Scope.prototype[method] = function() {
 		var model = this.models[0];
 		return model[method].apply(model, arguments);
 	}
-});
-
-var Scope =
-module.exports = util.subclass.call(EventEmitter, proto, {
-
-	extend: util.subclass,
-
-	isScope: function(obj) {
-		return obj instanceof Scope;
-	}
-
 });
 
 // deeply traverses a value in search of all paths that match parts
@@ -340,7 +332,7 @@ function findAllMatchingPaths(model, value, parts, paths, base) {
 		return paths;
 	}
 
-	var handle = Model.createHandle(model, value),
+	var handle = model.createHandle(value),
 		part = parts[0],
 		rest = parts.slice(1);
 
