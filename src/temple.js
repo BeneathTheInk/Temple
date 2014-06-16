@@ -15,13 +15,20 @@ module.exports = Binding.extend({
 		throw new Error("No render method implemented.");
 	},
 
-	paint: function() {
+	appendTo: function() {
 		if (!this._rendered) {
 			this.appendChild(this.render());
 			this._rendered = true;
 		}
 
-		return Binding.prototype.paint.apply(this, arguments);
+		return Binding.prototype.appendTo.apply(this, arguments);
+	},
+
+	detach: function() {
+		Binding.prototype.detach.apply(this, arguments);
+		this.removeChild(this.children.slice(0));
+		delete this._rendered;
+		return this;
 	}
 });
 

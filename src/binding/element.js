@@ -11,17 +11,27 @@ module.exports = Binding.extend({
 		this.attributes = {};
 		this.node = document.createElement(tagname);
 		
-		// when children are added, append to element
+		// when children are added, append to element node
 		this.on("child:add", function(child) {
-			child.appendTo(this.node);
+			if (this.node.parentNode != null) child.appendTo(this.node);
 		});
 
-		Binding.call(this, _.toArray(arguments).slice(1));
+		this.on("child:remove", function(child) {
+			child.detach();
+		});
+
+		Binding.apply(this, _.toArray(arguments).slice(1));
 	},
 
 	appendTo: function(parent, before) {
 		parent.insertBefore(this.node, before);
 		return Binding.prototype.appendTo.apply(this, arguments);
+	},
+
+	detach: function() {
+		var parent = this.node.parentNode;
+		if (parent != null) parent.removeChild(this.node);
+		return Binding.prototype.detach.apply(this, arguments);
 	},
 
 	toString: function() {
@@ -61,12 +71,5 @@ module.exports = Binding.extend({
 		});
 
 		return this;
-	},
-
-	destroy: function() {
-		var parent = this.node.parentNode;
-		if (parent != null) parent.removeChild(this.node);
-
-		return Binding.prototype.destroy.apply(this, arguments);
 	}
 });

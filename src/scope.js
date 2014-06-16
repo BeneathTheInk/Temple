@@ -20,7 +20,6 @@ module.exports = function(model) {
 	this._hidden = {};
 
 	this.addModel(model);
-	this.initialize();
 }
 
 Scope.extend = util.subclass;
@@ -29,14 +28,6 @@ Scope.isScope = function(obj) {
 }
 
 _.extend(Scope.prototype, Events, {
-	initialize: function() {},
-
-	createScopeFromPath: function(path) {
-		if (!_.isString(path)) throw new Error("Expecting string path.");
-		var model = (this.findModel(path) || this).getModel(path);
-		return new Scope(model).addModel(this);
-	},
-
 	// adds a model to the set
 	addModel: function(model) {
 		// accept scopes and arrays, but reduce them to models
@@ -50,10 +41,8 @@ _.extend(Scope.prototype, Events, {
 			if (!~this.models.indexOf(model)) {
 				this.models.push(model);
 
-				// add observers
-				this._observers.forEach(function(ob) {
-					model.on("change", ob.onChange);
-				});
+				// add observer
+				model.on("change", this._onChange, this);
 
 				this.trigger("model:add", model);
 			}
@@ -74,10 +63,8 @@ _.extend(Scope.prototype, Events, {
 			if (~index) {
 				this.models.splice(index, 1);
 
-				// strip observers
-				this._observers.forEach(function(ob) {
-					model.off("change", ob.onChange);
-				});
+				// strip observer
+				model.off("change", this._onChange, this);
 
 				this.trigger("model:remove", model);
 			}
@@ -88,33 +75,32 @@ _.extend(Scope.prototype, Events, {
 
 	// returns the first model whose value at path isn't undefined
 	findModel: function(path) {
-		var model, i;
+		var i, models = this.getModels();
 
-		for (i in this.models) {
-			model = this.models[i];
-			if (model.get(path) !== void 0)
-				return model;
-		}
+		for (var i in models)
+			if (models[i].get(path) !== void 0)
+				return models[i];
 
-		return this.models[0];
+		return null;
+	},
+
+	getModels: function() {
+		return this.models.slice(0);
 	},
 
 	get: function(parts) {
-		var val;
-
 		if (Deps.active) this.depend(parts);
 		parts = util.splitPath(parts);
 
 		if (parts[0] === "this") {
 			parts.shift();
-			val = this.getModel(parts).get();
+			return this.models[0].get(parts);
 		}
 
 		else {
-			val = this.findModel(parts).get(parts);
+			var model = this.findModel(parts);
+			if (model != null) return model.get(parts);
 		}
-
-		return val;
 	},
 
 	// registers a dependency at path and observes changes
@@ -125,7 +111,7 @@ _.extend(Scope.prototype, Events, {
 		// create if doesn't exist
 		if (dep == null) {
 			dep = this._deps[path] = new Deps.Dependency;
-			dep._observer = this.observe(parts, function() { dep.changed(); });
+			this.observe(parts, dep._observer = function() { dep.changed(); });
 		}
 
 		dep.depend();
@@ -176,139 +162,32 @@ _.extend(Scope.prototype, Events, {
 	observe: function(path, fn) {
 		if (!_.isFunction(fn)) throw new Error("Expecting a function to call on change.");
 
-		var matchParts = _.isArray(path) ? path : util.parsePath(path),
-			self = this;
+		var matchParts = _.isArray(path) ? path : util.parsePath(path);
 
 		// remember the observer so we can kill it later
 		this._observers.push({
 			path: path,
-			fn: fn,
-			onChange: onChange
+			parts: matchParts,
+			fn: fn
 		});
 
-		// apply to all existing models
-		this.models.forEach(function(m) {
-			m.on("change", onChange);
-		});
-		
 		return this;
-
-		function onChange(chg) {
-			var keys, newval, oldval, model,
-				ngetter, ogetter, parts, part, base, paths, i,
-				cmodel, cindex, pmodel, omodel;
-
-			// clone parts so we don't affect the original
-			parts = matchParts.slice(0);
-			keys = chg.keypath;
-			newval = chg.value;
-			oldval = chg.oldValue;
-			model = chg.model;
-			pmodel = model;
-
-			// we need to get the true old and new values based on all the models
-			if (chg.type !== "update") {
-				cmodel = self.findModel(chg.keypath);
-
-				if (cmodel != null) {
-					cindex = self.models.indexOf(cmodel);
-					
-					if (cmodel === this) {
-						omodel = _.find(self.models.slice(cindex + 1), function(model) {
-							return !_.isUndefined(model.get(path));
-						});
-
-						if (omodel != null) {
-							pmodel = omodel.getModel(keys);
-							oldval = pmodel.value;
-						}
-					
-					} else if (cindex > self.models.indexOf(this)) {
-						pmodel = model;
-						model = cmodel.getModel(keys);
-						newval = model.value;
-
-					} else return;
-				}
-			}
-
-			// traverse through cparts
-			// a mismatch means we don't need to be here
-			for (i = 0; i < keys.length; i++) {
-				part = parts.shift();
-				if (_.isRegExp(part) && part.test(keys[i])) continue;
-				if (part === "**") {
-					// look ahead
-					if (parts[0] == null || parts[0] !== keys[i + 1]) {
-						parts.unshift(part);
-					}
-					continue;
-				}
-				if (part !== keys[i]) return;
-			}
-
-			paths = [];
-			base = util.joinPathParts(keys);
-
-			// generate a list of effected paths
-			findAllMatchingPaths.call(this, model, newval, parts, paths);
-			findAllMatchingPaths.call(this, pmodel, oldval, parts, paths);
-			paths = util.findShallowestUniquePaths(paths);
-
-			// getters for retrieving values at path
-			ngetter = function(obj, path) {
-				return model.createHandle(obj)("get", path);
-			}
-
-			if (model === pmodel) ogetter = ngetter;
-			else ogetter = function(obj, path) {
-				return pmodel.createHandle(obj)("get", path);
-			}
-			
-			// fire the callback on each path that changed
-			paths.forEach(function(keys, index, list) {
-				var path, localModel, nval, oval;
-
-				nval = util.get(newval, keys, ngetter),
-				oval = util.get(oldval, keys, ogetter);
-				if (nval === oval) return;
-
-				fn.call(self, {
-					model: model.getModel(keys),
-					previousModel: pmodel.getModel(keys),
-					path: util.joinPathParts(base, keys),
-					type: util.changeType(nval, oval),
-					value: nval,
-					oldValue: oval
-				});
-			});
-		}
 	},
 
 	stopObserving: function(path, fn) {
-		var obs;
+		if (path == null && fn == null) {
+			this._observers = [];
+			return this;
+		}
 
 		if (_.isFunction(path) && fn == null) {
 			fn = path;
 			path = null;
 		}
 
-		if (path == null && fn == null) {
-			obs = this._observers;
-			this._observers = [];
-		}
-
-		else {
-			obs = this._observers.filter(function(o) {
-				return (path == null || path === o.path) && (fn == null || fn === o.fn);
-			});
-		}
-
-		obs.forEach(function(o) {
-			this.models.forEach(function(m) {
-				m.off("change", o.onChange);
-			});
-
+		this._observers.filter(function(o) {
+			return (path == null || path === o.path) && (fn == null || fn === o.fn);
+		}).forEach(function(o) {
 			var index = this._observers.indexOf(o);
 			if (~index) this._observers.splice(index, 1);
 		}, this);
@@ -316,13 +195,56 @@ _.extend(Scope.prototype, Events, {
 		return this;
 	},
 
-	// cleans up the scope so it can be properly garbage collected
-	destroy: function() {
-		this.stopComputation();
-		this.stopObserving();
-		this.removeModel(this.models.slice(0));
-		this.trigger("destroy");
-		return this;
+	// model onChange event
+	_onChange: function(chg, opts, model) {
+		var scope = this;
+
+		this._observers.forEach(function(ob) {
+			var parts, paths, base;
+
+			// clone parts so we don't affect the original
+			parts = ob.parts.slice(0);
+
+			// match the beginning of parts
+			if (!matchPathStart(chg.keypath, parts)) return;
+
+			// tweak the summary for all the models in scope
+			if (!intersectChange.call(scope, model, chg)) return;
+
+			paths = [];
+			base = util.joinPathParts(chg.keypath);
+
+			// generate a list of effected paths
+			findAllMatchingPaths.call(model, chg.model, chg.value, parts, paths);
+			findAllMatchingPaths.call(model, chg.previousModel, chg.oldValue, parts, paths);
+			paths = util.findShallowestUniquePaths(paths);
+	
+			// fire the callback on each path that changed
+			paths.forEach(function(keys, index, list) {
+				var nval, oval;
+
+				nval = util.get(chg.value, keys, function(obj, path) {
+					return chg.model.createHandle(obj)("get", path);
+				});
+
+				oval = util.get(chg.oldValue, keys, function(obj, path) {
+					return chg.previousModel.createHandle(obj)("get", path);
+				});
+				
+				if (nval === oval) return;
+
+				ob.fn.call(scope, {
+					model: chg.model.getModel(keys),
+					previousModel: chg.previousModel.getModel(keys),
+					keypath: chg.keypath.concat(keys),
+					type: util.changeType(nval, oval),
+					value: nval,
+					oldValue: oval
+				});
+			});
+		});
+
+		this.trigger("change", chg, opts, model);
 	}
 });
 
@@ -344,6 +266,88 @@ _.extend(Scope.prototype, Events, {
 		return model[method].apply(model, arguments);
 	}
 });
+
+// matchs the start of a keypath to a list of match parts
+// parts is modified to the remaining segments that were not matched
+function matchPathStart(keys, parts) {
+	var i, part;
+
+	for (i = 0; i < keys.length; i++) {
+		part = parts.shift();
+		if (_.isRegExp(part) && part.test(keys[i])) continue;
+		if (part === "**") {
+			// look ahead
+			if (parts[0] == null || parts[0] !== keys[i + 1]) {
+				parts.unshift(part);
+			}
+			continue;
+		}
+		if (part !== keys[i]) return false;
+	}
+
+	return true;
+}
+
+// modifies a change summary to incorporate all models in scope
+function intersectChange(model, summary) {
+	var models = this.getModels(),
+		dindex = models.indexOf(model),
+		cindex = -1;
+
+	// delta model must exist in models or things go wacky
+	if (!~dindex) return false;
+
+	models.some(function(model, index) {
+		if (model.get(summary.keypath) !== void 0) {
+			cindex = index;
+			return true;
+		}
+	}, model);
+
+	// default previous is the delta model
+	summary.previousModel = summary.model;
+
+	switch(summary.type) {
+		case "add":
+			// if the delta index is after the current index, move along
+			// if the delta index is before the current index, something went wrong
+			if (dindex !== cindex) return false;
+
+			// find the model after the current one that previously contained the value
+			var pmodel = _.find(models.slice(cindex + 1), function(model) {
+				return model.get(summary.keypath) !== void 0;
+			});
+
+			if (pmodel != null) {
+				summary.previousModel = pmodel.getModel(summary.keypath);
+				summary.oldValue = summary.previousModel.value;
+			}
+
+			break;
+
+		case "update":
+			// if the delta index is after the current index, move along
+			// if the delta index is before the current index, something went wrong
+			if (dindex !== cindex) return false;
+
+			break;
+
+		case "delete":
+			// with deletes, only modify the summary if the current model exists
+			if (cindex > -1) {
+				// if the delta index isn't before the current index, something went wrong
+				if ( cindex <= dindex) return false;
+
+				// a delete means the summary model is the delta model
+				summary.model = models[cindex].getModel(summary.keypath);
+				summary.value = summary.model.value;
+			}
+	}
+
+	summary.type = util.changeType(summary.value, summary.oldValue);
+
+	return summary;
+}
 
 // deeply traverses a value in search of all paths that match parts
 function findAllMatchingPaths(model, value, parts, paths, base) {

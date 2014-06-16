@@ -5,7 +5,7 @@ describe("Bindings", function() {
 	this.slow(200);
 
 	afterEach(function() {
-		if (binding != null) binding.destroy();
+		if (binding != null) binding.detach();
 		binding = null;
 	});
 
@@ -14,7 +14,7 @@ describe("Bindings", function() {
 			binding = new Temple.Binding();
 		});
 
-		it("adds children bindings", function() {
+		it("appends children bindings", function() {
 			binding.appendChild(new Temple.Binding());
 			expect(binding.children).to.have.length(1);
 		});
@@ -26,15 +26,20 @@ describe("Bindings", function() {
 			expect(binding.children).to.have.length(0);
 		});
 
-		it("throws error when adding a child binding that already has a parent", function() {
+		it("removes child binding from exisiting parent before appending to new parent", function() {
 			var other = new Temple.Binding(),
-				child = new Temple.Binding();
+				child = new Temple.Binding(),
+				removed = false;
+
+			other.on("child:remove", function(b) {
+				if (child === b) removed = true;
+			});
 
 			other.appendChild(child);
+			binding.appendChild(child);
 
-			expect(function() {
-				binding.appendChild(child);
-			}).to.throw(Error);
+			expect(child.parent).to.equal(binding);
+			expect(removed).to.be.ok;
 		});
 
 		it("autoruns under namespace", function() {
@@ -72,37 +77,11 @@ describe("Bindings", function() {
 			expect(seen).to.equal(1);
 		});
 
-		it("emits destroy event on destruction", function() {
-			binding.once("destroy", function() { throw new Error; });
-
-			expect(function() {
-				binding.destroy();
-			}).to.throw(Error);
-
-			binding = null;
-		});
-
-		it("removes all children on destruction", function() {
-			binding.destroy();
-			expect(binding.children).to.have.length(0);
-			binding = null;
-		});
-
-		it("stops all computations on destruction", function(done) {
-			var seen = 0,
-				dep = new Temple.Deps.Dependency;
-
-			binding.autorun(function() {
-				dep.depend();
-				seen++;
-			});
-
-			binding.destroy();
-			dep.changed();
-
-			renderWait(function() {
-				expect(seen).to.equal(1);
-			}, done);
+		it("emits detach event on detach", function() {
+			var seen = false;
+			binding.once("detach", function() { seen = true; });
+			binding.detach();
+			expect(seen).to.be.ok;
 		});
 	});
 
@@ -162,9 +141,9 @@ describe("Bindings", function() {
 			expect(binding.node.style.color).to.equal("red");
 		});
 
-		it("removes element from DOM on destruction", function() {
+		it("removes element from DOM on detach", function() {
 			binding.paint();
-			binding.destroy();
+			binding.detach();
 			expect(binding.node.parentNode).to.be.null;
 		});
 	});
@@ -191,17 +170,17 @@ describe("Bindings", function() {
 			}, done);
 		});
 
-		it("removes text node from DOM on destruction", function() {
+		it("removes text node from DOM on detach", function() {
 			binding = new Temple.Text("Hello World").paint();
-			binding.destroy();
+			binding.detach();
 			expect(binding.node.parentNode).to.be.null;
 		});
 	});
 
 	describe("HTML", function() {
 		it("appends nodes to parent", function() {
-			binding = new Temple.Binding.HTML("<div></div><span></span>");
-			binding.render(new Temple.Scope());
+			binding = new Temple.HTML("<div></div><span></span>");
+			binding.paint();
 
 			expect(binding.nodes).to.have.length(2);
 			expect(binding.nodes[0]).to.be.element.with.tagName("div");
@@ -215,16 +194,16 @@ describe("Bindings", function() {
 		});
 
 		it("converts string value to html nodes, reactively", function(done) {
-			binding = new Temple.Binding.HTML(function(scope) {
-				return scope.get("html");
+			binding = new Temple.HTML(function() {
+				return this.get("html");
 			});
 
-			var scope = new Temple.Scope({ html: "<div>" });
-			binding.render(scope);
+			binding.set({ html: "<div>" });
+			binding.paint();
 
 			expect(binding.nodes).to.have.length(1);
 			expect(binding.nodes[0]).to.be.element.with.tagName("div");
-			scope.set("html", "<span>");
+			binding.set("html", "<span>");
 
 			renderWait(function() {
 				expect(binding.nodes).to.have.length(1);
@@ -232,32 +211,13 @@ describe("Bindings", function() {
 			}, done);
 		});
 
-		it("removes nodes from DOM on destruction", function() {
-			binding = new Temple.Binding.HTML("<div>");
+		it("removes nodes from DOM on detach", function() {
+			binding = new Temple.HTML("<div>");
 			var cont = document.createElement("div");
-			binding.appendTo(cont);
-			binding.destroy();
+			binding.paint(cont);
+			binding.detach();
 			expect(binding.nodes).to.have.length(0);
 			expect(cont.childNodes).to.have.length(0);
-		});
-	});
-
-	describe("Context", function() {
-		it("renders children bindings with a scope focused at path", function() {
-			var seen = false;
-
-			binding = new Temple.Binding.Context("foo",
-				new Temple.Binding.Text(function(s) {
-					expect(s.getModel()).to.equal(scope.getModel("foo"));
-					expect(s.get()).to.equal("bar");
-					seen = true;
-				})
-			);
-
-			var scope = new Temple.Scope({ foo: "bar" });
-			binding.render(scope);
-
-			expect(seen).to.be.ok;
 		});
 	});
 

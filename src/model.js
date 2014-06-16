@@ -116,7 +116,7 @@ _.extend(Model.prototype, Events, {
 		
 			parent.trigger("change", _.defaults({
 				keypath: [ path ].concat(summary.keypath)
-			}, summary), options);
+			}, summary), options, parent);
 		}
 	},
 
@@ -223,7 +223,7 @@ _.extend(Model.prototype, Events, {
 		}, this);
 
 		// announce the change
-		this.trigger("change", summary, options);
+		this.trigger("change", summary, options, this);
 
 		return summary;
 	}

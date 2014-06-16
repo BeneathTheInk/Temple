@@ -17,7 +17,6 @@ module.exports = Binding.extend({
 		this.node = document.createTextNode("");
 
 		Binding.call(this, data);
-		this.render();
 	},
 
 	appendChild: function() {
@@ -25,16 +24,21 @@ module.exports = Binding.extend({
 	},
 
 	render: function() {
-		this.autorun("render", function(comp) {
-			var val = this.compute();
-			val = val != null ? val.toString() : "";
-			this.node.nodeValue = this.value = val;
-		});
+		var val = this.compute();
+		val = val != null ? val.toString() : "";
+		this.node.nodeValue = this.value = val;
 	},
 
 	appendTo: function(parent, before) {
+		this.autorun("render", this.render);
 		parent.insertBefore(this.node, before);
 		return Binding.prototype.appendTo.apply(this, arguments);
+	},
+
+	detach: function() {
+		var parent = this.node.parentNode;
+		if (parent != null) parent.removeChild(this.node);
+		return Binding.prototype.detach.apply(this, arguments);
 	},
 
 	find: function(selector) { return null; },
@@ -42,12 +46,5 @@ module.exports = Binding.extend({
 
 	toString: function() {
 		return this.value;
-	},
-
-	destroy: function() {
-		var parent = this.node.parentNode;
-		if (parent != null) parent.removeChild(this.node);
-
-		return Binding.prototype.destroy.apply(this, arguments);
 	}
 });

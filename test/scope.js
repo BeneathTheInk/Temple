@@ -114,7 +114,7 @@ describe("Scope", function() {
 				expect(chg).to.deep.equal({
 					model: scope.getModel("foo.bar"),
 					previousModel: scope.getModel("foo.bar"),
-					path: "foo.bar",
+					keypath: [ "foo", "bar" ],
 					type: "add",
 					value: "baz",
 					oldValue: undefined
@@ -140,7 +140,7 @@ describe("Scope", function() {
 				expect(chg).to.deep.equal({
 					model: scope.getModel("foo"),
 					previousModel: scope.getModel("foo"),
-					path: "foo",
+					keypath: [ "foo" ],
 					type: "delete",
 					value: undefined,
 					oldValue: "bar"
@@ -156,7 +156,7 @@ describe("Scope", function() {
 		it("calling get() in an observer returns the new value", function() {
 			var seen = false;
 			scope.observe("foo.bar", function(chg) {
-				expect(this.get(chg.path)).to.equal(chg.value);
+				expect(this.get(chg.keypath)).to.equal(chg.value);
 				seen = true;
 			});
 
@@ -170,7 +170,7 @@ describe("Scope", function() {
 				expect(chg).to.deep.equal({
 					model: scope.getModel(),
 					previousModel: scope.getModel(),
-					path: "",
+					keypath: [],
 					type: "update",
 					value: "foo",
 					oldValue: { foo: "bar" }
@@ -189,7 +189,7 @@ describe("Scope", function() {
 				expect(chg).to.deep.equal({
 					model: scope.getModel("foo"),
 					previousModel: scope.getModel("foo"),
-					path: "foo",
+					keypath: [ "foo" ],
 					type: "update",
 					value: { bar: "baz" },
 					oldValue: "bar"
@@ -208,7 +208,7 @@ describe("Scope", function() {
 				expect(chg).to.deep.equal({
 					model: scope.getModel("foo.bar.baz"),
 					previousModel: scope.getModel("foo.bar.baz"),
-					path: "foo.bar.baz",
+					keypath: [ "foo", "bar", "baz" ],
 					type: "add",
 					value: "buz",
 					oldValue: undefined
@@ -227,7 +227,7 @@ describe("Scope", function() {
 				expect(chg).to.deep.equal({
 					model: scope.getModel("foo.bar.baz"),
 					previousModel: scope.getModel("foo.bar.baz"),
-					path: "foo.bar.baz",
+					keypath: [ "foo", "bar", "baz" ],
 					type: "add",
 					value: "buz",
 					oldValue: undefined
@@ -246,7 +246,7 @@ describe("Scope", function() {
 				expect(chg).to.deep.equal({
 					model: scope.getModel("foo.bar.baz"),
 					previousModel: scope.getModel("foo.bar.baz"),
-					path: "foo.bar.baz",
+					keypath: [ "foo", "bar", "baz" ],
 					type: "add",
 					value: "buz",
 					oldValue: undefined
@@ -267,7 +267,7 @@ describe("Scope", function() {
 				expect(chg).to.deep.equal({
 					model: scope.getModel("foo.bar"),
 					previousModel: scope.getModel("foo.bar"),
-					path: "foo.bar",
+					keypath: [ "foo", "bar" ],
 					type: "update",
 					value: { baz: "buz" },
 					oldValue: "baz"
@@ -287,7 +287,7 @@ describe("Scope", function() {
 				expect(chg).to.deep.equal({
 					model: scope.getModel("foo.bar.baz"),
 					previousModel: scope.getModel("foo.bar.baz"),
-					path: "foo.bar.baz",
+					keypath: [ "foo", "bar", "baz" ],
 					type: "add",
 					value: "buz",
 					oldValue: undefined
@@ -306,7 +306,7 @@ describe("Scope", function() {
 				expect(chg).to.deep.equal({
 					model: scope.getModel("foo.bar.bun.baz"),
 					previousModel: scope.getModel("foo.bar.bun.baz"),
-					path: "foo.bar.bun.baz",
+					keypath: [ "foo", "bar", "bun", "baz" ],
 					type: "add",
 					value: "buz",
 					oldValue: undefined
@@ -327,7 +327,7 @@ describe("Scope", function() {
 				expect(chg).to.deep.equal({
 					model: scope.getModel("foo.bar.baz"),
 					previousModel: scope.getModel("foo.bar.baz"),
-					path: "foo.bar.baz",
+					keypath: [ "foo", "bar", "baz" ],
 					type: "update",
 					value: "bun",
 					oldValue: "buz"
@@ -346,7 +346,7 @@ describe("Scope", function() {
 				expect(chg).to.deep.equal({
 					model: scope.getModel("foo"),
 					previousModel: scope.getModel("foo"),
-					path: "foo",
+					keypath: [ "foo" ],
 					type: "update",
 					value: "buz",
 					oldValue: "bar"
@@ -368,7 +368,7 @@ describe("Scope", function() {
 				expect(chg).to.deep.equal({
 					model: fallback.getModel("bar"),
 					previousModel: fallback.getModel("bar"),
-					path: "bar",
+					keypath: [ "bar" ],
 					type: "update",
 					value: "bam",
 					oldValue: "baz"
@@ -388,7 +388,7 @@ describe("Scope", function() {
 				expect(chg).to.deep.equal({
 					model: scope.getModel("bar"),
 					previousModel: fallback.getModel("bar"),
-					path: "bar",
+					keypath: [ "bar" ],
 					type: "update",
 					value: "bam",
 					oldValue: "baz"
@@ -417,7 +417,7 @@ describe("Scope", function() {
 				expect(chg).to.deep.equal({
 					model: fallback.getModel("foo"),
 					previousModel: scope.getModel("foo"),
-					path: "foo",
+					keypath: [ "foo" ],
 					type: "update",
 					value: "bug",
 					oldValue: "bar"
