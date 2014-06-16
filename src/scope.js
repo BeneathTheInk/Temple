@@ -5,7 +5,7 @@ var _ = require("underscore"),
 	Deps = require("./deps");
 
 var Scope =
-module.exports = function(model) {
+module.exports = function Scope(model) {
 	// convert data to model if isn't one already
 	if (!Scope.isScope(model) && !Model.isModel(model)) {
 		var data = model;

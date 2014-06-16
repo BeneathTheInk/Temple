@@ -312,4 +312,67 @@ describe("Bindings", function() {
 		});
 	});
 
+	describe("If/Else", function() {
+		it("renders body when condition returns true", function() {
+			var seen = false;
+
+			binding = new Temple.If(true, function() { seen = true; });
+			binding.paint();
+
+			expect(seen).to.be.ok;
+		});
+
+		it("renders else body when condition returns false", function() {
+			var seen = false;
+
+			binding = new Temple.If(false, function() {
+				throw new Error("Body was called.");
+			}, function() {
+				seen = true;
+			});
+
+			binding.paint();
+
+			expect(seen).to.be.ok;
+		});
+
+		it("switches from body to else body when condition changes values", function(done) {
+			var body = new Temple.Binding(),
+				elseBody = new Temple.Binding();
+
+			binding = new Temple.If (
+				function() { return this.get("foo"); },
+				function() { return body; },
+				function() { return elseBody; }
+			);
+
+			binding.set("foo", true);
+			binding.paint();
+
+			expect(binding.children).to.have.length(1);
+			expect(binding.children[0]).to.equal(body);
+			
+			binding.set("foo", false);
+
+			renderWait(function() {
+				expect(binding.children).to.have.length(1);
+				expect(binding.children[0]).to.equal(elseBody);
+			}, done);
+		});
+
+		it("removes body on detach", function() {
+			var body = new Temple.Binding()
+			binding = new Temple.If (true, function() { return body; });
+			binding.paint();
+
+			expect(binding.children).to.have.length(1);
+			expect(binding.children[0]).to.equal(body);
+
+			binding.detach();
+
+			expect(binding.children).to.have.length(0);
+			expect(body.parent).to.be.undefined;
+		});
+	});
+
 });

@@ -33,7 +33,7 @@ module.exports = Binding.extend({
 });
 
 // class properties/methods
-Temple.VERSION = "0.2.9";
+Temple.VERSION = "0.2.10-alpha";
 Temple.util = util;
 
 Temple.Deps = require("./deps");

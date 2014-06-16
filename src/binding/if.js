@@ -17,7 +17,7 @@ module.exports = Binding.extend({
 		this.elseBody = _.isFunction(elseBody) ? elseBody : null;
 		this.placeholder = document.createComment(_.uniqueId("$"));
 
-		// when children are added, append to element node
+		// when children are added, append to placeholder
 		this.on("child:add", function(child) {
 			if (this.placeholder.parentNode != null)
 				child.appendTo(this.placeholder.parentNode, this.placeholder);
@@ -36,7 +36,10 @@ module.exports = Binding.extend({
 
 		// append the new body
 		var body = this[this.compute() ? "body" : "elseBody"];
-		if (body != null) this.appendChild(body.call(this));
+		if (body != null) {
+			var bindings = body.call(this);
+			if (bindings != null) this.appendChild(bindings);
+		}
 	},
 
 	appendTo: function(parent, before) {
@@ -46,8 +49,8 @@ module.exports = Binding.extend({
 	},
 
 	detach: function() {
-		var parent = this.node.parentNode;
-		if (parent != null) parent.removeChild(this.node);
+		var parent = this.placeholder.parentNode;
+		if (parent != null) parent.removeChild(this.placeholder);
 		Binding.prototype.detach.apply(this, arguments);
 		this.removeChild(this.children.slice(0));
 		return this;

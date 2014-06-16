@@ -61,6 +61,7 @@ module.exports = Scope.extend({
 		
 		if (~index) {
 			this.children.splice(index, 1);
+			if (child.parent === this) delete child.parent;
 			this.trigger("child:remove", child);
 		}
 

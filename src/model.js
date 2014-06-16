@@ -4,7 +4,7 @@ var _ = require("underscore"),
 	handlers = require("./handlers");
 
 var Model =
-module.exports = function(data) {
+module.exports = function Model(data) {
 	this._handlers = [];
 	this.children = {};
 	this.set([], data);
