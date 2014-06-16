@@ -25,7 +25,7 @@ module.exports = Binding.extend({
 
 	appendTo: function(parent, before) {
 		parent.insertBefore(this.node, before);
-		return Binding.prototype.appendTo.apply(this, arguments);
+		return Binding.prototype.appendTo.call(this, this.node);
 	},
 
 	detach: function() {

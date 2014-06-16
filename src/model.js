@@ -4,10 +4,10 @@ var _ = require("underscore"),
 	handlers = require("./handlers");
 
 var Model =
-module.exports = function(value) {
+module.exports = function(data) {
 	this._handlers = [];
 	this.children = {};
-	this.set([], value);
+	this.set([], data);
 }
 
 Model.extend = util.subclass;

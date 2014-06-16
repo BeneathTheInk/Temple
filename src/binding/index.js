@@ -34,7 +34,7 @@ module.exports = Scope.extend({
 			return this;
 		}
 
-		if (!(child instanceof Binding))
+		if (!Binding.isBinding(child))
 			throw new Error("Expected array or instances of Binding for children.");
 
 		// ensure the binding is not already a child
@@ -129,10 +129,13 @@ module.exports = Scope.extend({
 
 });
 
+Binding.isBinding = function(obj) {
+	return obj instanceof Binding;
+}
+
 // load the real bindings
 Binding.Text		= require("./text");
 Binding.Element		= require("./element");
 Binding.HTML		= require("./html");
-// Binding.Context		= require("./context");
-// Binding.Each		= require("./each");
-// Binding.Component	= require("./component");
+Binding.Each		= require("./each");
+Binding.If			= require("./if");

@@ -30,8 +30,8 @@ module.exports = Binding.extend({
 	},
 
 	appendTo: function(parent, before) {
-		this.autorun("render", this.render);
 		parent.insertBefore(this.node, before);
+		this.autorun("render", this.render);
 		return Binding.prototype.appendTo.apply(this, arguments);
 	},
 

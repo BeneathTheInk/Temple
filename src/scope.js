@@ -196,55 +196,16 @@ _.extend(Scope.prototype, Events, {
 	},
 
 	// model onChange event
-	_onChange: function(chg, opts, model) {
-		var scope = this;
+	_onChange: function(summary, opts, model) {
+		// tweak the summary, incorporating all the models in scope
+		var chg = _.clone(summary);
+		if (!intersectChange.call(this, model, chg)) return;
 
-		this._observers.forEach(function(ob) {
-			var parts, paths, base;
+		// handle all the observers
+		this._observers.forEach(_.partial(handleObserver, chg), this);
 
-			// clone parts so we don't affect the original
-			parts = ob.parts.slice(0);
-
-			// match the beginning of parts
-			if (!matchPathStart(chg.keypath, parts)) return;
-
-			// tweak the summary for all the models in scope
-			if (!intersectChange.call(scope, model, chg)) return;
-
-			paths = [];
-			base = util.joinPathParts(chg.keypath);
-
-			// generate a list of effected paths
-			findAllMatchingPaths.call(model, chg.model, chg.value, parts, paths);
-			findAllMatchingPaths.call(model, chg.previousModel, chg.oldValue, parts, paths);
-			paths = util.findShallowestUniquePaths(paths);
-	
-			// fire the callback on each path that changed
-			paths.forEach(function(keys, index, list) {
-				var nval, oval;
-
-				nval = util.get(chg.value, keys, function(obj, path) {
-					return chg.model.createHandle(obj)("get", path);
-				});
-
-				oval = util.get(chg.oldValue, keys, function(obj, path) {
-					return chg.previousModel.createHandle(obj)("get", path);
-				});
-				
-				if (nval === oval) return;
-
-				ob.fn.call(scope, {
-					model: chg.model.getModel(keys),
-					previousModel: chg.previousModel.getModel(keys),
-					keypath: chg.keypath.concat(keys),
-					type: util.changeType(nval, oval),
-					value: nval,
-					oldValue: oval
-				});
-			});
-		});
-
-		this.trigger("change", chg, opts, model);
+		// pass up changes
+		this.trigger("change", summary, opts, model);
 	}
 });
 
@@ -286,6 +247,49 @@ function matchPathStart(keys, parts) {
 	}
 
 	return true;
+}
+
+function handleObserver(chg, ob) {
+	var parts, paths, base,
+		scope = this;
+
+	// clone parts so we don't affect the original
+	parts = ob.parts.slice(0);
+
+	// match the beginning of parts
+	if (!matchPathStart(chg.keypath, parts)) return;
+
+	paths = [];
+	base = util.joinPathParts(chg.keypath);
+
+	// generate a list of effected paths
+	findAllMatchingPaths(chg.model, chg.value, parts, paths);
+	findAllMatchingPaths(chg.previousModel, chg.oldValue, parts, paths);
+	paths = util.findShallowestUniquePaths(paths);
+
+	// fire the callback on each path that changed
+	paths.forEach(function(keys, index, list) {
+		var nval, oval;
+
+		nval = util.get(chg.value, keys, function(obj, path) {
+			return chg.model.createHandle(obj)("get", path);
+		});
+
+		oval = util.get(chg.oldValue, keys, function(obj, path) {
+			return chg.previousModel.createHandle(obj)("get", path);
+		});
+		
+		if (nval === oval) return;
+
+		ob.fn.call(scope, {
+			model: chg.model.getModel(keys),
+			previousModel: chg.previousModel.getModel(keys),
+			keypath: chg.keypath.concat(keys),
+			type: util.changeType(nval, oval),
+			value: nval,
+			oldValue: oval
+		});
+	});
 }
 
 // modifies a change summary to incorporate all models in scope
@@ -365,8 +369,8 @@ function findAllMatchingPaths(model, value, parts, paths, base) {
 
 	if (_.isRegExp(part)) {
 		handle("keys").forEach(function(k) {
-			findAllMatchingPaths.call(this, model.getModel(k), handle("get", k), rest, paths, base.concat(k));
-		}, this);
+			findAllMatchingPaths(model.getModel(k), handle("get", k), rest, paths, base.concat(k));
+		});
 	} else if (part === "**") {
 		if (handle("isLeaf")) {
 			if (!rest.length) paths.push(base);
@@ -383,10 +387,10 @@ function findAllMatchingPaths(model, value, parts, paths, base) {
 				_base = base.concat(k);
 			}
 
-			findAllMatchingPaths.call(this, model.getModel(k), handle("get", k), _rest, paths, _base);
-		}, this);
+			findAllMatchingPaths(model.getModel(k), handle("get", k), _rest, paths, _base);
+		});
 	} else {
-		findAllMatchingPaths.call(this, model.getModel(part), handle("get", part), rest, paths, base.concat(part));
+		findAllMatchingPaths(model.getModel(part), handle("get", part), rest, paths, base.concat(part));
 	}
 
 	return paths;

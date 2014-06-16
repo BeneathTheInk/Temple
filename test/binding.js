@@ -225,13 +225,12 @@ describe("Bindings", function() {
 		it("renders children bindings for every value in array", function() {
 			var seen = 0;
 
-			binding = new Temple.Binding.Each("foo", function(index) {
+			binding = new Temple.Each("foo", function() {
 				seen++;
-				return new Temple.Binding();
 			});
 
-			var scope = new Temple.Scope({ foo: [0,1,2] });
-			binding.render(scope);
+			binding.set("foo", [0,1,2]);
+			binding.paint();
 
 			expect(seen).to.equal(3);
 		});
@@ -239,158 +238,77 @@ describe("Bindings", function() {
 		it("renders each key in plain js objects", function() {
 			var seen = 0;
 
-			binding = new Temple.Binding.Each("foo", function(key) {
+			binding = new Temple.Each("foo", function(model, key) {
 				seen++;
 				if (seen === 1) expect(key).to.equal("one");
 				if (seen === 2) expect(key).to.equal("two");
 				return new Temple.Binding();
 			});
 
-			var scope = new Temple.Scope({ foo: { one: "Hello", two: "World" } });
-			binding.render(scope);
+			binding.set({ foo: { one: "Hello", two: "World" } });
+			binding.paint();
 
 			expect(seen).to.equal(2);
 		});
 
 		it("renders nothing on empty array", function() {
-			binding = new Temple.Binding.Each("foo", function() {
+			binding = new Temple.Each("foo", function() {
 				throw new Error("Row was rendered!");
 			});
 
-			var scope = new Temple.Scope({ foo: [] });
-			binding.render(scope);
+			binding.set("foo", []);
+			binding.paint();
 		});
 
 		it("renders new rows of bindings when added to array", function() {
 			var seen = 0;
 
-			binding = new Temple.Binding.Each("foo", function(key) {
+			binding = new Temple.Each("foo", function() {
 				seen++;
 				return new Temple.Binding();
 			});
 
-			var scope = new Temple.Scope({ foo: [0] });
-			binding.render(scope);
+			binding.set({ foo: [0] });
+			binding.paint();
 
-			scope.get("foo").push(1);
+			binding.get("foo").push(1);
 			expect(seen).to.equal(2);
 		});
 
 		it("removes rows of bindings when removed from array", function() {
 			var seen = false;
 
-			binding = new Temple.Binding.Each("foo", function(key) {
+			binding = new Temple.Each("foo", function(key) {
 				var b = new Temple.Binding();
-				b.once("destroy", function() {
+				b.once("detach", function() {
 					seen = true;
 				});
 				return b;
 			});
 
-			var scope = new Temple.Scope({ foo: [0] });
-			binding.render(scope);
+			binding.set("foo", [0,1,2]);
+			binding.paint();
 
-			scope.get("foo").pop();
+			binding.get("foo").pop();
 			expect(seen).to.be.ok;
 		});
 
-		it("removes all rows on destruction", function() {
+		it("removes all rows on detach", function() {
 			var seen = 0;
 
-			binding = new Temple.Binding.Each("foo", function(key) {
+			binding = new Temple.Each("foo", function(key) {
 				var b = new Temple.Binding();
-				b.once("destroy", function() {
+				b.once("detach", function() {
 					seen++;
 				});
 				return b;
 			});
 
-			var scope = new Temple.Scope({ foo: [0,1,2] });
-			binding.render(scope);
+			binding.set("foo", [0,1,2]);
+			binding.paint();
 
-			binding.destroy();
+			binding.detach();
 			expect(seen).to.equal(3);
-		});
-	});
-
-	describe("Component", function() {
-		var doc;
-
-		beforeEach(function() {
-			doc = document.createDocumentFragment();
-		});
-
-		it("renders Temple class", function() {
-			var View = Temple.extend({
-				render: function() {
-					return new Temple.Binding.Text(function(scope) {
-						return scope.get("foo");
-					});
-				}
-			});
-
-			binding = new Temple.Binding.Component(View);
-			binding.render(new Temple.Scope({ foo: "Hello World" }));
-			binding.appendTo(doc);
-
-			expect(binding.toString()).to.equal("Hello World");
-		});
-
-		it("renders instance of Temple", function() {
-			var tpl = new Temple();
-			tpl.render = function() {
-				return new Temple.Binding.Text("Hello World");
-			}
-
-			binding = new Temple.Binding.Component(tpl);
-			binding.render(new Temple.Scope());
-			binding.appendTo(doc);
-
-			expect(binding.toString()).to.equal("Hello World");
-		});
-
-		it("updates component value when parent value changes", function(done) {
-			var View = Temple.extend({
-				render: function() {
-					return new Temple.Binding.Text(function(scope) {
-						return scope.get("foo");
-					});
-				}
-			});
-
-			var scope = new Temple.Scope({ foo: "bar" });
-			binding = new Temple.Binding.Component(View);
-			binding.render(scope);
-			binding.appendTo(doc);
-			scope.set("foo", "Hello World");
-
-			renderWait(function() {
-				expect(binding.toString()).to.equal("Hello World");
-			}, done);
-		});
-
-		it("erases the component on destruction", function() {
-			var erased = false;
-
-			var View = Temple.extend({
-				initialize: function() {
-					this.once("erase", function() {
-						erased = true;
-					});
-				},
-				render: function() {
-					return new Temple.Binding.Text(function(scope) {
-						return scope.get("foo");
-					});
-				}
-			});
-
-			binding = new Temple.Binding.Component(View);
-			binding.render(new Temple.Scope());
-			binding.appendTo(doc);
-			binding.destroy();
-
-			expect(erased).to.be.ok;
 		});
 	});
 
