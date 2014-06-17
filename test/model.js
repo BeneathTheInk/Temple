@@ -77,8 +77,7 @@ describe("Model", function() {
 					return target != null && typeof target === "object";
 				},
 				construct: function(target) {
-					expect(target).to.equal(obj);
-					seen++;
+					if (target === obj) seen++;
 				}
 			};
 
@@ -100,12 +99,10 @@ describe("Model", function() {
 					return target != null && typeof target === "object";
 				},
 				construct: function(target) {
-					expect(target).to.equal(obj);
-					c++;
+					if (target === obj) c++;
 				},
 				destroy: function(target) {
-					expect(target).to.equal(obj);
-					d++;
+					if (target === obj) d++;
 				}
 			};
 

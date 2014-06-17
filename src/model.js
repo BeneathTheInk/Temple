@@ -46,7 +46,7 @@ _.extend(Model.prototype, Events, {
 	createHandle: function(val) {
 		var handler = this._handler(val),
 			self = this;
-		
+
 		return function(m) {
 			var args = _.toArray(arguments).slice(1),
 				method = handler[m];
@@ -57,10 +57,24 @@ _.extend(Model.prototype, Events, {
 
 	// adds a handler to use on any future model values
 	// secondary usage is to execute a handler method with arguments
+	// handlers are really inefficient right now.
 	handle: function(handler) {
 		if (_.isObject(handler)) {
 			handler = _.extend({}, handlers.default, handler);
 			this._handlers.unshift(handler);
+
+			// we have to tell all the models in the tree that
+			// a new handler was added otherwise things will
+			// use the old handler
+			var m, models = [].concat(this);
+
+			while (models.length) {
+				m = models.shift();
+				m.handle("destroy");
+				m.handle("construct");
+				models = models.concat(_.values(m.children));
+			}
+
 			return this;
 		}
 

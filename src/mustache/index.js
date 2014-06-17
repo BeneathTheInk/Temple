@@ -228,6 +228,8 @@ module.exports = Temple.extend({
 						return comp;
 					}
 
+					break;
+
 				default:
 					console.log(template);
 			}
