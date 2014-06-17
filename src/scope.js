@@ -6,20 +6,21 @@ var _ = require("underscore"),
 
 var Scope =
 module.exports = function Scope(model) {
-	// convert data to model if isn't one already
-	if (!Scope.isScope(model) && !Model.isModel(model)) {
-		var data = model;
-		model = new Model(_.result(this, "defaults"));
-		if (!_.isUndefined(data)) model.set([], data);
-	}
-
-	this.models = [];
+	this.children = [];
 	this._comps = {};
 	this._observers = [];
 	this._deps = [];
-	this._hidden = {};
 
-	this.addModel(model);
+	// event that proxies changes to all children
+	this.on("change", function() {
+		var args = _.toArray(arguments);
+		this.children.forEach(function(child) {
+			child._onChange.apply(child, args);
+		});
+	});
+
+	// set the initial data
+	this.setModel(model);
 }
 
 Scope.extend = util.subclass;
@@ -28,46 +29,71 @@ Scope.isScope = function(obj) {
 }
 
 _.extend(Scope.prototype, Events, {
-	// adds a model to the set
-	addModel: function(model) {
-		// accept scopes and arrays, but reduce them to models
-		if (Scope.isScope(model)) this.addModel(model.models);
-		else if (_.isArray(model)) {
-			model.forEach(function(m) { this.addModel(m); }, this);
+	setModel: function(model) {
+		if (!Model.isModel(model)) {
+			var data = model;
+			model = new Model(_.result(this, "defaults"));
+			if (!_.isUndefined(data)) model.set([], data);
 		}
 
-		else {
-			if (!Model.isModel(model)) throw new Error("Expecting model.");
-			if (!~this.models.indexOf(model)) {
-				this.models.push(model);
+		// clear existing model
+		this.clearModel();
+		
+		// add the new one
+		this.model = model;
+		model.on("change", this._onChange, this);
+		this.trigger("model", model);
 
-				// add observer
-				model.on("change", this._onChange, this);
+		return this;
+	},
 
-				this.trigger("model:add", model);
-			}
+	clearModel: function() {
+		if (this.model != null) {
+			model.off("change", this._onChange);
+			delete this.model;
+			this.trigger("model");
 		}
 
 		return this;
 	},
- 
-	// removes a previously added model
-	removeModel: function(model) {
-		if (Scope.isScope(model)) this.removeModel(model.models);
-		else if (_.isArray(model)) {
-			model.forEach(function(m) { this.removeModel(m); }, this);
+
+	addChild: function(child) {
+		if (_.isArray(child)) {
+			child.forEach(this.addChild, this);
+			return this;
 		}
 
-		else {
-			var index = this.models.indexOf(model);
-			if (~index) {
-				this.models.splice(index, 1);
+		if (!Scope.isScope(child))
+			throw new Error("Expected array or instance of Scope for children.");
 
-				// strip observer
-				model.off("change", this._onChange, this);
+		// ensure the binding is not already a child
+		if (~this.children.indexOf(child)) return this;
 
-				this.trigger("model:remove", model);
-			}
+		// remove from existing parent
+		if (child.parent != null) child.parent.removeChild(child);
+
+		this.children.push(child);
+		child.parent = this;
+
+		this.trigger("child:add", child);
+		child.trigger("parent:add", this);
+
+		return this;
+	},
+
+	removeChild: function(child) {
+		if (_.isArray(child)) {
+			child.forEach(this.removeChild, this);
+			return this;
+		}
+
+		var index = this.children.indexOf(child);
+		
+		if (~index) {
+			this.children.splice(index, 1);
+			child.trigger("parent:remove", this);
+			this.trigger("child:remove", child);
+			if (child.parent === this) delete child.parent;
 		}
 
 		return this;
@@ -85,22 +111,26 @@ _.extend(Scope.prototype, Events, {
 	},
 
 	getModels: function() {
-		return this.models.slice(0);
+		var models = [],
+			c = this;
+		
+		while (c != null) {
+			if (c.model) models.push(c.model);
+			c = c.parent;
+		}
+
+		return models;
 	},
 
 	get: function(parts) {
 		if (Deps.active) this.depend(parts);
 		parts = util.splitPath(parts);
+		var model = this.findModel(parts);
+		if (model != null) return model.get(parts);
+	},
 
-		if (parts[0] === "this") {
-			parts.shift();
-			return this.models[0].get(parts);
-		}
-
-		else {
-			var model = this.findModel(parts);
-			if (model != null) return model.get(parts);
-		}
+	keys: function(path) {
+		return (this.findModel(path) || this).keys(path);
 	},
 
 	// registers a dependency at path and observes changes
@@ -196,16 +226,16 @@ _.extend(Scope.prototype, Events, {
 	},
 
 	// model onChange event
-	_onChange: function(summary, opts, model) {
-		// tweak the summary, incorporating all the models in scope
-		var chg = _.clone(summary);
-		if (!intersectChange.call(this, model, chg)) return;
+	_onChange: function() {
+		var args = _.toArray(arguments);
 
 		// handle all the observers
-		this._observers.forEach(_.partial(handleObserver, chg), this);
+		this._observers.forEach(function(ob) {
+			handleObserver.apply(this, [ob].concat(args));
+		}, this);
 
 		// pass up changes
-		this.trigger("change", summary, opts, model);
+		this.trigger.apply(this, ["change"].concat(args));
 	}
 });
 
@@ -213,44 +243,24 @@ _.extend(Scope.prototype, Events, {
 [ "handle", "set", "unset" ]
 .forEach(function(method) {
 	Scope.prototype[method] = function() {
-		var model = this.models[0];
+		var model = this.model;
 		model[method].apply(model, arguments);
 		return this;
 	}
 });
 
 // proxy methods which don't return this
-[ "getModel", "keys", "notify" ]
+[ "getModel", "notify" ]
 .forEach(function(method) {
 	Scope.prototype[method] = function() {
-		var model = this.models[0];
+		var model = this.model;
 		return model[method].apply(model, arguments);
 	}
 });
 
-// matchs the start of a keypath to a list of match parts
-// parts is modified to the remaining segments that were not matched
-function matchPathStart(keys, parts) {
-	var i, part;
-
-	for (i = 0; i < keys.length; i++) {
-		part = parts.shift();
-		if (_.isRegExp(part) && part.test(keys[i])) continue;
-		if (part === "**") {
-			// look ahead
-			if (parts[0] == null || parts[0] !== keys[i + 1]) {
-				parts.unshift(part);
-			}
-			continue;
-		}
-		if (part !== keys[i]) return false;
-	}
-
-	return true;
-}
-
-function handleObserver(chg, ob) {
-	var parts, paths, base,
+// handles an observer and a change summary
+function handleObserver(ob, chg, opts, model) {
+	var parts, paths, base, getter,
 		scope = this;
 
 	// clone parts so we don't affect the original
@@ -261,34 +271,32 @@ function handleObserver(chg, ob) {
 
 	paths = [];
 	base = util.joinPathParts(chg.keypath);
+	getter = function(obj, path) {
+		return chg.model.createHandle(obj)("get", path);
+	}
 
 	// generate a list of effected paths
 	findAllMatchingPaths(chg.model, chg.value, parts, paths);
-	findAllMatchingPaths(chg.previousModel, chg.oldValue, parts, paths);
+	findAllMatchingPaths(chg.model, chg.oldValue, parts, paths);
 	paths = util.findShallowestUniquePaths(paths);
 
 	// fire the callback on each path that changed
 	paths.forEach(function(keys, index, list) {
-		var nval, oval;
+		var nval, oval, summary;
 
-		nval = util.get(chg.value, keys, function(obj, path) {
-			return chg.model.createHandle(obj)("get", path);
-		});
-
-		oval = util.get(chg.oldValue, keys, function(obj, path) {
-			return chg.previousModel.createHandle(obj)("get", path);
-		});
-		
+		nval = util.get(chg.value, keys, getter);
+		oval = util.get(chg.oldValue, keys, getter);
 		if (nval === oval) return;
 
-		ob.fn.call(scope, {
+		var summary = {
 			model: chg.model.getModel(keys),
-			previousModel: chg.previousModel.getModel(keys),
 			keypath: chg.keypath.concat(keys),
 			type: util.changeType(nval, oval),
 			value: nval,
 			oldValue: oval
-		});
+		};
+
+		if (intersectChange.call(scope, model, summary)) ob.fn.call(scope, summary);
 	});
 }
 
@@ -351,6 +359,27 @@ function intersectChange(model, summary) {
 	summary.type = util.changeType(summary.value, summary.oldValue);
 
 	return summary;
+}
+
+// matchs the start of a keypath to a list of match parts
+// parts is modified to the remaining segments that were not matched
+function matchPathStart(keys, parts) {
+	var i, part;
+
+	for (i = 0; i < keys.length; i++) {
+		part = parts.shift();
+		if (_.isRegExp(part) && part.test(keys[i])) continue;
+		if (part === "**") {
+			// look ahead
+			if (parts[0] == null || parts[0] !== keys[i + 1]) {
+				parts.unshift(part);
+			}
+			continue;
+		}
+		if (part !== keys[i]) return false;
+	}
+
+	return true;
 }
 
 // deeply traverses a value in search of all paths that match parts

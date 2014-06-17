@@ -1,53 +1,44 @@
 describe("Scope", function() {
-	var scope, fallback;
-
-	before(function() {
-		scope = new Temple.Scope();
-	});
+	var scope;
 
 	beforeEach(function() {
+		scope = new Temple.Scope();
 		scope.set("foo", "bar");
-		fallback = new Temple.Model({ bar: "baz" });
-		scope.addModel(fallback);
-	});
-
-	afterEach(function() {
-		scope.stopObserving();
-		scope.removeModel(fallback);
-		fallback = null;
 	});
 
 	it("creates a model on constructor if a model isn't passed", function() {
-		expect(scope.models[0]).to.be.instanceof(Temple.Model);
+		expect(scope.model).to.be.instanceof(Temple.Model);
 	});
 
-	it.skip("get(path) executes function value iff value at path is function", function() {
-		scope.set("foo", function() {
-			expect(this).to.equal(scope);
-			return "Hello World";
+	it("adds child scope", function() {
+		scope.addChild(new Temple.Scope());
+		expect(scope.children).to.have.length(1);
+	});
+
+	it("removes child scope", function() {
+		var child = new Temple.Scope();
+		scope.addChild(child);
+		scope.removeChild(child);
+		expect(scope.children).to.have.length(0);
+	});
+
+	it("removes child scope from exisiting parent before adding", function() {
+		var other = new Temple.Scope(),
+			child = new Temple.Scope(),
+			removed = false;
+
+		other.on("child:remove", function(b) {
+			if (child === b) removed = true;
 		});
 
-		expect(scope.get("foo")).to.equal("Hello World");
+		other.addChild(child);
+		scope.addChild(child);
+
+		expect(child.parent).to.equal(scope);
+		expect(removed).to.be.ok;
 	});
 
-	it("adds fallback model", function() {
-		expect(scope.models[1]).to.deep.equal(fallback);
-	});
-
-	it("removes fallback model", function() {
-		scope.removeModel(fallback);
-		expect(scope.models).to.have.length(1);
-	});
-
-	it("scope returns fallback value at path iff model value at path is undefined", function() {
-		expect(scope.get("foo")).to.equal("bar");
-		expect(scope.get("bar")).to.equal("baz");
-	});
-
-	it("if path is prefixed with `this`, model returns exact value at path", function() {
-		expect(scope.get("this.foo")).to.equal("bar");
-		expect(scope.get("this.bar")).to.be.undefined;
-	});
+	it("get() returns value from parent scope");
 
 	describe("#observe()", function() {
 		
@@ -359,63 +350,72 @@ describe("Scope", function() {
 			expect(seen).to.be.ok;
 		});
 
-		it("observes changes to fallback value", function() {
-			var seen = false;
+		it("observes changes to parent values", function() {
+			var seen = false,
+				parent = new Temple.Scope();
 
 			scope.observe("bar", function(chg) {
 				expect(this).to.equal(scope);
 
 				expect(chg).to.deep.equal({
-					model: fallback.getModel("bar"),
-					previousModel: fallback.getModel("bar"),
+					model: parent.getModel("bar"),
+					previousModel: parent.getModel("bar"),
 					keypath: [ "bar" ],
-					type: "update",
+					type: "add",
 					value: "bam",
-					oldValue: "baz"
+					oldValue: undefined
 				});
 
 				seen = true;
 			});
 
-			fallback.set("bar", "bam");
+			parent.addChild(scope);
+			parent.set("bar", "bam");
+
 			expect(seen).to.be.ok;
 		});
 
-		it("observes changes to local value when the value was found in fallback", function() {
-			var seen = false;
+		it("observes changes to local value when the value was found in parent", function() {
+			var seen = false,
+				parent = new Temple.Scope({ bar: "bam" });
 
 			scope.observe("bar", function(chg) {
 				expect(chg).to.deep.equal({
 					model: scope.getModel("bar"),
-					previousModel: fallback.getModel("bar"),
+					previousModel: parent.getModel("bar"),
 					keypath: [ "bar" ],
 					type: "update",
-					value: "bam",
-					oldValue: "baz"
+					value: "baz",
+					oldValue: "bam"
 				});
 
 				seen = true;
 			});
-
-			scope.set("bar", "bam");
+			
+			parent.addChild(scope);
+			scope.set("bar", "baz");
+			
 			expect(seen).to.be.ok;
 		});
 
 		it("doesn't observes changes to fallback when the value is in local model", function() {
+			var parent = new Temple.Scope();
+
 			scope.observe("foo", function(chg) {
 				throw new Error("A change was observed.");
 			});
 
-			fallback.set("foo", "bam");
+			parent.addChild(scope);
+			parent.set("foo", "bam");
 		});
 
 		it("observes unset on local value, falling back on a secondary value", function() {
-			var seen = false;
-			fallback.set("foo", "bug");
+			var seen = false,
+				parent = new Temple.Scope({ foo: "bug" });
 
 			scope.observe("foo", function(chg) {
 				expect(chg).to.deep.equal({
-					model: fallback.getModel("foo"),
+					model: parent.getModel("foo"),
 					previousModel: scope.getModel("foo"),
 					keypath: [ "foo" ],
 					type: "update",
@@ -426,7 +426,9 @@ describe("Scope", function() {
 				seen = true;
 			});
 
+			parent.addChild(scope);
 			scope.unset("foo");
+
 			expect(seen).to.be.ok;
 		});
 	});

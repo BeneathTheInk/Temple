@@ -11,16 +11,22 @@ module.exports = Binding.extend({
 		this.attributes = {};
 		this.node = document.createElement(tagname);
 		
-		// when children are added, append to element node
-		this.on("child:add", function(child) {
-			if (this.node.parentNode != null) child.appendTo(this.node);
-		});
-
-		this.on("child:remove", function(child) {
-			child.detach();
-		});
-
 		Binding.apply(this, _.toArray(arguments).slice(1));
+	},
+
+	mount: function() {
+		// cleverly wrapped so we can kill all of them at the same time
+		this.autorun("attributes", function() {
+			_.each(this.attributes, function(value, name) {
+				this.autorun(function(comp) {
+					var val = value.call(this);
+					val = val != null ? val.toString() : "";
+					this.node.setAttribute(name, val);
+				});
+			}, this);
+		});
+
+		return Binding.prototype.mount.apply(this, arguments);
 	},
 
 	appendTo: function(parent, before) {
@@ -29,6 +35,7 @@ module.exports = Binding.extend({
 	},
 
 	detach: function() {
+		this.stopComputation("attributes");
 		var parent = this.node.parentNode;
 		if (parent != null) parent.removeChild(this.node);
 		return Binding.prototype.detach.apply(this, arguments);
@@ -64,11 +71,7 @@ module.exports = Binding.extend({
 		if (!_.isFunction(value)) throw new Error("Expecting string or function for attribute value");
 		if (!_.isString(name)) throw new Error("Expecting string for attribute name");
 
-		this.autorun("__attr_" + name, function() {
-			var val = value.call(this);
-			val = val != null ? val.toString() : "";
-			this.node.setAttribute(name, val);
-		});
+		this.attributes[name] = value;
 
 		return this;
 	}

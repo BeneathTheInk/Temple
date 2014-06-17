@@ -3,11 +3,8 @@ describe("#autorun() & #depend()", function() {
 	this.slow(200);
 	var tpl, comp;
 
-	before(function() {
-		tpl = new Temple();
-	});
-
 	beforeEach(function() {
+		tpl = new Temple();
 		tpl.set("foo", "bar");
 	});
 
@@ -48,50 +45,75 @@ describe("#autorun() & #depend()", function() {
 		}, 10);
 	});
 
-	it("autorun() context reruns for fallback changes", function(done) {
-		var fb = new Temple.Model({ baz: "buz" }),
+	it("autorun() context reruns for parent changes", function(done) {
+		var parent = new Temple.Scope({ baz: "buz" }),
 			run = 2;
 
-		function donedone(e) {
-			tpl.removeModel(fb);
-			done(e);
-		}
-
-		tpl.addModel(fb);
+		parent.addChild(tpl);
 
 		comp = tpl.autorun(function() {
 			try { expect(tpl.get("baz")).to.be.ok; }
-			catch(e) { return donedone(e); }
-			if (!(--run)) donedone();
+			catch(e) { return done(e); }
+			if (!(--run)) done();
 		});
 
 		setTimeout(function() {
-			fb.set("baz", { bar: "baz" });
+			tpl.set("baz", { bar: "baz" });
 		}, 10);
 	});
 
-	it("autorun() context reruns for changes to value when previous get() returned a fallback scope's value", function(done) {
-		var fb = new Temple.Model({ baz: "buz" }),
+	it("autorun() context reruns for changes to value when previous get() returned a parent value", function(done) {
+		var parent = new Temple.Scope({ baz: "buz" }),
 			run = 2;
 
-		function donedone(e) {
-			tpl.removeModel(fb);
-			done(e);
-		}
-
-		tpl.addModel(fb);
+		parent.addChild(tpl);
 
 		comp = tpl.autorun(function() {
 			try {
 				if (run == 2) expect(tpl.get("baz")).to.equal("buz");
 				if (run == 1) expect(tpl.get("baz")).to.deep.equal({ bar: "baz" });
 			}
-			catch(e) { return donedone(e); }
-			if (!(--run)) donedone();
+			catch(e) { return done(e); }
+			if (!(--run)) done();
 		});
 
 		setTimeout(function() {
 			tpl.set("baz", { bar: "baz" });
 		}, 10);
+	});
+
+	it("autoruns under namespace", function() {
+		var seen = false;
+		tpl.autorun("ns", function() { seen = true; });
+		expect(seen).to.be.ok;
+	});
+
+	it("stops autorun computations by namespace", function(done) {
+		var seen = 0,
+			dep = new Temple.Deps.Dependency;
+		
+		tpl.autorun("ns", function() {
+			dep.depend();
+			seen++;
+		});
+		
+		tpl.stopComputation("ns");
+		dep.changed();
+
+		renderWait(function() {
+			expect(seen).to.equal(1);
+		}, done);
+	});
+
+	it("clears previous computation when autorun is called with the same namespace", function() {
+		var seen = 0;
+		
+		tpl.autorun("ns", function(){ seen++; });
+		
+		expect(function() {
+			tpl.autorun("ns", function() { throw new Error; });
+		}).to.throw(Error);
+
+		expect(seen).to.equal(1);
 	});
 });

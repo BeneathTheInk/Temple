@@ -34,37 +34,52 @@ module.exports = Binding.extend({
 		return this;
 	},
 
-	render: function(scope) {
-		var val, cont;
-
-		// compute html value
-		val = this.compute(scope);
-		val = val != null ? val.toString() : "";
-		this.value = val;
-		
-		// remove existing html nodes
-		this.cleanNodes();
-		
-		// convert html into DOM nodes
-		div = document.createElement("div");
-		div.innerHTML = val;
-		this.nodes = _.toArray(div.childNodes);
-		
-		// refresh node positions in DOM
+	refreshNodes: function() {
 		var parent = this.placeholder.parentNode;
 		if (parent != null) this.nodes.forEach(function(node) {
 			parent.insertBefore(node, this.placeholder);
 		}, this);
 	},
 
+	render: function() {
+		var val, cont;
+
+		// compute html value
+		val = this.compute();
+		val = val != null ? val.toString() : "";
+		
+		// dirty check the value
+		if (val !== this.value) {
+			this.value = val;
+			
+			// remove existing html nodes
+			this.cleanNodes();
+			
+			// convert html into DOM nodes
+			div = document.createElement("div");
+			div.innerHTML = val;
+			this.nodes = _.toArray(div.childNodes);
+		}
+
+		// refresh node positions in DOM
+		this.refreshNodes();
+	},
+
+	mount: function() {
+		this.autorun("render", this.render);
+		return Binding.prototype.mount.apply(this, arguments);
+	},
+
 	appendTo: function(parent, before) {
 		parent.insertBefore(this.placeholder, before);
-		this.autorun("render", this.render);
+		this.refreshNodes();
 		return Binding.prototype.appendTo.apply(this, arguments);
 	},
 
 	detach: function() {
+		this.stopComputation("render");
 		this.cleanNodes();
+		delete this.value;
 		var parent = this.placeholder.parentNode;
 		if (parent != null) parent.removeChild(this.placeholder);
 		return Binding.prototype.detach.apply(this, arguments);

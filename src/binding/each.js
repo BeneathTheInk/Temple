@@ -1,46 +1,50 @@
 var _ = require("underscore"),
 	Binding = require("./index"),
-	util = require("../util");
+	util = require("../util"),
+	Model = require("../model");
 
 module.exports = Binding.extend({
-	constructor: function(path, body) {
-		if (!_.isString(path))
-			throw new Error("Expecting string path.");
-
+	constructor: function(body, data) {
 		if (!_.isFunction(body))
 			throw new Error("Expecting function for body.");
 
-		this.path = path;
 		this.body = body;
 		this.rows = {};
 		this.placeholder = document.createComment(_.uniqueId("$"));
 
-		Binding.call(this);
-	},
-
-	appendChild: function() {
-		throw new Error("HTML bindings can't have children.");
+		Binding.call(this, data);
 	},
 
 	updateRow: function(key) {
 		if (this.rows[key] == null) {
-			var path = util.joinPathParts(this.path, key),
-				model = (this.findModel(path) || this).getModel(path),
-				children = this.body(model, key),
+			var model = (this.findModel() || this).getModel(key),
+				child = this.body(model, key),
 				row = this.rows[key] = new Binding(model);
-				
-			if (children != null) row.appendChild(children);
+			
+			if (child != null) row.addChild(child);
+			this.addChild(row);
 		}
 		
-		return this;
+		return this.rows[key];
 	},
 
 	refreshRows: function() {
 		var parent = this.placeholder.parentNode;
 		
-		if (parent != null) _.each(this.rows, function(row) {
-			row.appendTo(parent, this.placeholder);
-		}, this);
+		if (parent != null) {
+			var keys = this.keys();
+			
+			keys.forEach(function(key) {
+				var row = this.updateRow(key);
+				row.paint(parent, this.placeholder);
+			}, this);
+
+			_.keys(this.rows).filter(function(k) {
+				return !_.contains(keys, k);
+			}).forEach(function(k) {
+				this.removeRow(k);
+			}, this);
+		}
 		
 		return this;
 	},
@@ -50,6 +54,7 @@ module.exports = Binding.extend({
 		
 		if (row != null) {
 			row.detach();
+			this.removeChild(row);
 			delete this.rows[key];
 		}
 
@@ -62,63 +67,26 @@ module.exports = Binding.extend({
 		return this;
 	},
 
-	autoUpdate: function() {
-		if (this._updating) return;
-		this._updating = true;
-
-		var parts = util.splitPath(this.path);
-
+	mount: function() {
 		function onChange(s) {
-			if (!util.arrayStartsWith(s.keypath, parts)) return;
-			var extra = s.keypath.slice(parts.length);
-			
-			if (!extra.length) {
-				this.render();
-			} else if (s.type === "delete") {
-				this.removeRow(extra[0]);
-			} else if (_.contains(this.keys(parts), extra[0])) {
-				this.updateRow(extra[0]);
-				this.refreshRows();
-			}
+			this.refreshRows();
 		}
 
-		this.observe(this.path, onChange);
-		this.observe(util.joinPathParts(this.path, "*"), onChange);
+		this.observe("", onChange);
+		this.observe("*", onChange);
 
 		this.once("detach", function() {
 			this.stopObserving(onChange);
-			delete this._updating;
 		});
 
-		return this;
-	},
-
-	render: function() {
-		var model = (this.findModel(this.path) || this).getModel(this.path),
-			keys = model.keys(),
-			toRemove = [];
-
-		this.autoUpdate();
-
-		keys.forEach(this.updateRow, this);
-
-		// remove all rows except for keys
-		_.keys(this.rows).filter(function(k) {
-			return !_.contains(keys, k);
-		}).forEach(function(k) {
-			this.removeRow(k);
-		}, this);
-
-		// update all positions
-		this.refreshRows();
-
-		return this;
+		return Binding.prototype.mount.apply(this, arguments);
 	},
 
 	appendTo: function(parent, before) {
 		parent.insertBefore(this.placeholder, before);
-		this.render();
-		return Binding.prototype.appendTo.apply(this, arguments);
+		this.refreshRows();
+		this.trigger("append", parent, before);
+		return this;
 	},
 
 	detach: function() {

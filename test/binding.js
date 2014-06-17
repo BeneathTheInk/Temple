@@ -14,69 +14,6 @@ describe("Bindings", function() {
 			binding = new Temple.Binding();
 		});
 
-		it("appends children bindings", function() {
-			binding.appendChild(new Temple.Binding());
-			expect(binding.children).to.have.length(1);
-		});
-
-		it("removes children bindings", function() {
-			var child = new Temple.Binding();
-			binding.appendChild(child);
-			binding.removeChild(child);
-			expect(binding.children).to.have.length(0);
-		});
-
-		it("removes child binding from exisiting parent before appending to new parent", function() {
-			var other = new Temple.Binding(),
-				child = new Temple.Binding(),
-				removed = false;
-
-			other.on("child:remove", function(b) {
-				if (child === b) removed = true;
-			});
-
-			other.appendChild(child);
-			binding.appendChild(child);
-
-			expect(child.parent).to.equal(binding);
-			expect(removed).to.be.ok;
-		});
-
-		it("autoruns under namespace", function() {
-			var seen = false;
-			binding.autorun("ns", function() { seen = true; });
-			expect(seen).to.be.ok;
-		});
-
-		it("stops autorun computations by namespace", function(done) {
-			var seen = 0,
-				dep = new Temple.Deps.Dependency;
-			
-			binding.autorun("ns", function() {
-				dep.depend();
-				seen++;
-			});
-			
-			binding.stopComputation("ns");
-			dep.changed();
-
-			renderWait(function() {
-				expect(seen).to.equal(1);
-			}, done);
-		});
-
-		it("clears previous computation when autorun is called with the same namespace", function() {
-			var seen = 0;
-			
-			binding.autorun("ns", function(){ seen++; });
-			
-			expect(function() {
-				binding.autorun("ns", function() { throw new Error; });
-			}).to.throw(Error);
-
-			expect(seen).to.equal(1);
-		});
-
 		it("emits detach event on detach", function() {
 			var seen = false;
 			binding.once("detach", function() { seen = true; });
@@ -225,11 +162,10 @@ describe("Bindings", function() {
 		it("renders children bindings for every value in array", function() {
 			var seen = 0;
 
-			binding = new Temple.Each("foo", function() {
+			binding = new Temple.Each(function() {
 				seen++;
-			});
+			}, [ 0, 1, 2 ]);
 
-			binding.set("foo", [0,1,2]);
 			binding.paint();
 
 			expect(seen).to.equal(3);
@@ -238,47 +174,45 @@ describe("Bindings", function() {
 		it("renders each key in plain js objects", function() {
 			var seen = 0;
 
-			binding = new Temple.Each("foo", function(model, key) {
+			binding = new Temple.Each(function(model, key) {
 				seen++;
 				if (seen === 1) expect(key).to.equal("one");
 				if (seen === 2) expect(key).to.equal("two");
 				return new Temple.Binding();
 			});
 
-			binding.set({ foo: { one: "Hello", two: "World" } });
+			binding.set({ one: "Hello", two: "World" });
 			binding.paint();
 
 			expect(seen).to.equal(2);
 		});
 
 		it("renders nothing on empty array", function() {
-			binding = new Temple.Each("foo", function() {
+			binding = new Temple.Each(function() {
 				throw new Error("Row was rendered!");
-			});
+			}, []);
 
-			binding.set("foo", []);
 			binding.paint();
 		});
 
 		it("renders new rows of bindings when added to array", function() {
 			var seen = 0;
 
-			binding = new Temple.Each("foo", function() {
+			binding = new Temple.Each(function() {
 				seen++;
 				return new Temple.Binding();
-			});
+			}, [0]);
 
-			binding.set({ foo: [0] });
 			binding.paint();
 
-			binding.get("foo").push(1);
+			binding.get().push(1);
 			expect(seen).to.equal(2);
 		});
 
 		it("removes rows of bindings when removed from array", function() {
 			var seen = false;
 
-			binding = new Temple.Each("foo", function(key) {
+			binding = new Temple.Each(function(key) {
 				var b = new Temple.Binding();
 				b.once("detach", function() {
 					seen = true;
@@ -286,25 +220,24 @@ describe("Bindings", function() {
 				return b;
 			});
 
-			binding.set("foo", [0,1,2]);
+			binding.set(null, [0,1,2]);
 			binding.paint();
 
-			binding.get("foo").pop();
+			binding.get().pop();
 			expect(seen).to.be.ok;
 		});
 
 		it("removes all rows on detach", function() {
 			var seen = 0;
 
-			binding = new Temple.Each("foo", function(key) {
+			binding = new Temple.Each(function(key) {
 				var b = new Temple.Binding();
 				b.once("detach", function() {
 					seen++;
 				});
 				return b;
-			});
+			}, [0,1,2]);
 
-			binding.set("foo", [0,1,2]);
 			binding.paint();
 
 			binding.detach();
@@ -312,67 +245,8 @@ describe("Bindings", function() {
 		});
 	});
 
-	describe("If/Else", function() {
-		it("renders body when condition returns true", function() {
-			var seen = false;
-
-			binding = new Temple.If(true, function() { seen = true; });
-			binding.paint();
-
-			expect(seen).to.be.ok;
-		});
-
-		it("renders else body when condition returns false", function() {
-			var seen = false;
-
-			binding = new Temple.If(false, function() {
-				throw new Error("Body was called.");
-			}, function() {
-				seen = true;
-			});
-
-			binding.paint();
-
-			expect(seen).to.be.ok;
-		});
-
-		it("switches from body to else body when condition changes values", function(done) {
-			var body = new Temple.Binding(),
-				elseBody = new Temple.Binding();
-
-			binding = new Temple.If (
-				function() { return this.get("foo"); },
-				function() { return body; },
-				function() { return elseBody; }
-			);
-
-			binding.set("foo", true);
-			binding.paint();
-
-			expect(binding.children).to.have.length(1);
-			expect(binding.children[0]).to.equal(body);
-			
-			binding.set("foo", false);
-
-			renderWait(function() {
-				expect(binding.children).to.have.length(1);
-				expect(binding.children[0]).to.equal(elseBody);
-			}, done);
-		});
-
-		it("removes body on detach", function() {
-			var body = new Temple.Binding()
-			binding = new Temple.If (true, function() { return body; });
-			binding.paint();
-
-			expect(binding.children).to.have.length(1);
-			expect(binding.children[0]).to.equal(body);
-
-			binding.detach();
-
-			expect(binding.children).to.have.length(0);
-			expect(body.parent).to.be.undefined;
-		});
+	describe("React", function() {
+		
 	});
 
 });

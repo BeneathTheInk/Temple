@@ -5,126 +5,95 @@ var _ = require("underscore"),
 	Deps = require("../deps");
 
 var Section =
-module.exports = Binding.extend({
-	constructor: function(path, body, inverted) {
-		if (!_.isString(path))
-			throw new Error("Expecting string path.");
+module.exports = Binding.React.extend({
+	constructor: function(value, body, inverted, data) {
+		if (!_.isFunction(value))
+			throw new Error("Expecting function for section value.");
 
 		if (!_.isFunction(body))
-			throw new Error("Expecting function for body.");
+			throw new Error("Expecting function for section body.");
 
-		this.path = path;
-		this.body = function() {
-			var args = arguments, ctx = this;
-			return Deps.nonreactive(function() {
-				return body.apply(ctx, args);
-			});
-		}
+		this.value = value;
+		this.body = body;
 		this.inverted = !!inverted;
-		this.binding = null;
-		this.placeholder = document.createComment(_.uniqueId("$"));
 
-		Binding.call(this);
+		Binding.React.call(this, null, data);
 	},
 
-	addChild: function() {
-		throw new Error("Section bindings can't have children.");
-	},
-
-	destroyBinding: function() {
-		if (this.binding != null) {
-			this.binding.destroy();
-			delete this.binding;
-		}
-
-		return this;
-	},
-
-	refreshBinding: function() {
-		if (this.binding != null) {
-			var parent = this.placeholder.parentNode;
-			if (parent != null) this.binding.appendTo(parent, this.placeholder);
-		}
-
-		return this;
-	},
-
-	dependOnLength: function(scope) {
+	dependOnLength: function(model) {
 		if (!Deps.active) return this;
-		
-		var path, self = this,
-			dep = new Deps.Dependency;
 
-		path = util.joinPathParts(this.path, "length");
-		scope.observe(path, onChange);
+		var dep = new Deps.Dependency,
+			self = this;
+
+		model.on("change", onChange);
 
 		function onChange(s) {
+			if (s.keypath.length !== 1 || s.keypath[0] !== "length") return;
+			
 			if ((self.inverted && s.value > 0) ||
 				(!self.inverted && s.value === 0)) dep.changed();
 		}
 
 		Deps.currentComputation.onInvalidate(function() {
-			scope.stopObserving(path, onChange);
+			model.off("change", onChange);
 		});
 
 		dep.depend();
 		return this;
 	},
 
-	render: function(scope) {
-		this.autorun("render", function(comp) {
-			this.destroyBinding();
+	dependOnModel: function(model) {
+		if (!Deps.active) return this;
+		
+		var dep = new Deps.Dependency,
+			self = this,
+			value = model.value;
 
-			var model = (scope.findModel(this.path) || scope).getModel(this.path),
-				val = model.handle("toArray"),
-				isEmpty;
+		model.on("change", onChange);
 
-			scope.depend(this.path);
-			if (!_.isArray(val)) val = scope.get(this.path);
-			isEmpty = Section.isEmpty(val);
-			
-			if (isEmpty && this.inverted) {
-				if (_.isArray(val)) this.dependOnLength(scope);
-				this.binding = new Binding.Context(this.path, this.body(0));
-			} else if (!isEmpty && !this.inverted) {
-				if (_.isArray(val)) {
-					this.dependOnLength(scope);
-					this.binding = new Binding.Each(this.path, this.body.bind(this));
-				} else this.binding = new Binding.Context(this.path, this.body(0));
-			} else {
-				// listen for changes to children to update the binding type
-				scope.depend(util.joinPathParts(this.path, "*" ));
-			}
+		function onChange(s) {
+			if (s.keypath.length !== 1) return;
+			dep.changed();
+		}
 
-			if (this.binding != null) {
-				this.binding.render(scope);
-				this.refreshBinding();
-			}
+		Deps.currentComputation.onInvalidate(function() {
+			model.off("change", onChange);
 		});
 
+		dep.depend();
 		return this;
 	},
 
-	appendTo: function(parent, before) {
-		parent.insertBefore(this.placeholder, before);
-		this.refreshBinding();
-		return this;
-	},
+	render: function() {
+		var model = this.value(),
+			val, isEmpty;
+		
+		// must return a model
+		if (!Model.isModel(model)) return;
 
-	find: function(selector) {
-		return this.binding != null ? this.binding.find(selector) : null;
-	},
+		val = model.handle("toArray");
+		if (!_.isArray(val)) val = model.get();
+		if (_.isFunction(val)) val = val.call(this);
+		isEmpty = Section.isEmpty(val);
 
-	findAll: function(selector) {
-		return this.binding != null ? this.binding.findAll(selector) : [];
-	},
-
-	destroy: function() {
-		this.destroyBinding();
-		var parent = this.placeholder.parentNode;
-		if (parent != null) parent.removeChild(this.placeholder);
-
-		return Binding.prototype.destroy.apply(this, arguments);
+		if (isEmpty && this.inverted) {
+			if (_.isArray(val)) this.dependOnLength(model);
+			var b = new Binding(model);
+			b.addChild(this.body.call(this, model, 0));
+			return b;
+		} else if (!isEmpty && !this.inverted) {
+			if (_.isArray(val)) {
+				this.dependOnLength(model);
+				return new Binding.Each(this.body, model);
+			} else {
+				var b = new Binding(model);
+				b.addChild(this.body.call(this, model, 0));
+				return b;
+			}
+		} else {
+			this.dependOnModel(model);
+		}
 	}
 }, {
 	isEmpty: function(val) {

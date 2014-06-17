@@ -19,23 +19,28 @@ module.exports = Binding.extend({
 		Binding.call(this, data);
 	},
 
-	appendChild: function() {
+	addChild: function() {
 		throw new Error("Text bindings can't have children.");
 	},
 
-	render: function() {
-		var val = this.compute();
-		val = val != null ? val.toString() : "";
-		this.node.nodeValue = this.value = val;
+	mount: function() {
+		this.autorun("render", function() {
+			var val = this.compute();
+			val = val != null ? val.toString() : "";
+			this.node.nodeValue = this.value = val;
+		});
+
+		return Binding.prototype.mount.apply(this, arguments);
 	},
 
 	appendTo: function(parent, before) {
 		parent.insertBefore(this.node, before);
-		this.autorun("render", this.render);
 		return Binding.prototype.appendTo.apply(this, arguments);
 	},
 
 	detach: function() {
+		this.stopComputation("render");
+		delete this.value;
 		var parent = this.node.parentNode;
 		if (parent != null) parent.removeChild(this.node);
 		return Binding.prototype.detach.apply(this, arguments);

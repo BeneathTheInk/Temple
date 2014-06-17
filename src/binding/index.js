@@ -7,72 +7,26 @@ var Binding =
 module.exports = Scope.extend({
 	
 	constructor: function() {
-		this.children = [];
+		 // parse args
+        var data, args = _.toArray(arguments).slice(0);
+        if (!(args[0] instanceof Binding)) data = args.shift();
+         
+        // exec scope constructor
+        Scope.call(this, data);
+ 
+        // append children
+        if (args.length) this.addChild(args);
 
-		// event that proxies changes to all children
-		this.on("change", function() {
-			var args = _.toArray(arguments);
-			this.children.forEach(function(child) {
-				child._onChange.apply(child, args);
-			});
-		});
-
-		// parse args
-		var model, args = _.toArray(arguments).slice(0);
-		if (!(args[0] instanceof Binding)) model = args.shift();
-		
-		// exec scope constructor
-		Scope.call(this, model);
-
-		// append children
-		if (args.length) this.appendChild(args);
+		this.initialize();
 	},
 
-	appendChild: function(child) {
-		if (_.isArray(child)) {
-			child.forEach(this.appendChild, this);
-			return this;
-		}
+	initialize: function(){},
 
-		if (!Binding.isBinding(child))
-			throw new Error("Expected array or instances of Binding for children.");
-
-		// ensure the binding is not already a child
-		if (~this.children.indexOf(child)) return this;
-
-		// remove from existing parent
-		if (child.parent != null) child.parent.removeChild(child);
-
-		this.children.push(child);
-		var self = child.parent = this;
-
-		this.trigger("child:add", child);
-
+	mount: function() {
+		this.children.forEach(function(child) { child.mount(); });
+		this.trigger("mount");
+		this._mounted = true;
 		return this;
-	},
-
-	removeChild: function(child) {
-		if (_.isArray(child)) {
-			child.forEach(this.removeChild, this);
-			return this;
-		}
-
-		var index = this.children.indexOf(child);
-		
-		if (~index) {
-			this.children.splice(index, 1);
-			if (child.parent === this) delete child.parent;
-			this.trigger("child:remove", child);
-		}
-
-		return this;
-	},
-
-	// custom get models that also looks up the parent tree
-	getModels: function() {
-		var models = Scope.prototype.getModels.call(this);
-		if (this.parent != null) models = models.concat(this.parent.getModels());
-		return models;
 	},
 
 	appendTo: function(parent, beforeNode) {
@@ -89,6 +43,7 @@ module.exports = Scope.extend({
 			child.detach();
 		});
 
+		delete this._mounted;
 		this.trigger("detach");
 		return this;
 	},
@@ -97,7 +52,12 @@ module.exports = Scope.extend({
 		if (_.isString(parent)) parent = document.querySelector(parent);
 		if (_.isString(beforeNode)) beforeNode = parent.querySelector(beforeNode);
 		if (parent == null) parent = document.createDocumentFragment();
-		return this.appendTo(parent, beforeNode);
+		
+		if (this._mounted) this.detach();
+		this.mount();
+		this.appendTo(parent, beforeNode);
+
+		return this;
 	},
 
 	find: function(selector) {
@@ -139,4 +99,4 @@ Binding.Text		= require("./text");
 Binding.Element		= require("./element");
 Binding.HTML		= require("./html");
 Binding.Each		= require("./each");
-Binding.If			= require("./if");
+Binding.React		= require("./react");

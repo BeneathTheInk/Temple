@@ -64,7 +64,6 @@ exports.sanitizePathParts = function(parts) {
 var splitPath =
 exports.splitPath = function(path) {
 	var parts = _.isArray(path) ? path : _.isString(path) ? path.split(".") : [ path ];
-	if (parts.length > 1 && parts[0] === "") parts[0] = "this";
 	return sanitizePathParts(parts);
 }
 
