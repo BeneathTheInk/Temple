@@ -1,10 +1,9 @@
 # Temple
 
-A JavaScript view framework built for the modern web.
+A modern JavaScript view framework.
 
-* __Reactive__ - Powered by a live DOM that automatically updates as the data changes.
-* __Built for Scale__ - Works great for projects of all sizes.
-* __Extensible__ - The API only provides the basic building blocks, allowing you to build exactly what you need.
+* __Reactive__ - Powered by a ViewModel that automatically updates the DOM as the data changes.
+* __Modular & Extensible__ - Views are encapsulated, reusable components, making testing and separation of concerns easy.
 * __Mustache__ - Includes an *optional* [Mustache](http://mustache.github.io/) + XML language parser and renderer.
 
 __Note: This library is under active development. Use at your own risk!__

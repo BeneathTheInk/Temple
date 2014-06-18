@@ -1,6 +1,6 @@
 {
 	"name": "templejs",
-	"version": "0.2.10-alpha",
+	"version": "0.2.10",
 	"description": "A JavaScript view framework built for the modern web.",
 	"author": "Beneath the Ink <info@beneaththeink.com>",
 	"contributors": [

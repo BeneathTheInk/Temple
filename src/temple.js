@@ -13,7 +13,7 @@ module.exports = Binding.React.extend({
 });
 
 // class properties/methods
-Temple.VERSION = "0.2.10-alpha";
+Temple.VERSION = "0.2.10";
 Temple.util = util;
 
 Temple.Deps = require("./deps");
