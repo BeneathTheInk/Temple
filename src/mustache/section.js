@@ -80,15 +80,15 @@ module.exports = Binding.React.extend({
 		if (isEmpty && this.inverted) {
 			if (_.isArray(val)) this.dependOnLength(model);
 			var b = new Binding(model);
-			b.addChild(this.body.call(this, model, 0));
+			this.body.call(this, b, 0);
 			return b;
 		} else if (!isEmpty && !this.inverted) {
 			if (_.isArray(val)) {
 				this.dependOnLength(model);
-				return new Binding.Each(this.body, model);
+				return new Binding.Each(this.body.bind(this), model);
 			} else {
 				var b = new Binding(model);
-				b.addChild(this.body.call(this, model, 0));
+				this.body.call(this, b, 0);
 				return b;
 			}
 		} else {

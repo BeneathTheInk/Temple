@@ -53,8 +53,7 @@ module.exports = Scope.extend({
 		if (_.isString(beforeNode)) beforeNode = parent.querySelector(beforeNode);
 		if (parent == null) parent = document.createDocumentFragment();
 		
-		if (this._mounted) this.detach();
-		this.mount();
+		if (!this._mounted) this.mount();
 		this.appendTo(parent, beforeNode);
 
 		return this;

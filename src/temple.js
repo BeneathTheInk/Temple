@@ -19,6 +19,6 @@ Temple.util = util;
 Temple.Deps = require("./deps");
 Temple.Scope = require("./scope");
 Temple.Model = require("./model");
+Temple.Binding = Binding;
 
 Temple.Mustache = require("./mustache");
-Temple.Binding = Binding;

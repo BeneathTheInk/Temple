@@ -174,11 +174,10 @@ describe("Bindings", function() {
 		it("renders each key in plain js objects", function() {
 			var seen = 0;
 
-			binding = new Temple.Each(function(model, key) {
+			binding = new Temple.Each(function(row, key) {
 				seen++;
 				if (seen === 1) expect(key).to.equal("one");
 				if (seen === 2) expect(key).to.equal("two");
-				return new Temple.Binding();
 			});
 
 			binding.set({ one: "Hello", two: "World" });
@@ -200,7 +199,6 @@ describe("Bindings", function() {
 
 			binding = new Temple.Each(function() {
 				seen++;
-				return new Temple.Binding();
 			}, [0]);
 
 			binding.paint();
@@ -212,12 +210,12 @@ describe("Bindings", function() {
 		it("removes rows of bindings when removed from array", function() {
 			var seen = false;
 
-			binding = new Temple.Each(function(key) {
+			binding = new Temple.Each(function(row, key) {
 				var b = new Temple.Binding();
 				b.once("detach", function() {
 					seen = true;
 				});
-				return b;
+				row.addChild(b);
 			});
 
 			binding.set(null, [0,1,2]);
@@ -230,12 +228,12 @@ describe("Bindings", function() {
 		it("removes all rows on detach", function() {
 			var seen = 0;
 
-			binding = new Temple.Each(function(key) {
+			binding = new Temple.Each(function(row, key) {
 				var b = new Temple.Binding();
 				b.once("detach", function() {
 					seen++;
 				});
-				return b;
+				row.addChild(b);
 			}, [0,1,2]);
 
 			binding.paint();

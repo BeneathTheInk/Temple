@@ -18,10 +18,9 @@ module.exports = Binding.extend({
 	updateRow: function(key) {
 		if (this.rows[key] == null) {
 			var model = (this.findModel() || this).getModel(key),
-				child = this.body(model, key),
 				row = this.rows[key] = new Binding(model);
 			
-			if (child != null) row.addChild(child);
+			this.body(row, key);
 			this.addChild(row);
 		}
 		
@@ -68,15 +67,12 @@ module.exports = Binding.extend({
 	},
 
 	mount: function() {
-		function onChange(s) {
-			this.refreshRows();
-		}
-
-		this.observe("", onChange);
-		this.observe("*", onChange);
+		this.observe("", this.refreshRows);
+		this.observe("*", this.refreshRows);
 
 		this.once("detach", function() {
-			this.stopObserving(onChange);
+			this.stopObserving("", this.refreshRows);
+			this.stopObserving("*", this.refreshRows);
 		});
 
 		return Binding.prototype.mount.apply(this, arguments);
