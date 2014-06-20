@@ -3,24 +3,21 @@ var _ = require("underscore"),
 	Binding = require("./index");
 
 module.exports = Binding.extend({
-	constructor: function(value, data) {
-		if (_.isString(value)) {
-			var str = value;
-			value = function() { return str; }
+	constructor: function(value) {
+		if (!_.isFunction(value)) {
+			var v = value;
+			value = function() { return v; }
 		}
-
-		if (!_.isFunction(value))
-			throw new Error("Expecting string or function for html binding value.");
 
 		this.compute = value;
 		this.value = "";
 		this.nodes = [];
 		this.placeholder = document.createComment(_.uniqueId("$"));
 
-		Binding.call(this, data);
+		Binding.call(this);
 	},
 
-	appendChild: function() {
+	addChild: function() {
 		throw new Error("HTML bindings can't have children.");
 	},
 
@@ -41,48 +38,48 @@ module.exports = Binding.extend({
 		}, this);
 	},
 
-	render: function() {
-		var val, cont;
+	_mount: function() {
+		this.autorun("render", function(comp) {
+			var val, cont, self = this;
 
-		// compute html value
-		val = this.compute();
-		val = val != null ? val.toString() : "";
-		
-		// dirty check the value
-		if (val !== this.value) {
-			this.value = val;
+			// compute html value
+			val = this.compute();
+			val = val != null ? val.toString() : "";
 			
-			// remove existing html nodes
-			this.cleanNodes();
-			
-			// convert html into DOM nodes
-			div = document.createElement("div");
-			div.innerHTML = val;
-			this.nodes = _.toArray(div.childNodes);
-		}
+			// dirty check the value
+			if (val !== this.value) {
+				this.value = val;
+				
+				// convert html into DOM nodes
+				div = document.createElement("div");
+				div.innerHTML = val;
+				this.nodes = _.toArray(div.childNodes);
+			}
 
-		// refresh node positions in DOM
-		this.refreshNodes();
+			// refresh the nodes in the DOM
+			this.refreshNodes();
+
+			comp.onInvalidate(function() {
+				self.cleanNodes();
+			});
+		});
 	},
 
-	mount: function() {
-		this.autorun("render", this.render);
-		return Binding.prototype.mount.apply(this, arguments);
-	},
-
-	appendTo: function(parent, before) {
-		parent.insertBefore(this.placeholder, before);
-		this.refreshNodes();
-		return Binding.prototype.appendTo.apply(this, arguments);
-	},
-
-	detach: function() {
+	_detach: function() {
 		this.stopComputation("render");
-		this.cleanNodes();
+		this.nodes = [];
 		delete this.value;
 		var parent = this.placeholder.parentNode;
 		if (parent != null) parent.removeChild(this.placeholder);
-		return Binding.prototype.detach.apply(this, arguments);
+	},
+
+	_appendTo: function(parent, before) {
+		parent.insertBefore(this.placeholder, before);
+		this.refreshNodes();
+	},
+
+	toString: function() {
+		return this.value;
 	},
 
 	find: function(selector) {
@@ -117,9 +114,5 @@ module.exports = Binding.extend({
 		}
 
 		return matches;
-	},
-
-	toString: function() {
-		return this.value;
 	}
 });

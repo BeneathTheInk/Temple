@@ -45,43 +45,6 @@ describe("#autorun() & #depend()", function() {
 		}, 10);
 	});
 
-	it("autorun() context reruns for parent changes", function(done) {
-		var parent = new Temple.Scope({ baz: "buz" }),
-			run = 2;
-
-		parent.addChild(tpl);
-
-		comp = tpl.autorun(function() {
-			try { expect(tpl.get("baz")).to.be.ok; }
-			catch(e) { return done(e); }
-			if (!(--run)) done();
-		});
-
-		setTimeout(function() {
-			tpl.set("baz", { bar: "baz" });
-		}, 10);
-	});
-
-	it("autorun() context reruns for changes to value when previous get() returned a parent value", function(done) {
-		var parent = new Temple.Scope({ baz: "buz" }),
-			run = 2;
-
-		parent.addChild(tpl);
-
-		comp = tpl.autorun(function() {
-			try {
-				if (run == 2) expect(tpl.get("baz")).to.equal("buz");
-				if (run == 1) expect(tpl.get("baz")).to.deep.equal({ bar: "baz" });
-			}
-			catch(e) { return done(e); }
-			if (!(--run)) done();
-		});
-
-		setTimeout(function() {
-			tpl.set("baz", { bar: "baz" });
-		}, 10);
-	});
-
 	it("autoruns under namespace", function() {
 		var seen = false;
 		tpl.autorun("ns", function() { seen = true; });

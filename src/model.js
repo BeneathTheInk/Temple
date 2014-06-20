@@ -1,7 +1,8 @@
 var _ = require("underscore"),
 	util = require("./util"),
 	Events = require("./events"),
-	handlers = require("./handlers");
+	handlers = require("./handlers"),
+	Observe = require("./observe");
 
 var Model =
 module.exports = function Model(data) {
@@ -17,7 +18,7 @@ Model.isModel = function(obj) {
 	return obj instanceof Model;
 }
 
-_.extend(Model.prototype, Events, {
+_.extend(Model.prototype, Events, Observe, {
 	// returns the correct handler based on a value
 	_handler: function(val) {
 		var handler;
@@ -128,9 +129,10 @@ _.extend(Model.prototype, Events, {
 				}
 			}
 		
-			parent.trigger("change", _.defaults({
+			// bubble the event
+			parent._onChange(_.extend({}, summary, {
 				keypath: [ path ].concat(summary.keypath)
-			}, summary), options, parent);
+			}), options, this);
 		}
 	},
 
@@ -151,6 +153,7 @@ _.extend(Model.prototype, Events, {
 
 	// return the value of the model at path, deeply
 	get: function(path) {
+		this.depend(path);
 		return this.getModel(path).value;
 	},
 
@@ -184,7 +187,7 @@ _.extend(Model.prototype, Events, {
 				this.handle("construct");
 
 				if (options.notify !== false && (oval !== this.value || options.remove)) {
-					this.notify([], this.value, oval, options);
+					this.notify([], oval, options);
 				}
 
 			}
@@ -204,32 +207,23 @@ _.extend(Model.prototype, Events, {
 	},
 
 	// let's the model and its children know that something changed
-	notify: function(path, nval, oval, options) {
-		var silent, summary, child, childOptions, nval;
+	notify: function(path, oval, options) {
+		var summary, childOptions;
 		options = options || {};
 
 		// notify only works on the model at path
 		if (!_.isArray(path) || path.length) {
-			return this.getModel(path).notify([], nval, oval, options);
+			return this.getModel(path).notify([], oval, options);
 		}
-
-		// update the current value if hasn't been already
-		if (nval !== this.value) {
-			if (_.isUndefined(oval)) oval = this.value;
-			this.set([], nval, _.extend(options, { notify: false }));
-		}
-
-		// if the values are identical, why are we here?
-		if (nval === oval) return;
 
 		childOptions = _.extend({ reset: true }, options, { bubble: false });
 		summary = {
 			model: this,
-			type: util.changeType(nval, oval),
 			keypath: [],
-			value: nval,
-			oldValue: oval
-		};
+			value: this.value,
+			oldValue: oval,
+			type: util.changeType(this.value, oval)
+		}
 
 		// reset all the children values
 		_.each(this.children, function(c, p) {
@@ -237,8 +231,8 @@ _.extend(Model.prototype, Events, {
 		}, this);
 
 		// announce the change
-		this.trigger("change", summary, options, this);
+		this._onChange(summary, options, this);
 
-		return summary;
+		return this;
 	}
 });

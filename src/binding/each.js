@@ -1,58 +1,34 @@
 var _ = require("underscore"),
 	Binding = require("./index"),
 	util = require("../util"),
-	Model = require("../model");
+	Deps = require("../deps");
 
-module.exports = Binding.extend({
-	constructor: function(body, data) {
-		if (!_.isFunction(body))
-			throw new Error("Expecting function for body.");
+module.exports = Binding.Scope.extend({
+	constructor: function(onRow, data) {
+		if (!_.isFunction(onRow))
+			throw new Error("Expecting function for onRow.");
 
-		this.body = body;
+		this.onRow = onRow;
 		this.rows = {};
-		this.placeholder = document.createComment(_.uniqueId("$"));
 
-		Binding.call(this, data);
+		Binding.Scope.call(this, data);
 	},
 
-	updateRow: function(key) {
+	getRow: function(key) {
 		if (this.rows[key] == null) {
-			var model = (this.findModel() || this).getModel(key),
-				row = this.rows[key] = new Binding(model);
-			
-			this.body(row, key);
+			var row, self = this;
+			row = this.rows[key] = new Binding.Scope(this.getModel(key));
+			row.render = function() { return self.onRow(this, key); }
 			this.addChild(row);
 		}
 		
 		return this.rows[key];
 	},
 
-	refreshRows: function() {
-		var parent = this.placeholder.parentNode;
-		
-		if (parent != null) {
-			var keys = this.keys();
-			
-			keys.forEach(function(key) {
-				var row = this.updateRow(key);
-				row.paint(parent, this.placeholder);
-			}, this);
-
-			_.keys(this.rows).filter(function(k) {
-				return !_.contains(keys, k);
-			}).forEach(function(k) {
-				this.removeRow(k);
-			}, this);
-		}
-		
-		return this;
-	},
-
 	removeRow: function(key) {
 		var row = this.rows[key];
 		
 		if (row != null) {
-			row.detach();
 			this.removeChild(row);
 			delete this.rows[key];
 		}
@@ -66,30 +42,36 @@ module.exports = Binding.extend({
 		return this;
 	},
 
-	mount: function() {
-		this.observe("", this.refreshRows);
-		this.observe("*", this.refreshRows);
+	refreshNodes: function() {
+		var keys = this.keys(),
+			rows = keys.map(this.getRow, this),
+			parent = this.placeholder.parentNode,
+			self = this;
 
-		this.once("detach", function() {
-			this.stopObserving("", this.refreshRows);
-			this.stopObserving("*", this.refreshRows);
-		});
+		_.keys(this.rows).filter(function(k) {
+			return !_.contains(keys, k);
+		}).forEach(function(k) {
+			this.removeRow(k);
+		}, this);
 
-		return Binding.prototype.mount.apply(this, arguments);
-	},
+		if (this.isMounted() && parent != null) {
+			rows.forEach(function(row) {
+				row.appendTo(parent, this.placeholder);
+			}, this);
+		}
 
-	appendTo: function(parent, before) {
-		parent.insertBefore(this.placeholder, before);
-		this.refreshRows();
-		this.trigger("append", parent, before);
 		return this;
 	},
 
-	detach: function() {
-		this.removeAllRows();
-		var parent = this.placeholder.parentNode;
-		if (parent != null) parent.removeChild(this.placeholder);
-		return Binding.prototype.detach.apply(this, arguments);
+	_mount: function() {
+		this.observe("", this.refreshNodes);
+		this.observe("*", this.refreshNodes);
+		this.refreshNodes();
+	},
+
+	_detach: function() {
+		this.stopObserving(this.refreshNodes);
+		return Binding.Scope.prototype._detach.apply(this, arguments);
 	},
 
 	find: function(selector) {

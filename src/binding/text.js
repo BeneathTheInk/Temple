@@ -3,7 +3,7 @@ var _ = require("underscore"),
 	Binding = require("./index");
 
 module.exports = Binding.extend({
-	constructor: function(value, data) {
+	constructor: function(value) {
 		if (_.isString(value)) {
 			var str = value;
 			value = function() { return str; }
@@ -16,40 +16,38 @@ module.exports = Binding.extend({
 		this.value = "";
 		this.node = document.createTextNode("");
 
-		Binding.call(this, data);
+		Binding.call(this);
 	},
 
 	addChild: function() {
 		throw new Error("Text bindings can't have children.");
 	},
 
-	mount: function() {
+	_mount: function() {
+		var args = _.toArray(arguments);
+
 		this.autorun("render", function() {
-			var val = this.compute();
+			var val = this.compute.apply(this, args);
 			val = val != null ? val.toString() : "";
 			this.node.nodeValue = this.value = val;
 		});
-
-		return Binding.prototype.mount.apply(this, arguments);
 	},
 
-	appendTo: function(parent, before) {
-		parent.insertBefore(this.node, before);
-		return Binding.prototype.appendTo.apply(this, arguments);
-	},
-
-	detach: function() {
+	_detach: function() {
 		this.stopComputation("render");
 		delete this.value;
 		var parent = this.node.parentNode;
 		if (parent != null) parent.removeChild(this.node);
-		return Binding.prototype.detach.apply(this, arguments);
 	},
 
-	find: function(selector) { return null; },
-	findAll: function() { return []; },
+	_appendTo: function(parent, before) {
+		parent.insertBefore(this.node, before);
+	},
 
 	toString: function() {
 		return this.value;
-	}
+	},
+
+	find: function(selector) { return null; },
+	findAll: function() { return []; }
 });

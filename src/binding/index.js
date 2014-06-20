@@ -1,50 +1,150 @@
 var _ = require("underscore"),
 	util = require("../util"),
-	Deps = require("../deps"),
-	Scope = require("../scope");
+	Events = require("../events"),
+	Deps = require("../deps");
 
-var Binding =
-module.exports = Scope.extend({
-	
-	constructor: function() {
-		 // parse args
-        var data, args = _.toArray(arguments).slice(0);
-        if (!(args[0] instanceof Binding)) data = args.shift();
-         
-        // exec scope constructor
-        Scope.call(this, data);
- 
-        // append children
-        if (args.length) this.addChild(args);
+function Binding() {
+	this.children = [];
+	this._comps = {};
 
-		this.initialize();
+	var args = _.toArray(arguments);
+	if (args.length) this.addChild(args);
+}
+
+module.exports = Binding;
+Binding.extend = util.subclass;
+Binding.isBinding = function(o) {
+	return o instanceof Binding;
+}
+
+_.extend(Binding.prototype, Events, {
+	addChild: function(child) {
+		if (_.isArray(child)) {
+			child.forEach(this.addChild, this);
+			return this;
+		}
+
+		if (!Binding.isBinding(child))
+			throw new Error("Expected array or instance of Binding for children.");
+
+		// ensure the binding is not already a child
+		if (~this.children.indexOf(child)) return this;
+
+		// remove from existing parent
+		if (child.parent != null) child.parent.removeChild(child);
+
+		this.children.push(child);
+		child.parent = this;
+
+		this.trigger("child:add", child);
+		child.trigger("parent:add", this);
+
+		if (this.isMounted()) child.mount();
+		return this;
 	},
 
-	initialize: function(){},
+	removeChild: function(child) {
+		if (_.isArray(child)) {
+			child.forEach(this.removeChild, this);
+			return this;
+		}
+
+		var index = this.children.indexOf(child);
+		
+		if (~index) {
+			if (child.isMounted()) child.detach();
+
+			this.children.splice(index, 1);
+			if (child.parent === this) delete child.parent;
+			this.stopListening(child);
+			
+			child.trigger("parent:remove", this);
+			this.trigger("child:remove", child);
+		}
+
+		return this;
+	},
+
+	// runs fn when deps change
+	autorun: function(name, fn) {
+		if (_.isFunction(name) && fn == null) {
+			fn = name;
+			name = _.uniqueId("f");
+		}
+
+		if (!_.isString(name)) throw new Error("Expecting string for computation identifier.");
+		if (!_.isFunction(fn)) throw new Error("Expecting function for computation.");
+
+		this.stopComputation(name);
+		var self = this;
+
+		return this._comps[name] = Deps.autorun(function(comp) {
+			fn.call(self, comp);
+			
+			comp.onInvalidate(function() {
+				if (comp.stopped && self._comps[name] === comp) {
+					delete self._comps[name];
+				}
+			});
+		});
+	},
+
+	stopComputation: function(name) {
+		if (name == null) {
+			_.each(this._comps, function(c) {
+				c.stop();
+			});
+
+			this._comps = {};
+		}
+
+		else if (this._comps[name] != null) {
+			this._comps[name].stop();
+		}
+
+		return this;
+	},
+
+	_mount: function() {
+		_.invoke(this.children, "mount");
+	},
 
 	mount: function() {
-		this.children.forEach(function(child) { child.mount(); });
-		this.trigger("mount");
+		if (this.isMounted()) return this;
 		this._mounted = true;
+
+		this._mount.apply(this, arguments);
+		this.trigger("mount");
+
 		return this;
 	},
 
-	appendTo: function(parent, beforeNode) {
-		this.children.slice(0).forEach(function(child) {
-			child.appendTo(parent, beforeNode);
-		});
+	isMounted: function() {
+		return this._mounted || false;
+	},
 
-		this.trigger("append", parent, beforeNode);
-		return this;
+	_detach: function() {
+		_.invoke(this.children, "detach");
 	},
 
 	detach: function() {
-		this.children.slice(0).forEach(function(child) {
-			child.detach();
-		});
-
+		if (!this.isMounted()) return this;
+		this._detach.apply(this, arguments);
 		delete this._mounted;
 		this.trigger("detach");
+		return this;
+	},
+
+	_appendTo: function(parent, before) {
+		this.children.forEach(function(child) {
+			child.appendTo(parent, before);
+		});
+	},
+
+	appendTo: function(parent, before) {
+		if (!this.isMounted()) return this;
+		this._appendTo(parent, before);
+		this.trigger("append", parent, before);
 		return this;
 	},
 
@@ -53,9 +153,9 @@ module.exports = Scope.extend({
 		if (_.isString(beforeNode)) beforeNode = parent.querySelector(beforeNode);
 		if (parent == null) parent = document.createDocumentFragment();
 		
-		if (!this._mounted) this.mount();
+		this.mount();
 		this.appendTo(parent, beforeNode);
-
+		
 		return this;
 	},
 
@@ -86,16 +186,11 @@ module.exports = Scope.extend({
 	},
 
 	toHTML: function() { return this.toString(); }
-
 });
 
-Binding.isBinding = function(obj) {
-	return obj instanceof Binding;
-}
-
-// load the real bindings
-Binding.Text		= require("./text");
-Binding.Element		= require("./element");
-Binding.HTML		= require("./html");
-Binding.Each		= require("./each");
-Binding.React		= require("./react");
+// Load the bindings
+Binding.Scope = require("./scope");
+Binding.Text = require("./text");
+Binding.HTML = require("./html");
+Binding.Element = require("./element");
+Binding.Each = require("./each");

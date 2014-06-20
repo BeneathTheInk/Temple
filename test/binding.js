@@ -17,8 +17,37 @@ describe("Bindings", function() {
 		it("emits detach event on detach", function() {
 			var seen = false;
 			binding.once("detach", function() { seen = true; });
+			binding.mount();
 			binding.detach();
 			expect(seen).to.be.ok;
+		});
+
+		it("adds child binding", function() {
+			binding.addChild(new Temple.Binding());
+			expect(binding.children).to.have.length(1);
+		});
+
+		it("removes child binding", function() {
+			var child = new Temple.Binding();
+			binding.addChild(child);
+			binding.removeChild(child);
+			expect(binding.children).to.have.length(0);
+		});
+
+		it("removes child binding from exisiting parent before adding", function() {
+			var other = new Temple.Binding(),
+				child = new Temple.Binding(),
+				removed = false;
+
+			other.on("child:remove", function(b) {
+				if (child === b) removed = true;
+			});
+
+			other.addChild(child);
+			binding.addChild(child);
+
+			expect(child.parent).to.equal(binding);
+			expect(removed).to.be.ok;
 		});
 	});
 
@@ -50,14 +79,15 @@ describe("Bindings", function() {
 		});
 
 		it("sets reactive attribute", function(done) {
-			binding.set({ className: "active" });
+			var model = new Temple.Model({ className: "active" });
+			
 			binding.attr("class", function() {
-				return this.get("className");
+				return model.get("className");
 			});
 			binding.paint();
 			
 			expect(binding.node.getAttribute("class")).to.equal("active");
-			binding.set("className", "inactive");
+			model.set("className", "inactive");
 
 			renderWait(function() {
 				expect(binding.node.getAttribute("class")).to.equal("inactive");
@@ -65,11 +95,12 @@ describe("Bindings", function() {
 		});
 
 		it("sets mixed object of attributes", function() {
-			binding.set({ color: "red" });
+			var model = new Temple.Model({ color: "red" });
+			
 			binding.attr({
 				"class": "active",
 				style: function() {
-					return "color: " + this.get("color") + ";";
+					return "color: " + model.get("color") + ";";
 				}
 			});
 			binding.paint();
@@ -95,12 +126,14 @@ describe("Bindings", function() {
 		});
 
 		it("updates value reactively", function(done) {
+			var model = new Temple.Model({ foo: "bar" });
+
 			binding = new Temple.Text(function() {
-				return this.get("foo");
-			}, { foo: "bar" }).paint();
+				return model.get("foo");
+			}).paint();
 
 			expect(binding.node).to.be.textNode.with.nodeValue("bar");
-			binding.set("foo", "Hello World");
+			model.set("foo", "Hello World");
 
 			renderWait(function() {
 				expect(binding.node).to.have.nodeValue("Hello World");
@@ -131,16 +164,16 @@ describe("Bindings", function() {
 		});
 
 		it("converts string value to html nodes, reactively", function(done) {
-			binding = new Temple.HTML(function() {
-				return this.get("html");
-			});
+			var model = new Temple.Model({ html: "<div>" });
 
-			binding.set({ html: "<div>" });
+			binding = new Temple.HTML(function() {
+				return model.get("html");
+			});
 			binding.paint();
 
 			expect(binding.nodes).to.have.length(1);
 			expect(binding.nodes[0]).to.be.element.with.tagName("div");
-			binding.set("html", "<span>");
+			model.set("html", "<span>");
 
 			renderWait(function() {
 				expect(binding.nodes).to.have.length(1);
@@ -243,8 +276,18 @@ describe("Bindings", function() {
 		});
 	});
 
-	describe("React", function() {
-		
+	describe("Scope", function() {
+		var scope;
+
+		beforeEach(function() {
+			scope = new Temple.Scope();
+			scope.set("foo", "bar");
+		});
+
+		it("creates a model on constructor if a model isn't passed", function() {
+			expect(scope.model).to.be.instanceof(Temple.Model);
+		});
+
 	});
 
 });

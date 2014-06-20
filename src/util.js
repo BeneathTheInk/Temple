@@ -294,3 +294,17 @@ exports.matchSelector = function(node, selector) {
 exports.changeType = function(nval, oval) {
 	return _.isUndefined(oval) ? "add" : _.isUndefined(nval) ? "delete" : "update";
 }
+
+exports.refreshNodes = function(newNodes, currentNodes, parentNode) {
+	var beforeNode = (_.last(currentNodes) || {}).nextSibling;
+	
+	// remove all current nodes
+	currentNodes.forEach(function(node) {
+		parentNode.removeChild(node);
+	});
+	
+	// add all new nodes
+	newNodes.forEach(function(node) {
+		parentNode.insertBefore(node, beforeNode);
+	});
+}

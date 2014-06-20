@@ -154,7 +154,7 @@ module.exports = Temple.extend({
 	},
 
 	convertTemplate: function(template, context) {
-		if (context == null) context = this;
+		if (context == null) context = new Context(this.model);
 		var temple = this;
 
 		function convert(t, c) {
@@ -169,17 +169,15 @@ module.exports = Temple.extend({
 		return Temple.Deps.nonreactive(function() {
 			switch(template.type) {
 				case NODE_TYPE.ROOT:
-					var b = new Temple.Binding();
-					b.addChild(convert());
-					return b;
+					return convert();
 
 				case NODE_TYPE.ELEMENT:
 					var binding = new Temple.Element(template.name);
 					binding.addChild(convert());
 
-					template.attributes.forEach(function(attr) {
-						temple._attrToDecorator(attr, binding, context);
-					});
+					// template.attributes.forEach(function(attr) {
+					// 	temple._attrToDecorator(attr, binding, context);
+					// });
 
 					return binding;
 
@@ -188,27 +186,29 @@ module.exports = Temple.extend({
 
 				case NODE_TYPE.INTERPOLATOR:
 				case NODE_TYPE.TRIPLE:
-					var model = getModelByPath(template.value, context),
-						klass = template.type === NODE_TYPE.TRIPLE ? "HTML" : "Text";
+					var klass = template.type === NODE_TYPE.TRIPLE ? "HTML" : "Text";
 
 					return new Temple[klass](function() {
-						var m, val;
-						val = (m = model.call(this)) != null ? m.get() : null;
-						if (_.isFunction(val)) val = val.call(this);
-						return val;
+						return context.get(template.value);
 					});
 
 				case NODE_TYPE.INVERTED:
 				case NODE_TYPE.SECTION:
-					var model = getModelByPath(template.value, context),
-						inverted = template.type === NODE_TYPE.INVERTED,
-						onRow = function(row, key) {
-							row.addChild(new Temple.Binding({ $key: key }, convert(null, row)));
-						};
+					var inverted = template.type === NODE_TYPE.INVERTED,
+						model, onRow;
+
+					model = function() {
+						return context.findModel(template.value).getModel(template.value);
+					}
+
+					onRow = function(row, key) {
+						var nctx = context.clone(row.model, new Temple.Model({ $key: key }));
+						return new Temple.Binding(convert(null, nctx));
+					}
 
 					return new Section(model, onRow, inverted);
 
-				case NODE_TYPE.PARTIAL:
+				/*case NODE_TYPE.PARTIAL:
 					var name = template.value,
 						partial = temple.findPartial(name),
 						comps = temple._components,
@@ -228,7 +228,7 @@ module.exports = Temple.extend({
 						return comp;
 					}
 
-					break;
+					break;*/
 
 				default:
 					console.log(template);
@@ -298,6 +298,42 @@ module.exports = Temple.extend({
 }, {
 	parse: parse,
 	NODE_TYPE: NODE_TYPE
+});
+
+function Context(models) {
+	if (!_.isArray(models)) models = [ models ];
+	this.models = models;
+}
+
+_.extend(Context.prototype, {
+	findModel: function(path) {
+		var i, models = this.models;
+
+		for (i in models)
+			if (models[i].get(path) !== void 0)
+				return models[i];
+
+		return null;
+	},
+	get: function(parts) {
+		var val, model;
+		parts = util.splitPath(parts);
+
+		if (parts[0] === "this") {
+			parts.shift();
+			val = this.models[0].get(parts);
+		} else {
+			model = this.findModel(parts);
+			if (model != null) val = model.get(parts);
+		}
+
+		if (_.isFunction(val)) val = val.call(this);
+		return val;
+	},
+	clone: function() {
+		var nmodels = _.flatten(_.toArray(arguments));
+		return new Context(nmodels.concat(this.models));
+	}
 });
 
 function convertTemplateToArgs(template) {

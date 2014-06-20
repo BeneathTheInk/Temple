@@ -5,19 +5,19 @@ var _ = require("underscore"),
 	Deps = require("../deps");
 
 var Section =
-module.exports = Binding.React.extend({
-	constructor: function(value, body, inverted, data) {
+module.exports = Binding.Scope.extend({
+	constructor: function(value, onRow, inverted) {
 		if (!_.isFunction(value))
 			throw new Error("Expecting function for section value.");
 
-		if (!_.isFunction(body))
-			throw new Error("Expecting function for section body.");
+		if (!_.isFunction(onRow))
+			throw new Error("Expecting function for section onRow.");
 
 		this.value = value;
-		this.body = body;
+		this.onRow = onRow;
 		this.inverted = !!inverted;
 
-		Binding.React.call(this, null, data);
+		Binding.Scope.call(this);
 	},
 
 	dependOnLength: function(model) {
@@ -65,6 +65,15 @@ module.exports = Binding.React.extend({
 		return this;
 	},
 
+	makeBinding: function(model) {
+		var binding = new Binding.Scope(model),
+			self = this;
+
+		binding.render = function() { return self.onRow(this, 0); }
+		
+		return binding;
+	},
+
 	render: function() {
 		var model = this.value(),
 			val, isEmpty;
@@ -79,17 +88,13 @@ module.exports = Binding.React.extend({
 
 		if (isEmpty && this.inverted) {
 			if (_.isArray(val)) this.dependOnLength(model);
-			var b = new Binding(model);
-			this.body.call(this, b, 0);
-			return b;
+			return this.makeBinding(model);
 		} else if (!isEmpty && !this.inverted) {
 			if (_.isArray(val)) {
 				this.dependOnLength(model);
-				return new Binding.Each(this.body.bind(this), model);
+				return new Binding.Each(this.onRow.bind(this), model);
 			} else {
-				var b = new Binding(model);
-				this.body.call(this, b, 0);
-				return b;
+				return this.makeBinding(model);
 			}
 		} else {
 			this.dependOnModel(model);

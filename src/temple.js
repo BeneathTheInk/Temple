@@ -4,20 +4,20 @@ var _ = require("underscore"),
 
 // export
 var Temple =
-module.exports = Binding.React.extend({
+module.exports = Binding.Scope.extend({
 	use: function(fn) {
 		var args = _.toArray(arguments).slice(1);
 		fn.apply(this, args);
 		return this;
 	}
-});
+}, Binding);
 
 // class properties/methods
 Temple.VERSION = "0.2.10";
 Temple.util = util;
 
 Temple.Deps = require("./deps");
-Temple.Scope = require("./scope");
+// Temple.Scope = require("./scope");
 Temple.Model = require("./model");
 Temple.Binding = Binding;
 

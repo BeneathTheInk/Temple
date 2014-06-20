@@ -51,8 +51,9 @@ var arrayHandler = _.defaults({
 		this.set("length", arr.length);
 		
 		arr.observe(this._arrayObserver = (function(index, nval, oval) {
-			this.notify(index.toString(), nval, oval, { remove: nval === void 0 });
-			this.notify("length", arr.length);
+			this.set(index.toString(), nval, { remove: nval === void 0 });
+			// this.notify(index.toString(), oval, { remove: nval === void 0 });
+			this.set("length", arr.length);
 		}).bind(this));
 	},
 

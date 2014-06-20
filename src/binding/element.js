@@ -14,7 +14,7 @@ module.exports = Binding.extend({
 		Binding.apply(this, _.toArray(arguments).slice(1));
 	},
 
-	mount: function() {
+	_mount: function() {
 		// cleverly wrapped so we can kill all of them at the same time
 		this.autorun("attributes", function() {
 			_.each(this.attributes, function(value, name) {
@@ -26,19 +26,19 @@ module.exports = Binding.extend({
 			}, this);
 		});
 
-		return Binding.prototype.mount.apply(this, arguments);
+		return Binding.prototype._mount.apply(this, arguments);
 	},
 
-	appendTo: function(parent, before) {
-		parent.insertBefore(this.node, before);
-		return Binding.prototype.appendTo.call(this, this.node);
-	},
-
-	detach: function() {
+	_detach: function() {
 		this.stopComputation("attributes");
 		var parent = this.node.parentNode;
 		if (parent != null) parent.removeChild(this.node);
-		return Binding.prototype.detach.apply(this, arguments);
+		return Binding.prototype._detach.apply(this, arguments);
+	},
+
+	_appendTo: function(parent, before) {
+		parent.insertBefore(this.node, before);
+		Binding.prototype._appendTo.call(this, this.node);
 	},
 
 	toString: function() {
