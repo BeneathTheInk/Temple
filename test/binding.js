@@ -243,12 +243,12 @@ describe("Bindings", function() {
 		it("removes rows of bindings when removed from array", function() {
 			var seen = false;
 
-			binding = new Temple.Each(function(row, key) {
+			binding = new Temple.Each(function(model, key) {
 				var b = new Temple.Binding();
 				b.once("detach", function() {
 					seen = true;
 				});
-				row.addChild(b);
+				return b;
 			});
 
 			binding.set(null, [0,1,2]);
@@ -261,12 +261,12 @@ describe("Bindings", function() {
 		it("removes all rows on detach", function() {
 			var seen = 0;
 
-			binding = new Temple.Each(function(row, key) {
+			binding = new Temple.Each(function(model, key) {
 				var b = new Temple.Binding();
 				b.once("detach", function() {
 					seen++;
 				});
-				row.addChild(b);
+				return b;
 			}, [0,1,2]);
 
 			binding.paint();

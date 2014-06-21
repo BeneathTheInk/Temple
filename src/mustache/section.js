@@ -5,19 +5,14 @@ var _ = require("underscore"),
 	Deps = require("../deps");
 
 var Section =
-module.exports = Binding.Scope.extend({
-	constructor: function(value, onRow, inverted) {
-		if (!_.isFunction(value))
-			throw new Error("Expecting function for section value.");
-
-		if (!_.isFunction(onRow))
-			throw new Error("Expecting function for section onRow.");
-
-		this.value = value;
+module.exports = Binding.React.extend({
+	constructor: function(ctx, path, onRow, inverted) {
+		this.path = path;
+		this.ctx = ctx;
 		this.onRow = onRow;
 		this.inverted = !!inverted;
 
-		Binding.Scope.call(this);
+		Binding.React.call(this);
 	},
 
 	dependOnLength: function(model) {
@@ -26,17 +21,15 @@ module.exports = Binding.Scope.extend({
 		var dep = new Deps.Dependency,
 			self = this;
 
-		model.on("change", onChange);
+		model.observe("length", onChange);
 
 		function onChange(s) {
-			if (s.keypath.length !== 1 || s.keypath[0] !== "length") return;
-			
 			if ((self.inverted && s.value > 0) ||
 				(!self.inverted && s.value === 0)) dep.changed();
 		}
 
 		Deps.currentComputation.onInvalidate(function() {
-			model.off("change", onChange);
+			model.stopObserving("length", onChange);
 		});
 
 		dep.depend();
@@ -50,51 +43,38 @@ module.exports = Binding.Scope.extend({
 			self = this,
 			value = model.value;
 
-		model.on("change", onChange);
+		model.observe("*", onChange);
 
-		function onChange(s) {
-			if (s.keypath.length !== 1) return;
+		function onChange() {
 			dep.changed();
 		}
 
 		Deps.currentComputation.onInvalidate(function() {
-			model.off("change", onChange);
+			model.stopObserving("*", onChange);
 		});
 
 		dep.depend();
 		return this;
 	},
 
-	makeBinding: function(model) {
-		var binding = new Binding.Scope(model),
-			self = this;
-
-		binding.render = function() { return self.onRow(this, 0); }
-		
-		return binding;
-	},
-
 	render: function() {
-		var model = this.value(),
-			val, isEmpty;
-		
-		// must return a model
-		if (!Model.isModel(model)) return;
+		var model, val, isEmpty;
 
+		model = this.ctx.findModel(this.path).getModel(this.path);
 		val = model.handle("toArray");
 		if (!_.isArray(val)) val = model.get();
-		if (_.isFunction(val)) val = val.call(this);
+		if (_.isFunction(val)) val = val.call(this.ctx);
 		isEmpty = Section.isEmpty(val);
 
 		if (isEmpty && this.inverted) {
 			if (_.isArray(val)) this.dependOnLength(model);
-			return this.makeBinding(model);
+			return this.onRow(model, 0);
 		} else if (!isEmpty && !this.inverted) {
 			if (_.isArray(val)) {
 				this.dependOnLength(model);
 				return new Binding.Each(this.onRow.bind(this), model);
 			} else {
-				return this.makeBinding(model);
+				return this.onRow(model, 0);
 			}
 		} else {
 			this.dependOnModel(model);

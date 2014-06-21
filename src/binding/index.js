@@ -189,7 +189,9 @@ _.extend(Binding.prototype, Events, {
 });
 
 // Load the bindings
+Binding.React = require("./react");
 Binding.Scope = require("./scope");
+Binding.ReactScope = require("./reactscope");
 Binding.Text = require("./text");
 Binding.HTML = require("./html");
 Binding.Element = require("./element");

@@ -64,7 +64,7 @@ module.exports = function(grunt) {
 		watch: {
 			main: {
 				files: [ "src/**/*.js", "src/**/*.peg" ],
-				tasks: [ "build", "browserify:test" ],
+				tasks: [ "build-test" ],
 				options: { spawn: false }
 			}
 		}
@@ -79,9 +79,10 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-wrap2000');
 
 	grunt.registerTask('build', [ 'copy', 'peg' ]);
+	grunt.registerTask('build-test', [ 'build', 'browserify:test', 'wrap2000:test' ]);
 	grunt.registerTask('dist', [ 'clean', 'build', 'browserify:dist', 'wrap2000:dist', 'uglify:dist' ]);
-	grunt.registerTask('test', [ 'clean', 'build', 'browserify:test', 'wrap2000:test' ]);
-	grunt.registerTask('dev', [ 'clean', 'build', 'browserify:test', "watch" ]);
+	grunt.registerTask('test', [ 'clean', 'build-test' ]);
+	grunt.registerTask('dev', [ 'clean', 'build-test', "watch" ]);
 
 	grunt.registerTask('default', [ 'dist' ]);
 

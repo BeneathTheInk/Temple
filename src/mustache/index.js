@@ -3,11 +3,13 @@ var Temple = require("../temple"),
 	_ = require("underscore"),
 	parse = require("./parse"),
 	util = require("../util"),
+	Context = require("./context"),
 	Section = require("./section"),
-	ArgParser = require("./arguments.js");
+	ArgParser = require("./arguments.js"),
+	Deps = require("../deps");
 
 var Mustache =
-module.exports = Temple.extend({
+module.exports = Context.extend({
 	constructor: function(template, data) {
 		this._partials = {};
 		this._components = {};
@@ -24,14 +26,7 @@ module.exports = Temple.extend({
 		var partials = _.result(this, "partials");
 		if (_.isObject(partials)) this.setPartial(partials);
 
-		Temple.call(this, data);
-	},
-
-	render: function() {
-		if (this._template == null)
-			throw new Error("Expected a template to be set before rendering.");
-
-		return this.convertTemplate(this._template);
+		Context.call(this, data);
 	},
 
 	// parses and sets the root template
@@ -94,17 +89,13 @@ module.exports = Temple.extend({
 
 		else if (name == null) {
 			_.each(this._decorators, function(d, n) {
-				this._decorators[n] = d.filter(function(f) { return f !== fn });
+				this._decorators[n] = _.without(d, fn);
 			}, this);
 		}
 
 		else {
-			var d = this._decorators[name], index;
-			
-			if (_.isArray(d)) {
-				index = d.indexOf(fn);
-				if (index > -1) d.splice(index, 1);
-			}
+			var d = this._decorators[name];
+			this._decorators[name] = _.without(d, fn);
 		}
 
 		return this;
@@ -153,133 +144,227 @@ module.exports = Temple.extend({
 		return this._components[name] || [];
 	},
 
-	convertTemplate: function(template, context) {
-		if (context == null) context = new Context(this.model);
-		var temple = this;
+	_mount: function() {
+		if (this._template == null)
+			throw new Error("Expected a template to be set before rendering.");
 
-		function convert(t, c) {
-			return temple.convertTemplate(t || template.children, c || context);
-		}
-
-		if (_.isArray(template)) return template.map(function(t) {
-			return convert(t);
-		}, this).filter(function(b) { return b != null; });
-
-		// cannot be reactive or things get infinite fast
-		return Temple.Deps.nonreactive(function() {
-			switch(template.type) {
-				case NODE_TYPE.ROOT:
-					return convert();
-
-				case NODE_TYPE.ELEMENT:
-					var binding = new Temple.Element(template.name);
-					binding.addChild(convert());
-
-					// template.attributes.forEach(function(attr) {
-					// 	temple._attrToDecorator(attr, binding, context);
-					// });
-
-					return binding;
-
-				case NODE_TYPE.TEXT:
-					return new Temple.Text(template.value);
-
-				case NODE_TYPE.INTERPOLATOR:
-				case NODE_TYPE.TRIPLE:
-					var klass = template.type === NODE_TYPE.TRIPLE ? "HTML" : "Text";
-
-					return new Temple[klass](function() {
-						return context.get(template.value);
-					});
-
-				case NODE_TYPE.INVERTED:
-				case NODE_TYPE.SECTION:
-					var inverted = template.type === NODE_TYPE.INVERTED,
-						model, onRow;
-
-					model = function() {
-						return context.findModel(template.value).getModel(template.value);
-					}
-
-					onRow = function(row, key) {
-						var nctx = context.clone(row.model, new Temple.Model({ $key: key }));
-						return new Temple.Binding(convert(null, nctx));
-					}
-
-					return new Section(model, onRow, inverted);
-
-				/*case NODE_TYPE.PARTIAL:
-					var name = template.value,
-						partial = temple.findPartial(name),
-						comps = temple._components,
-						comp;
-
-					if (partial != null) {
-						comp = new partial;
-						
-						if (comps[name] == null) comps[name] = [];
-						comps[name].push(comp);
-
-						comp.once("parent:remove", function() {
-							var index = comps[name].indexOf(comp);
-							if (~index) comps[name].slice(index, 1);
-						});
-						
-						return comp;
-					}
-
-					break;*/
-
-				default:
-					console.log(template);
-			}
-		});
+		this.addChild(this.convertTemplate(this._template));
+		Context.prototype._mount.call(this);
 	},
 
-	_attrToDecorator: function(attr, binding, context) {
+	_detach: function() {
+		this.removeChild(this.children.slice(0));
+	},
+
+	convertTemplate: function(template, ctx) {
+		if (ctx == null) ctx = this;
+		var temple = this;
+
+		if (_.isArray(template)) return template.map(function(t) {
+			return this.convertTemplate(t, ctx);
+		}, this).filter(function(b) { return b != null; });
+
+		switch(template.type) {
+			case NODE_TYPE.ROOT:
+				return this.convertTemplate(template.children, ctx);
+
+			case NODE_TYPE.ELEMENT:
+				var binding = new Temple.Element(template.name);
+				binding.addChild(this.convertTemplate(template.children, ctx));
+
+				template.attributes.forEach(function(attr) {
+					temple._attrToDecorator(attr, binding, ctx);
+				});
+
+				return binding;
+
+			case NODE_TYPE.TEXT:
+				return new Temple.Text(template.value);
+
+			case NODE_TYPE.INTERPOLATOR:
+			case NODE_TYPE.TRIPLE:
+				var klass = template.type === NODE_TYPE.TRIPLE ? "HTML" : "Text";
+
+				return new Temple[klass](function() {
+					return ctx.get(template.value);
+				});
+
+			case NODE_TYPE.INVERTED:
+			case NODE_TYPE.SECTION:
+				var inverted = template.type === NODE_TYPE.INVERTED,
+					onRow;
+
+				onRow = function(model, key) {
+					var row = new Context(model);
+					row.addModel(new Temple.Model({ $key: key }));
+					row.setParentContext(ctx);
+					row.addChild(temple.convertTemplate(template.children, row));
+
+					// for the GC
+					Deps.currentComputation.onInvalidate(function() {
+						row.setParentContext(null);
+					});
+
+					return row;
+				}
+
+				return new Section(ctx, template.value, onRow, inverted);
+
+			case NODE_TYPE.PARTIAL:
+				var name = template.value,
+					partial = temple.findPartial(name),
+					comps = temple._components,
+					comp, detach;
+
+				if (partial != null) {
+					comp = new partial;
+
+					if (comp instanceof Context) comp.setParentContext(ctx);
+
+					if (comps[name] == null) comps[name] = [];
+					comps[name].push(comp);
+
+					detach = function() {
+						comps[name] = _.without(comps[name], comp);
+						if (comp instanceof Context) comp.setParentContext(null);
+						temple.off("detach", detach);
+						comp.off("detach", detach);
+					}
+
+					temple.on("detach", detach);
+					comp.on("detach", detach);
+					
+					return comp;
+				}
+
+				break;
+
+			default:
+				console.log(template);
+		}
+	},
+
+	convertStringTemplate: function(template, ctx) {
+		if (ctx == null) ctx = this;
+		var temple = this;
+
+		if (_.isArray(template)) return template.map(function(t) {
+			return temple.convertStringTemplate(t, ctx);
+		}).filter(function(b) { return b != null; }).join("");
+
+		switch(template.type) {
+			case NODE_TYPE.TEXT:
+				return template.value;
+
+			case NODE_TYPE.INTERPOLATOR:
+			case NODE_TYPE.TRIPLE:	
+				var val = ctx.get(template.value);
+				return val != null ? val.toString() : "";
+
+			case NODE_TYPE.SECTION:
+			case NODE_TYPE.INVERTED:
+				var inverted = template.type === NODE_TYPE.INVERTED,
+					path = template.value,
+					model, val, isEmpty, makeRow, cleanup, strval,
+					rows = [];
+
+				model = (ctx.findModel(path) || ctx).getModel(path);
+				val = model.handle("toArray");
+				if (!_.isArray(val)) val = model.get();
+				if (_.isFunction(val)) val = val.call(ctx);
+				isEmpty = Section.isEmpty(val);
+				model.depend("*");
+
+				makeRow = function(i) {
+					var row, m;
+					
+					if (i == null) {
+						m = model;
+						i = 0;
+					} else {
+						m = model.getModel(i);
+					}
+
+					var row = new Context(m);
+					row.addModel(new Temple.Model({ $key: i }));
+					row.setParentContext(ctx);
+					rows.push(row);
+
+					return temple.convertStringTemplate(template.children, row);
+				}
+
+				cleanup = function() {
+					rows.forEach(function(r) {
+						r.setParentContext(null);
+					});
+				}
+
+				if (!(isEmpty ^ inverted)) {
+					strval = _.isArray(val) && !inverted ?
+						model.keys().map(makeRow).join("") :
+						makeRow();
+				}
+
+				if (Deps.active) Deps.currentComputation.onInvalidate(cleanup);
+				else cleanup();
+
+				return strval;
+				
+			default:
+				console.log(template);
+		}
+	},
+
+	_attrToDecorator: function(attr, binding, ctx) {
 		var decorators = this.findDecorators(attr.name),
 			temple = this,
-			processed, targs, directive;
+			processed, rawargs, init,
+			id = _.uniqueId("dec"),
+			destroyed = true;
 		
 		if (decorators.length) {
-			processed = decorators.map(function(fn) {
-				return fn.call(temple, binding.node, attr.children);
-			}).filter(function(d) {
-				return typeof d === "object";
-			});
+			init = function() {
+				if (!destroyed) return;
+				destroyed = false;
 
-			processed.some(function(d) {
-				if (d.parse !== false) {
-					targs = convertTemplateToArgs(attr.children);
-					return true;
-				}
-			});
+				processed = decorators.map(function(fn) {
+					return fn.call(temple, binding.node, attr.children);
+				}).filter(function(d) {
+					return typeof d === "object";
+				});
+
+				processed.some(function(d) {
+					if (d.parse !== false) {
+						rawargs = convertTemplateToArgs(attr.children)
+							.filter(function(t) { return t.type === NODE_TYPE.TEXT; })
+							.map(function(t) { return t.value; })
+							.join("");
+
+						return true;
+					}
+				});
+			}
 
 			binding.on("mount", function() {
-				this.autorun("d-" + attr.name, function() {
-					var raw, args = [];
+				init();
 
-					if (targs != null) {
-						raw = new Temple.Binding(null, convertStringTemplate(targs, context));
-						this.addChild(raw);
-						raw.paint();
+				this.autorun(id, function() {
+					var args = [];
 
-						args = ArgParser.parse(raw.toString(), { scope: this });
-
-						raw.detach();
-						this.removeChild(raw);
-					}
+					if (rawargs != null)
+						args = ArgParser.parse(rawargs, { ctx: ctx });
 
 					processed.forEach(function(d) {
 						if (typeof d.update === "function") {
-							d.update.apply(this, d.parse !== false ? args : []);
+							d.update.apply(ctx, d.parse !== false ? args : []);
 						}
-					}, this);
+					});
 				});
 			});
 
 			binding.on("detach", function() {
-				this.stopComputation("d-" + attr.name);
+				this.stopComputation(id);
+				destroyed = true;
 
 				processed.forEach(function(d) {
 					if (typeof d.destroy === "function") d.destroy.call(temple);
@@ -288,52 +373,14 @@ module.exports = Temple.extend({
 		}
 
 		else {
-			var b = new Attribute(attr.name, function() {
-				return convertStringTemplate(attr.children, context);
+			binding.attr(attr.name, function() {
+				return temple.convertStringTemplate(attr.children, ctx);
 			});
-
-			binding.addChild(b);
 		}
 	},
 }, {
 	parse: parse,
 	NODE_TYPE: NODE_TYPE
-});
-
-function Context(models) {
-	if (!_.isArray(models)) models = [ models ];
-	this.models = models;
-}
-
-_.extend(Context.prototype, {
-	findModel: function(path) {
-		var i, models = this.models;
-
-		for (i in models)
-			if (models[i].get(path) !== void 0)
-				return models[i];
-
-		return null;
-	},
-	get: function(parts) {
-		var val, model;
-		parts = util.splitPath(parts);
-
-		if (parts[0] === "this") {
-			parts.shift();
-			val = this.models[0].get(parts);
-		} else {
-			model = this.findModel(parts);
-			if (model != null) val = model.get(parts);
-		}
-
-		if (_.isFunction(val)) val = val.call(this);
-		return val;
-	},
-	clone: function() {
-		var nmodels = _.flatten(_.toArray(arguments));
-		return new Context(nmodels.concat(this.models));
-	}
 });
 
 function convertTemplateToArgs(template) {
@@ -352,176 +399,11 @@ function convertTemplateToArgs(template) {
 
 		case NODE_TYPE.SECTION:
 		case NODE_TYPE.INVERTED:
-			template = _.clone(template);
-			template.children = convertTemplateToArgs(template.children);
-			break;
+			throw new Error("Unexpected section in decorator value.");
+
+		case NODE_TYPE.PARTIAL:
+			throw new Error("Unexpected partial in decorator value.");
 	}
 
 	return template;
 }
-
-function getModelByPath(path, context) {
-	var parts = util.splitPath(path),
-		focus = false;
-
-	if (parts[0] === "this") {
-		parts.shift();
-		focus = true;
-	}
-
-	return function() {
-		var scope = this, model;
-
-		if (focus) {
-			context.depend(parts);
-			model = context.getModel();
-		} else {
-			scope.depend(parts);
-			model = scope.findModel(parts) || scope;
-		}
-
-		return model.getModel(parts);
-	}
-}
-
-var Attribute = Temple.Binding.extend({
-	constructor: function(name, render, data) {
-		this.name = name;
-		this.render = render;
-
-		Temple.Binding.call(this, data);
-	},
-	mount: function() {
-		var self = this;
-
-		this.autorun("render", function(comp) {
-			var binding = this.render();
-			this.addChild(binding);
-			
-			Temple.Binding.prototype.mount.call(this);
-			this.parent.node.setAttribute(this.name, this.toString());
-
-			comp.onInvalidate(function() {
-				self.removeChild(binding);
-				self.parent.node.setAttribute(self.name, "");
-			});
-		});
-
-		return this;
-	},
-	detach: function() {
-		this.stopComputation("render");
-		return Temple.Binding.prototype.detach.apply(this, arguments);
-	}
-});
-
-function convertStringTemplate(template, context) {
-	if (_.isArray(template)) return template.map(function(t) {
-		return convertStringTemplate(t, context);
-	}).filter(function(b) { return b != null; });
-
-	switch(template.type) {
-		case NODE_TYPE.TEXT:
-			return new StringValue(function() { return template.value; });
-
-		case NODE_TYPE.INTERPOLATOR:
-		case NODE_TYPE.TRIPLE:
-			var model = getModelByPath(template.value, context)
-			
-			return new StringValue(function() {
-				var m, val;
-				val = (m = model.call(this)) != null ? m.get() : null;
-				if (_.isFunction(val)) val = val.call(this);
-				return val;
-			});
-
-		case NODE_TYPE.SECTION:
-		case NODE_TYPE.INVERTED:
-			var model = getModelByPath(template.value, context),
-				inverted = template.type === NODE_TYPE.INVERTED,
-				body = function(row, key) {
-					var children = convertStringTemplate(template.children, row);
-					row.addChild(new Temple.Binding({ $key: key }, children));
-				};
-
-			return new StringSection(model, body, inverted);
-			
-		default:
-			console.log(template);
-	}
-}
-
-var StringValue = Temple.Binding.extend({
-	constructor: function(value) {
-		this.value = value;
-		Temple.Binding.call(this);
-	},
-	toString: function() {
-		return this.value();
-	}
-});
-
-var StringSection = Temple.Binding.extend({
-	constructor: function(value, body, inverted, data) {
-		this.value = value;
-		this.body = body;
-		this.inverted = !!inverted;
-		Temple.Binding.call(this);
-	},
-	dependOnModel: function(model) {
-		if (!Temple.Deps.active) return this;
-		
-		var dep = new Temple.Deps.Dependency,
-			self = this,
-			value = model.value;
-
-		model.on("change", onChange);
-
-		function onChange(s) {
-			if (s.keypath.length !== 1) return;
-			dep.changed();
-		}
-
-		Temple.Deps.currentComputation.onInvalidate(function() {
-			model.off("change", onChange);
-		});
-
-		dep.depend();
-		return this;
-	},
-	mount: function() {
-		var model = this.value(),
-			val, isEmpty;
-		
-		// must return a model
-		if (!Temple.Model.isModel(model)) return;
-
-		this.dependOnModel(model);
-		val = model.handle("toArray");
-		if (!_.isArray(val)) val = model.get();
-		if (_.isFunction(val)) val = val.call(this);
-		isEmpty = Section.isEmpty(val);
-
-		if (isEmpty && this.inverted) {
-			var b = new Temple.Binding(model);
-			this.body(b, 0);
-			this.addChild(b);
-		} else if (!isEmpty && !this.inverted) {
-			if (_.isArray(val)) {
-				val.forEach(function(v, i) {
-					var m = model.getModel(i),
-						b = new Temple.Binding(m);
-
-					this.body(b, i);
-					this.addChild(b);
-				}, this);
-			} else {
-				var b = new Temple.Binding(model);
-				this.body(b, 0);
-				this.addChild(b);
-			}
-		}
-
-		return Temple.Binding.prototype.mount.apply(this, arguments);
-	}
-});

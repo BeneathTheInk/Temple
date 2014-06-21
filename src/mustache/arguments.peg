@@ -29,10 +29,13 @@ value = ws v:
 // Variables
 variable
 	= "{{" s:(escape / [^}])+ "}}" {
-		var path = s.join("").trim();
-		// unfortunately, we must listen to changes at all deep paths
-		options.scope.depend(util.joinPathParts(path, "**"));
-		return options.scope.get(path);
+		var path = s.join("").trim(),
+			model = (options.ctx.findModel(path) || options.ctx).getModel(path);
+
+		// we must listen to changes at all deep paths
+		model.depend("**");
+		
+		return model.value;
 	}
 
 // Literals

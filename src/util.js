@@ -131,6 +131,113 @@ exports.arrayStartsWith = function(a1, a2) {
 	return max <= a1.length && _.isEqual(a2, a1.slice(0, max));
 }
 
+// finds all changed, matching subpaths
+var findAllChanges =
+exports.findAllChanges = function(chg, parts, onPath, ctx) {
+	var parts, paths, base, getter,
+		args = _.toArray(arguments).slice(2);
+
+	// clone parts so we don't affect the original
+	parts = parts.slice(0);
+
+	// match the beginning of parts
+	if (!matchPathStart(chg.keypath, parts)) return;
+
+	paths = [];
+	base = joinPathParts(chg.keypath);
+	getter = function(obj, path) {
+		return chg.model.createHandle(obj)("get", path);
+	}
+
+	// generate a list of effected paths
+	findAllMatchingPaths(chg.model, chg.value, parts, paths);
+	findAllMatchingPaths(chg.model, chg.oldValue, parts, paths);
+	paths = findShallowestUniquePaths(paths);
+
+	// fire the callback on each path that changed
+	paths.forEach(function(keys, index, list) {
+		var nval, oval;
+		
+		nval = get(chg.value, keys, getter);
+		oval = get(chg.oldValue, keys, getter);
+		if (nval === oval) return;
+
+		onPath.call(ctx, {
+			model: chg.model.getModel(keys),
+			keypath: chg.keypath.concat(keys),
+			type: changeType(nval, oval),
+			value: nval,
+			oldValue: oval
+		});
+	});
+}
+
+// matchs the start of a keypath to a list of match parts
+// parts is modified to the remaining segments that were not matched
+var matchPathStart =
+exports.matchPathStart = function(keys, parts) {
+	var i, part;
+
+	for (i = 0; i < keys.length; i++) {
+		part = parts.shift();
+		if (_.isRegExp(part) && part.test(keys[i])) continue;
+		if (part === "**") {
+			// look ahead
+			if (parts[0] == null || parts[0] !== keys[i + 1]) {
+				parts.unshift(part);
+			}
+			continue;
+		}
+		if (part !== keys[i]) return false;
+	}
+
+	return true;
+}
+
+// deeply traverses a value in search of all paths that match parts
+var findAllMatchingPaths =
+exports.findAllMatchingPaths = function(model, value, parts, paths, base) {
+	if (paths == null) paths = [];
+	if (base == null) base = [];
+
+	if (!parts.length) {
+		paths.push(base);
+		return paths;
+	}
+
+	var handle = model.createHandle(value),
+		part = parts[0],
+		rest = parts.slice(1);
+
+	if (_.isRegExp(part)) {
+		handle("keys").forEach(function(k) {
+			findAllMatchingPaths(model.getModel(k), handle("get", k), rest, paths, base.concat(k));
+		});
+	} else if (part === "**") {
+		if (handle("isLeaf")) {
+			if (!rest.length) paths.push(base);
+			return paths;
+		}
+
+		handle("keys").forEach(function(k) {
+			var _rest = rest,
+				_base = base;
+
+			// look ahead
+			if (rest[0] == null || rest[0] !== k) {
+				_rest = [part].concat(rest);
+				_base = base.concat(k);
+			}
+
+			findAllMatchingPaths(model.getModel(k), handle("get", k), _rest, paths, _base);
+		});
+	} else {
+		findAllMatchingPaths(model.getModel(part), handle("get", part), rest, paths, base.concat(part));
+	}
+
+	return paths;
+}
+
 // array write operations
 var mutatorMethods = [ 'pop', 'push', 'reverse', 'shift', 'sort', 'splice', 'unshift' ];
 
@@ -291,20 +398,7 @@ exports.matchSelector = function(node, selector) {
 
 // returns the type of changes based on old and new values
 // expects oval !== nval
+var changeType =
 exports.changeType = function(nval, oval) {
 	return _.isUndefined(oval) ? "add" : _.isUndefined(nval) ? "delete" : "update";
-}
-
-exports.refreshNodes = function(newNodes, currentNodes, parentNode) {
-	var beforeNode = (_.last(currentNodes) || {}).nextSibling;
-	
-	// remove all current nodes
-	currentNodes.forEach(function(node) {
-		parentNode.removeChild(node);
-	});
-	
-	// add all new nodes
-	newNodes.forEach(function(node) {
-		parentNode.insertBefore(node, beforeNode);
-	});
 }

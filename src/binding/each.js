@@ -1,9 +1,10 @@
 var _ = require("underscore"),
-	Binding = require("./index"),
+	ReactScope = require("./reactscope"),
+	React = require("./react"),
 	util = require("../util"),
 	Deps = require("../deps");
 
-module.exports = Binding.Scope.extend({
+module.exports = ReactScope.extend({
 	constructor: function(onRow, data) {
 		if (!_.isFunction(onRow))
 			throw new Error("Expecting function for onRow.");
@@ -11,14 +12,15 @@ module.exports = Binding.Scope.extend({
 		this.onRow = onRow;
 		this.rows = {};
 
-		Binding.Scope.call(this, data);
+		ReactScope.call(this, data);
 	},
 
 	getRow: function(key) {
 		if (this.rows[key] == null) {
-			var row, self = this;
-			row = this.rows[key] = new Binding.Scope(this.getModel(key));
-			row.render = function() { return self.onRow(this, key); }
+			var row, model, self = this;
+			model = this.getModel(key);
+			row = this.rows[key] = new React();
+			row.render = function() { return self.onRow(model, key); }
 			this.addChild(row);
 		}
 		
@@ -71,7 +73,7 @@ module.exports = Binding.Scope.extend({
 
 	_detach: function() {
 		this.stopObserving(this.refreshNodes);
-		return Binding.Scope.prototype._detach.apply(this, arguments);
+		return ReactScope.prototype._detach.apply(this, arguments);
 	},
 
 	find: function(selector) {
