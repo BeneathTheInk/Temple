@@ -27,7 +27,10 @@ module.exports = Context.extend({
 		if (_.isObject(partials)) this.setPartial(partials);
 
 		Context.call(this, data);
+		this.initialize();
 	},
+
+	initialize: function(){},
 
 	// parses and sets the root template
 	setTemplate: function(template) {
@@ -382,6 +385,9 @@ module.exports = Context.extend({
 	parse: parse,
 	NODE_TYPE: NODE_TYPE
 });
+
+// allow plugin usage
+Mustache.prototype.use = Temple.prototype.use;
 
 function convertTemplateToArgs(template) {
 	if (_.isArray(template)) return template.map(function(t) {

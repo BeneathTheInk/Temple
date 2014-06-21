@@ -1,10 +1,11 @@
 var _ = require("underscore"),
 	Binding = require("../binding"),
 	util = require("../util"),
-	Model = require("../model");
+	Model = require("../model"),
+	Observe = require("../observe");
 
 var Context =
-module.exports = Binding.extend({
+module.exports = Binding.extend(_.extend(Observe, {
 
 	constructor: function(model) {
 		Binding.call(this);
@@ -140,7 +141,7 @@ module.exports = Binding.extend({
 		});
 	}
 
-}, {
+}), {
 	isContext: function(o) {
 		return o instanceof Context;
 	}

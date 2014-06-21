@@ -5,6 +5,11 @@ var _ = require("underscore"),
 // export
 var Temple =
 module.exports = Binding.Scope.extend({
+	constructor: function() {
+		Binding.Scope.apply(this, arguments);
+		this.initialize();
+	},
+	initialize: function(){},
 	use: function(fn) {
 		var args = _.toArray(arguments).slice(1);
 		fn.apply(this, args);

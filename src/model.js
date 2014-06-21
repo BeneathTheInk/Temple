@@ -132,7 +132,7 @@ _.extend(Model.prototype, Events, Observe, {
 			// bubble the event
 			parent._onChange(_.extend({}, summary, {
 				keypath: [ path ].concat(summary.keypath)
-			}), options, this);
+			}), options, parent);
 		}
 	},
 
