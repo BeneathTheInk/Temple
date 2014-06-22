@@ -136,7 +136,8 @@ module.exports = Binding.extend(_.extend(Observe, {
 		var model;
 		if (_.isArray(path) || _.isString(path)) model = this.findModel(path);
 		if (model == null) model = this.getModel();
-		return model.set.apply(model, arguments);
+		model.set.apply(model, arguments);
+		return this;
 	},
 
 	// removes the value at path

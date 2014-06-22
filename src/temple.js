@@ -4,7 +4,7 @@ var _ = require("underscore"),
 
 // export
 var Temple =
-module.exports = Binding.Scope.extend({
+module.exports = Binding.ReactScope.extend({
 	constructor: function() {
 		Binding.Scope.apply(this, arguments);
 		this.initialize();
@@ -18,7 +18,7 @@ module.exports = Binding.Scope.extend({
 }, Binding);
 
 // class properties/methods
-Temple.VERSION = "0.2.11-alpha";
+Temple.VERSION = "0.2.11";
 Temple.util = util;
 
 Temple.Deps = require("./deps");
