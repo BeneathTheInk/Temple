@@ -1,0 +1,29 @@
+{
+	"name": "temple",
+	"version": "0.2.11",
+	"description": "A modern JavaScript view framework.",
+	"repo": "BeneathTheInk/Temple",
+	"keywords": [
+		"mustache",
+		"view",
+		"DOM",
+		"html",
+		"template",
+		"templating",
+		"data binding",
+		"binding",
+		"declarative",
+		"view model",
+		"reactive"
+	],
+	"license": "MIT",
+	"main": "dist/temple.js",
+	"ignore": [
+		"node_modules/",
+		"src/",
+		"test/",
+		".*",
+		"Gruntfile.js",
+		"package.json"
+	]
+}
