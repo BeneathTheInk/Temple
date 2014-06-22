@@ -214,33 +214,33 @@ module.exports = Context.extend({
 				return new Section(ctx, template.value, onRow, inverted);
 
 			case NODE_TYPE.PARTIAL:
-				var name = template.value,
-					partial = temple.findPartial(name),
-					comps = temple._components,
-					comp, detach;
+				return Deps.nonreactive(function() {
+					var name = template.value,
+						partial = temple.findPartial(name),
+						comps = temple._components,
+						comp, detach;
 
-				if (partial != null) {
-					comp = new partial;
+					if (partial != null) {
+						comp = new partial;
 
-					if (comp instanceof Context) comp.setParentContext(ctx);
+						if (comp instanceof Context) comp.setParentContext(ctx);
 
-					if (comps[name] == null) comps[name] = [];
-					comps[name].push(comp);
+						if (comps[name] == null) comps[name] = [];
+						comps[name].push(comp);
 
-					detach = function() {
-						comps[name] = _.without(comps[name], comp);
-						if (comp instanceof Context) comp.setParentContext(null);
-						temple.off("detach", detach);
-						comp.off("detach", detach);
+						detach = function() {
+							comps[name] = _.without(comps[name], comp);
+							if (comp instanceof Context) comp.setParentContext(null);
+							temple.off("detach", detach);
+							comp.off("detach", detach);
+						}
+
+						temple.on("detach", detach);
+						comp.on("detach", detach);
+						
+						return comp;
 					}
-
-					temple.on("detach", detach);
-					comp.on("detach", detach);
-					
-					return comp;
-				}
-
-				break;
+				});
 
 			default:
 				console.log(template);
@@ -383,7 +383,8 @@ module.exports = Context.extend({
 	},
 }, {
 	parse: parse,
-	NODE_TYPE: NODE_TYPE
+	NODE_TYPE: NODE_TYPE,
+	Context: Context
 });
 
 // allow plugin usage

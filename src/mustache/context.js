@@ -132,6 +132,18 @@ module.exports = Binding.extend(_.extend(Observe, {
 		return (this.findModel(path) || this).keys(path);
 	},
 
+	set: function(path) {
+		var model;
+		if (_.isArray(path) || _.isString(path)) model = this.findModel(path);
+		if (model == null) model = this.getModel();
+		return model.set.apply(model, arguments);
+	},
+
+	// removes the value at path
+	unset: function(path, options) {
+		return this.set(path || [], true, _.extend({ remove: true }, options));
+	},
+
 	// custom observer handler
 	_handleObserver: function(ob, chg, opts, model) {
 		var self = this;
@@ -148,7 +160,7 @@ module.exports = Binding.extend(_.extend(Observe, {
 });
 
 // chainable proxy methods
-[ "handle", "set", "unset" ]
+[ "handle" ]
 .forEach(function(method) {
 	Context.prototype[method] = function() {
 		var model = this.models[0];
@@ -158,7 +170,7 @@ module.exports = Binding.extend(_.extend(Observe, {
 });
 
 // proxy methods which don't return this
-[ "getModel", "notify" ]
+[ "getModel" ]
 .forEach(function(method) {
 	Context.prototype[method] = function() {
 		var model = this.models[0];

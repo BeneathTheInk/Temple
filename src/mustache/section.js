@@ -7,7 +7,7 @@ var _ = require("underscore"),
 var Section =
 module.exports = Binding.React.extend({
 	constructor: function(ctx, path, onRow, inverted) {
-		this.path = path;
+		this.path = util.splitPath(path);
 		this.ctx = ctx;
 		this.onRow = onRow;
 		this.inverted = !!inverted;
@@ -36,31 +36,17 @@ module.exports = Binding.React.extend({
 		return this;
 	},
 
-	dependOnModel: function(model) {
-		if (!Deps.active) return this;
-		
-		var dep = new Deps.Dependency,
-			self = this,
-			value = model.value;
+	render: function() {
+		var model, val, isEmpty,
+			path = this.path.slice(0);
 
-		model.observe("*", onChange);
-
-		function onChange() {
-			dep.changed();
+		if (path[0] === "this") {
+			path.shift();
+			model = this.ctx.getModel(path);
+		} else {
+			model = (this.ctx.findModel(path) || this.ctx).getModel(path);
 		}
 
-		Deps.currentComputation.onInvalidate(function() {
-			model.stopObserving("*", onChange);
-		});
-
-		dep.depend();
-		return this;
-	},
-
-	render: function() {
-		var model, val, isEmpty;
-
-		model = this.ctx.findModel(this.path).getModel(this.path);
 		val = model.handle("toArray");
 		if (!_.isArray(val)) val = model.get();
 		if (_.isFunction(val)) val = val.call(this.ctx);
@@ -76,8 +62,8 @@ module.exports = Binding.React.extend({
 			} else {
 				return this.onRow(model, 0);
 			}
-		} else {
-			this.dependOnModel(model);
+		} else if (_.isArray(val)) {
+			model.depend("*");
 		}
 	}
 }, {

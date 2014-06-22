@@ -2,7 +2,7 @@ module.exports = function(grunt) {
 
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
-		clean: [ "lib/" ],
+		clean: [ "lib/", "dist/*.js" ],
 		copy: {
 			main: {
 				files: [{
@@ -64,7 +64,7 @@ module.exports = function(grunt) {
 		watch: {
 			main: {
 				files: [ "src/**/*.js", "src/**/*.peg" ],
-				tasks: [ 'build', 'build-test' ],
+				tasks: [ 'test' ],
 				options: { spawn: false }
 			}
 		}
