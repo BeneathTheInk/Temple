@@ -6,8 +6,8 @@ var _ = require("underscore"),
 var Temple =
 module.exports = Binding.ReactScope.extend({
 	constructor: function() {
-		Binding.Scope.apply(this, arguments);
-		this.initialize();
+		Binding.ReactScope.apply(this, arguments);
+		this.initialize.apply(this, arguments);
 	},
 	initialize: function(){},
 	use: function(fn) {

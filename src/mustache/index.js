@@ -182,7 +182,7 @@ module.exports = Context.extend({
 				return binding;
 
 			case NODE_TYPE.TEXT:
-				return new Temple.Text(template.value);
+				return new Temple.Text(decodeEntities(template.value));
 
 			case NODE_TYPE.INTERPOLATOR:
 			case NODE_TYPE.TRIPLE:
@@ -414,3 +414,27 @@ function convertTemplateToArgs(template) {
 
 	return template;
 }
+
+
+// cleans html, then converts html entities to unicode
+var decodeEntities = (function() {
+	if (typeof document === "undefined") return;
+
+	// this prevents any overhead from creating the object each time
+	var element = document.createElement('div');
+
+	function decodeHTMLEntities (str) {
+		if(str && typeof str === 'string') {
+			// strip script/html tags
+			str = str.replace(/<script[^>]*>([\S\s]*?)<\/script>/gmi, '');
+			str = str.replace(/<\/?\w(?:[^"'>]|"[^"]*"|'[^']*')*>/gmi, '');
+			element.innerHTML = str;
+			str = element.textContent;
+			element.textContent = '';
+		}
+
+		return str;
+	}
+
+	return decodeHTMLEntities;
+})();
