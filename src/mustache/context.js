@@ -2,7 +2,8 @@ var _ = require("underscore"),
 	Binding = require("../binding"),
 	util = require("../util"),
 	Model = require("../model"),
-	Observe = require("../observe");
+	Observe = require("../observe"),
+	Deps = require("../deps");
 
 var Context =
 module.exports = Binding.extend(_.extend(Observe, {
@@ -133,10 +134,17 @@ module.exports = Binding.extend(_.extend(Observe, {
 	},
 
 	set: function(path) {
-		var model;
-		if (_.isArray(path) || _.isString(path)) model = this.findModel(path);
+		var model, self = this;
+		
+		if (_.isArray(path) || _.isString(path)) {
+			model = Deps.nonreactive(function() {
+				return self.findModel(path);
+			});
+		}
+		
 		if (model == null) model = this.getModel();
 		model.set.apply(model, arguments);
+		
 		return this;
 	},
 
