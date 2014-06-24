@@ -184,6 +184,9 @@ module.exports = Context.extend({
 			case NODE_TYPE.TEXT:
 				return new Temple.Text(decodeEntities(template.value));
 
+			case NODE_TYPE.HTML:
+				return new Temple.HTML(template.value);
+
 			case NODE_TYPE.INTERPOLATOR:
 			case NODE_TYPE.TRIPLE:
 				var klass = template.type === NODE_TYPE.TRIPLE ? "HTML" : "Text";
@@ -384,7 +387,18 @@ module.exports = Context.extend({
 }, {
 	parse: parse,
 	NODE_TYPE: NODE_TYPE,
-	Context: Context
+	Context: Context,
+
+	// converts raw html str to template tree
+	parseHTML: function(str) {
+		return {
+			type: NODE_TYPE.ROOT,
+			children: [ {
+				type: NODE_TYPE.HTML,
+				value: str
+			} ]
+		};
+	}
 });
 
 // allow plugin usage

@@ -2,14 +2,15 @@ module.exports = {
 	ROOT              : 0,
 
 	// XML/HTML
-	TEXT              : 1,
-	ELEMENT           : 2,
-	ATTRIBUTE         : 3,
+	HTML              : 1,
+	TEXT              : 2,
+	ELEMENT           : 3,
+	ATTRIBUTE         : 4,
 	
 	// Mustache
-	INTERPOLATOR      : 4,
-	TRIPLE            : 5,
-	SECTION           : 6,
-	INVERTED          : 7,
-	PARTIAL           : 8
+	INTERPOLATOR      : 5,
+	TRIPLE            : 6,
+	SECTION           : 7,
+	INVERTED          : 8,
+	PARTIAL           : 9
 }
