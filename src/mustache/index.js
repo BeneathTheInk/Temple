@@ -260,7 +260,7 @@ module.exports = Context.extend({
 				return template.value;
 
 			case NODE_TYPE.INTERPOLATOR:
-			case NODE_TYPE.TRIPLE:	
+			case NODE_TYPE.TRIPLE:
 				var val = ctx.get(template.value);
 				return val != null ? val.toString() : "";
 
