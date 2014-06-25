@@ -6,11 +6,13 @@ var Temple = require("../temple"),
 	Context = require("./context"),
 	Section = require("./section"),
 	ArgParser = require("./arguments.js"),
-	Deps = require("../deps");
+	Deps = require("../deps"),
+	debug = require("debug")("temple:mustache");
 
 var Mustache =
 module.exports = Context.extend({
 	constructor: function(template, data) {
+		debug("init mustache view");
 		this._partials = {};
 		this._components = {};
 
@@ -151,6 +153,7 @@ module.exports = Context.extend({
 		if (this._template == null)
 			throw new Error("Expected a template to be set before rendering.");
 
+		debug("rendering mustache view");
 		this.addChild(this.convertTemplate(this._template));
 		Context.prototype._mount.call(this);
 	},
@@ -167,57 +170,65 @@ module.exports = Context.extend({
 			return this.convertTemplate(t, ctx);
 		}, this).filter(function(b) { return b != null; });
 
-		switch(template.type) {
-			case NODE_TYPE.ROOT:
-				return this.convertTemplate(template.children, ctx);
+		return Deps.nonreactive(function() {
+			switch(template.type) {
+				case NODE_TYPE.ROOT:
+					return temple.convertTemplate(template.children, ctx);
 
-			case NODE_TYPE.ELEMENT:
-				var binding = new Temple.Element(template.name);
-				binding.addChild(this.convertTemplate(template.children, ctx));
+				case NODE_TYPE.ELEMENT:
+					debug("init element binding: '%s'", template.name);
+					var binding = new Temple.Element(template.name);
+					binding.addChild(temple.convertTemplate(template.children, ctx));
 
-				template.attributes.forEach(function(attr) {
-					temple._attrToDecorator(attr, binding, ctx);
-				});
-
-				return binding;
-
-			case NODE_TYPE.TEXT:
-				return new Temple.Text(decodeEntities(template.value));
-
-			case NODE_TYPE.HTML:
-				return new Temple.HTML(template.value);
-
-			case NODE_TYPE.INTERPOLATOR:
-			case NODE_TYPE.TRIPLE:
-				var klass = template.type === NODE_TYPE.TRIPLE ? "HTML" : "Text";
-
-				return new Temple[klass](function() {
-					return ctx.get(template.value);
-				});
-
-			case NODE_TYPE.INVERTED:
-			case NODE_TYPE.SECTION:
-				var inverted = template.type === NODE_TYPE.INVERTED,
-					onRow;
-
-				onRow = function(model, key) {
-					var row = new Context(model);
-					row.addModel(new Temple.Model({ $key: key }));
-					row.setParentContext(ctx);
-					row.addChild(temple.convertTemplate(template.children, row));
-
-					// for the GC
-					Deps.currentComputation.onInvalidate(function() {
-						row.setParentContext(null);
+					template.attributes.forEach(function(attr) {
+						temple._attrToDecorator(attr, binding, ctx);
 					});
 
-					return row;
-				}
+					return binding;
 
-				return new Section(ctx, template.value, onRow, inverted);
+				case NODE_TYPE.TEXT:
+					debug("init text binding");
+					return new Temple.Text(decodeEntities(template.value));
 
-			case NODE_TYPE.PARTIAL:
-				return Deps.nonreactive(function() {
+				case NODE_TYPE.HTML:
+					debug("init html binding");
+					return new Temple.HTML(template.value);
+
+				case NODE_TYPE.INTERPOLATOR:
+				case NODE_TYPE.TRIPLE:
+					debug("init interpolator binding: '%s'", template.value);
+					var klass = template.type === NODE_TYPE.TRIPLE ? "HTML" : "Text";
+
+					return new Temple[klass](function() {
+						return ctx.get(template.value);
+					});
+
+				case NODE_TYPE.INVERTED:
+				case NODE_TYPE.SECTION:
+					debug("init interpolator binding: '%s'", template.value);
+
+					var inverted = template.type === NODE_TYPE.INVERTED,
+						onRow;
+
+					onRow = function(model, key) {
+						var row = new Context(model);
+						row.addModel(new Temple.Model({ $key: key }));
+						row.setParentContext(ctx);
+						row.addChild(temple.convertTemplate(template.children, row));
+
+						// for the GC
+						Deps.currentComputation.onInvalidate(function() {
+							row.setParentContext(null);
+						});
+
+						return row;
+					}
+
+					return new Section(ctx, template.value, onRow, inverted);
+
+				case NODE_TYPE.PARTIAL:
+					debug("init partial binding: '%s'", template.value);
+
 					var name = template.value,
 						partial = temple.findPartial(name),
 						comps = temple._components,
@@ -243,11 +254,13 @@ module.exports = Context.extend({
 						
 						return comp;
 					}
-				});
 
-			default:
-				console.log(template);
-		}
+					break;
+
+				default:
+					console.log(template);
+			}
+		});
 	},
 
 	convertStringTemplate: function(template, ctx) {
@@ -332,6 +345,7 @@ module.exports = Context.extend({
 			init = function() {
 				if (!destroyed) return;
 				destroyed = false;
+				debug("init decorator '%s'", attr.name);
 
 				processed = decorators.map(function(fn) {
 					return fn.call(temple, binding.node, attr.children);
@@ -355,6 +369,7 @@ module.exports = Context.extend({
 				init();
 
 				this.autorun(id, function() {
+					debug("updating decorator '%s'", attr.name);
 					var args = [];
 
 					if (rawargs != null)
@@ -369,6 +384,7 @@ module.exports = Context.extend({
 			});
 
 			binding.on("detach", function() {
+				debug("destroying decorator '%s'", attr.name);
 				this.stopComputation(id);
 				destroyed = true;
 
@@ -380,6 +396,7 @@ module.exports = Context.extend({
 
 		else {
 			binding.attr(attr.name, function() {
+				debug("updating attribute '%s'", attr.name);
 				return temple.convertStringTemplate(attr.children, ctx);
 			});
 		}

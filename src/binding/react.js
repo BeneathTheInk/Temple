@@ -32,7 +32,6 @@ module.exports = Binding.extend({
 
 		self.autorun("render", function(comp) {
 			var bindings = this.render.apply(this, args);
-
 			if (bindings != null) this.addChild(bindings);
 			this.refreshNodes();
 

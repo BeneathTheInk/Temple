@@ -152,9 +152,10 @@ _.extend(Model.prototype, Events, Observe, {
 	},
 
 	// return the value of the model at path, deeply
-	get: function(path) {
-		this.depend(path);
-		return this.getModel(path).value;
+	get: function(path, options) {
+		options = options || {};
+		if (options.depend !== false) this.depend(path);
+		return this.getModel(path, options).value;
 	},
 
 	// the own properties of the model's value

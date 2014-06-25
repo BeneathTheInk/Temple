@@ -16,7 +16,7 @@ module.exports = Binding.extend(_.extend(Observe, {
 		// convert data to model if isn't one already
 		if (!Model.isModel(model)) {
 			var data = model;
-			model = new Model(_.result(this, "defaults"));
+			model = new Model(_.clone(_.result(this, "defaults")));
 			if (!_.isUndefined(data)) model.set([], data);
 		}
 
@@ -91,11 +91,11 @@ module.exports = Binding.extend(_.extend(Observe, {
 	},
 
 	// returns the first model whose value at path isn't undefined
-	findModel: function(path) {
+	findModel: function(path, options) {
 		var i, models = this.getModels();
 
 		for (var i in models)
-			if (models[i].get(path) !== void 0)
+			if (models[i].get(path, options) !== void 0)
 				return models[i];
 
 		return null;
@@ -113,16 +113,16 @@ module.exports = Binding.extend(_.extend(Observe, {
 		return _.unique(m);
 	},
 
-	get: function(parts) {
+	get: function(parts, options) {
 		var val, model;
 		parts = util.splitPath(parts);
 
 		if (parts[0] === "this") {
 			parts.shift();
-			val = this.models[0].get(parts);
+			val = this.models[0].get(parts, options);
 		} else {
-			model = this.findModel(parts);
-			if (model != null) val = model.get(parts);
+			model = this.findModel(parts, options);
+			if (model != null) val = model.get(parts, options);
 		}
 
 		if (_.isFunction(val)) val = val.call(this);
@@ -137,9 +137,7 @@ module.exports = Binding.extend(_.extend(Observe, {
 		var model, self = this;
 		
 		if (_.isArray(path) || _.isString(path)) {
-			model = Deps.nonreactive(function() {
-				return self.findModel(path);
-			});
+			model = this.findModel(path, { depend: false });
 		}
 		
 		if (model == null) model = this.getModel();

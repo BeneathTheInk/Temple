@@ -18,7 +18,7 @@ module.exports = Binding.ReactScope.extend({
 }, Binding);
 
 // class properties/methods
-Temple.VERSION = "0.2.11";
+Temple.VERSION = "0.2.12-alpha";
 Temple.util = util;
 
 Temple.Deps = require("./deps");

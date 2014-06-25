@@ -17,7 +17,7 @@ module.exports = Binding.extend(_.extend(Observe, {
 	setModel: function(model) {
 		if (!Model.isModel(model)) {
 			var data = model;
-			model = new Model(_.result(this, "defaults"));
+			model = new Model(_.clone(_.result(this, "defaults")));
 			if (!_.isUndefined(data)) model.set([], data);
 		}
 

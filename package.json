@@ -1,6 +1,6 @@
 {
 	"name": "templejs",
-	"version": "0.2.11",
+	"version": "0.2.12-alpha",
 	"description": "A modern JavaScript view framework.",
 	"author": "Beneath the Ink <info@beneaththeink.com>",
 	"contributors": [
@@ -16,6 +16,7 @@
 	},
 	"main": "./lib/temple.js",
 	"dependencies": {
+		"debug": "1.0.2",
 		"hogan.js": "3.0.2",
 		"underscore": "1.6.0"
 	},

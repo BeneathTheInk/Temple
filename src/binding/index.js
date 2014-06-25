@@ -143,8 +143,13 @@ _.extend(Binding.prototype, Events, {
 
 	appendTo: function(parent, before) {
 		if (!this.isMounted()) return this;
-		this._appendTo(parent, before);
-		this.trigger("append", parent, before);
+		var self = this;
+
+		Deps.nonreactive(function() {
+			self._appendTo(parent, before);
+			self.trigger("append", parent, before);
+		});
+		
 		return this;
 	},
 
