@@ -106,7 +106,9 @@ _.extend(Binding.prototype, Events, {
 	},
 
 	_mount: function() {
-		_.invoke(this.children, "mount");
+		this.children.slice(0).forEach(function(c) {
+			c.mount();
+		});
 	},
 
 	mount: function() {
@@ -124,7 +126,9 @@ _.extend(Binding.prototype, Events, {
 	},
 
 	_detach: function() {
-		_.invoke(this.children, "detach");
+		this.children.slice(0).forEach(function(c) {
+			c.detach();
+		});
 	},
 
 	detach: function() {
@@ -136,8 +140,8 @@ _.extend(Binding.prototype, Events, {
 	},
 
 	_appendTo: function(parent, before) {
-		this.children.forEach(function(child) {
-			child.appendTo(parent, before);
+		this.children.slice(0).forEach(function(c) {
+			c.appendTo(parent, before);
 		});
 	},
 

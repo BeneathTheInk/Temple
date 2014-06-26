@@ -26,7 +26,8 @@ module.exports = Binding.extend({
 			}, this);
 		});
 
-		return Binding.prototype._mount.apply(this, arguments);
+		Binding.prototype._mount.apply(this, arguments);
+		Binding.prototype._appendTo.call(this, this.node);
 	},
 
 	_detach: function() {
@@ -38,7 +39,6 @@ module.exports = Binding.extend({
 
 	_appendTo: function(parent, before) {
 		parent.insertBefore(this.node, before);
-		Binding.prototype._appendTo.call(this, this.node);
 	},
 
 	toString: function() {

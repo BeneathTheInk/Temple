@@ -80,7 +80,7 @@ module.exports = ReactScope.extend({
 		var el = null;
 
 		_.some(this.rows, function(row) {
-			return !!(el = row.binding.find(selector));
+			return !!(el = row.find(selector));
 		});
 
 		return el;
@@ -90,7 +90,7 @@ module.exports = ReactScope.extend({
 		var els = [];
 
 		_.each(this.rows, function(row) {
-			els = els.concat(row.binding.findAll(selector));
+			els = els.concat(row.findAll(selector));
 		});
 
 		return els;
