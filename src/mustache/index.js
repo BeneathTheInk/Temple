@@ -162,6 +162,40 @@ module.exports = Context.extend({
 		this.removeChild(this.children.slice(0));
 	},
 
+	renderPartial: function(name, ctx) {
+		debug("init partial binding: '%s'", name);
+
+		if (ctx == null) ctx = this;
+
+		var partial = this.findPartial(name),
+			comps = this._components,
+			self = this,
+			comp, detach;
+
+		if (partial != null) {
+			comp = new partial;
+
+			if (comp instanceof Context) comp.setParentContext(ctx);
+
+			if (comps[name] == null) comps[name] = [];
+			comps[name].push(comp);
+
+			detach = function() {
+				comps[name] = _.without(comps[name], comp);
+				if (comp instanceof Context) comp.setParentContext(null);
+				self.off("detach", detach);
+				comp.off("detach", detach);
+			}
+
+			this.on("detach", detach);
+			comp.on("detach", detach);
+			
+			return comp;
+		}
+
+		return null;
+	},
+
 	convertTemplate: function(template, ctx) {
 		if (ctx == null) ctx = this;
 		var temple = this;
@@ -176,15 +210,56 @@ module.exports = Context.extend({
 					return temple.convertTemplate(template.children, ctx);
 
 				case NODE_TYPE.ELEMENT:
-					debug("init element binding: '%s'", template.name);
-					var binding = new Temple.Element(template.name);
-					binding.addChild(temple.convertTemplate(template.children, ctx));
+					var comp = temple.renderPartial(template.name, ctx);
 
-					template.attributes.forEach(function(attr) {
-						temple._attrToDecorator(attr, binding, ctx);
-					});
+					if (comp != null) {
+						if (comp instanceof Context) {
+							comp.on("mount:before", function() {
+								comp.autorun("values", function() {
+									template.attributes.forEach(function(attr) {
+										comp.autorun(function() {
+											var val;
 
-					return binding;
+											if (attr.children.length) {
+												var tpl = attr.children[0];
+
+												switch(tpl.type) {
+													case NODE_TYPE.INTERPOLATOR:
+													case NODE_TYPE.TRIPLE:
+														val = ctx.get(tpl.value, { model: true }).value;
+														break;
+
+													case NODE_TYPE.TEXT:
+														val = ArgParser.parse(tpl.value, { ctx: ctx });
+														if (val.length === 1) val = val[0];
+														break;
+												}
+											}
+
+											comp.set(attr.name, val);
+										});
+									});
+								});
+							});
+
+							comp.on("detach", function() {
+								comp.stopComputation("values");
+							});
+						}
+
+						return comp;
+
+					} else {
+						debug("init element binding: '%s'", template.name);
+						var binding = new Temple.Element(template.name);
+						binding.addChild(temple.convertTemplate(template.children, ctx));
+
+						template.attributes.forEach(function(attr) {
+							temple._attrToDecorator(attr, binding, ctx);
+						});
+
+						return binding;
+					}
 
 				case NODE_TYPE.TEXT:
 					debug("init text binding");
@@ -227,35 +302,7 @@ module.exports = Context.extend({
 					return new Section(ctx, template.value, onRow, inverted);
 
 				case NODE_TYPE.PARTIAL:
-					debug("init partial binding: '%s'", template.value);
-
-					var name = template.value,
-						partial = temple.findPartial(name),
-						comps = temple._components,
-						comp, detach;
-
-					if (partial != null) {
-						comp = new partial;
-
-						if (comp instanceof Context) comp.setParentContext(ctx);
-
-						if (comps[name] == null) comps[name] = [];
-						comps[name].push(comp);
-
-						detach = function() {
-							comps[name] = _.without(comps[name], comp);
-							if (comp instanceof Context) comp.setParentContext(null);
-							temple.off("detach", detach);
-							comp.off("detach", detach);
-						}
-
-						temple.on("detach", detach);
-						comp.on("detach", detach);
-						
-						return comp;
-					}
-
-					break;
+					return temple.renderPartial(template.value, ctx);
 
 				default:
 					console.log(template);
@@ -355,11 +402,7 @@ module.exports = Context.extend({
 
 				processed.some(function(d) {
 					if (d.parse !== false) {
-						rawargs = convertTemplateToArgs(attr.children)
-							.filter(function(t) { return t.type === NODE_TYPE.TEXT; })
-							.map(function(t) { return t.value; })
-							.join("");
-
+						rawargs = convertTemplateToRawArgs(attr.children);
 						return true;
 					}
 				});
@@ -437,13 +480,20 @@ function convertTemplateToArgs(template) {
 
 		case NODE_TYPE.SECTION:
 		case NODE_TYPE.INVERTED:
-			throw new Error("Unexpected section in decorator value.");
+			throw new Error("Unexpected section in attribute value.");
 
 		case NODE_TYPE.PARTIAL:
-			throw new Error("Unexpected partial in decorator value.");
+			throw new Error("Unexpected partial in attribute value.");
 	}
 
 	return template;
+}
+
+function convertTemplateToRawArgs(template) {
+	return convertTemplateToArgs(template)
+		.filter(function(t) { return t.type === NODE_TYPE.TEXT; })
+		.map(function(t) { return t.value; })
+		.join("");
 }
 
 

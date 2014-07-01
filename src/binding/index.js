@@ -115,8 +115,10 @@ _.extend(Binding.prototype, Events, {
 		if (this.isMounted()) return this;
 		this._mounted = true;
 
+		this.trigger("mount:before");
 		this._mount.apply(this, arguments);
 		this.trigger("mount");
+		this.trigger("mount:after");
 
 		return this;
 	},
@@ -133,9 +135,13 @@ _.extend(Binding.prototype, Events, {
 
 	detach: function() {
 		if (!this.isMounted()) return this;
+		
+		this.trigger("detach:before");
 		this._detach.apply(this, arguments);
 		delete this._mounted;
 		this.trigger("detach");
+		this.trigger("detach:after");
+
 		return this;
 	},
 

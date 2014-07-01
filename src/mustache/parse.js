@@ -24,6 +24,8 @@ function parseXML(tree) {
 	tree.forEach(function(node, index) {
 		if (node.tag === "_t") {
 			src += node.text.toString();
+		} else if (node.tag === "\n") {
+			src += "\n";
 		} else {
 			src += d[0] + index + d[1];
 		}

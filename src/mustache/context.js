@@ -116,16 +116,20 @@ module.exports = Binding.extend(_.extend(Observe, {
 	get: function(parts, options) {
 		var val, model;
 		parts = util.splitPath(parts);
+		options = options || {};
 
 		if (parts[0] === "this") {
 			parts.shift();
-			val = this.models[0].get(parts, options);
 		} else {
 			model = this.findModel(parts, options);
-			if (model != null) val = model.get(parts, options);
 		}
 
+		if (model == null) model = this.models[0];
+		if (options.model) return model.getModel(parts);
+		
+		val = model.get(parts, options);
 		if (_.isFunction(val)) val = val.call(this);
+		
 		return val;
 	},
 
