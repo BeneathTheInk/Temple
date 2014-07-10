@@ -9,6 +9,9 @@ module.exports = Binding.extend({
 			value = function() { return v; }
 		}
 
+		if (!_.isFunction(value))
+			throw new Error("Expecting string or function for html binding value.");
+
 		this.compute = value;
 		this.value = "";
 		this.nodes = [];
