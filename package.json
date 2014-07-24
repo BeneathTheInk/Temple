@@ -16,10 +16,7 @@
 	},
 	"main": "./lib/temple.js",
 	"dependencies": {
-		"debug": "1.0.4",
-		"underscore": "1.6.0",
-		"virtual-dom": "0.0.15",
-		"vtree": "0.0.15"
+		"underscore": "1.6.0"
 	},
 	"devDependencies": {
 		"grunt": "0.4.5",
