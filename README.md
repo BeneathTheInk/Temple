@@ -60,9 +60,7 @@ var Clock = Temple.extend({
 			date.getMinutes(),
 			date.getSeconds()
 		].map(function(digit) {
-			digit = digit.toString(10);
-			if (digit.length < 2) digit = "0" + digit;
-			return digit;
+			return (digit < 10 ? "0" : "") + digit;
 		}).join(":");
 	}
 
