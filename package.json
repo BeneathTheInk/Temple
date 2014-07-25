@@ -15,9 +15,6 @@
 		"url": "https://github.com/BeneathTheInk/Temple.git"
 	},
 	"main": "./lib/temple.js",
-	"dependencies": {
-		"underscore": "1.6.0"
-	},
 	"devDependencies": {
 		"grunt": "0.4.5",
 		"grunt-browserify": "2.1.3",
@@ -28,16 +25,11 @@
 	},
 	"license": "MIT",
 	"keywords": [
-		"mustache",
 		"view",
 		"DOM",
 		"html",
-		"template",
-		"templating",
 		"data binding",
 		"binding",
-		"declarative",
-		"view model",
 		"reactive"
 	]
 }
