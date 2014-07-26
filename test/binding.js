@@ -5,7 +5,6 @@ describe("Bindings", function() {
 	this.slow(200);
 
 	afterEach(function() {
-		if (binding != null) binding.detach();
 		binding = null;
 	});
 
@@ -26,9 +25,30 @@ describe("Bindings", function() {
 			expect(binding.children).to.have.length(1);
 		});
 
+		it("adds child binding before existing binding", function() {
+			var existing = binding.appendChild(new Temple.Binding()),
+				child = binding.insertBefore(new Temple.Binding(), existing);
+
+			expect(binding.children).to.have.length(2);
+			expect(binding.children).to.deep.equal([ child, existing ]);
+		});
+
+		it("throws error if existing binding is not a child of parent", function() {
+			var existing = new Temple.Binding();
+
+			expect(function() {
+				binding.insertBefore(new Temple.Binding(), existing);
+			}).to.throw(Error);
+		});
+
+		it("throws error when attempting to add binding as child of itself", function() {
+			expect(function() {
+				binding.appendChild(binding);
+			}).to.throw(Error);
+		});
+
 		it("removes child binding", function() {
-			var child = new Temple.Binding();
-			binding.appendChild(child);
+			var child = binding.appendChild(new Temple.Binding());
 			binding.removeChild(child);
 			expect(binding.children).to.have.length(0);
 		});
@@ -70,7 +90,7 @@ describe("Bindings", function() {
 			binding.detach();
 			expect(binding.node.parentNode).to.be.null;
 		});
-		
+
 		it("sets string attribute", function() {
 			binding.attr("class", "active");
 			expect(binding.node.getAttribute("class")).to.equal("active");
