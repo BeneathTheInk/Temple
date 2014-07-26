@@ -70,13 +70,7 @@ describe("Bindings", function() {
 			binding.detach();
 			expect(binding.node.parentNode).to.be.null;
 		});
-
-		it.skip("find returns element on matching selector", function() {
-			var cont = document.createElement("span");
-			binding.paint(cont);
-			expect(binding.find("div")).to.equal(binding.node);
-		});
-
+		
 		it("sets string attribute", function() {
 			binding.attr("class", "active");
 			expect(binding.node.getAttribute("class")).to.equal("active");
@@ -101,6 +95,11 @@ describe("Bindings", function() {
 			binding.attr("title", "Hello World");
 			binding.removeAttribute("title");
 			expect(binding.attr("title")).to.be.null;
+		});
+
+		it("finds the element", function() {
+			expect(binding.find("div")).to.equal(binding.node);
+			expect(binding.findAll("div")).to.deep.equal([ binding.node ]);
 		});
 	});
 
@@ -140,6 +139,12 @@ describe("Bindings", function() {
 			expect(cont.childNodes).to.have.length(2);
 			binding.detach();
 			expect(cont.childNodes).to.have.length(0);
+		});
+
+		it("finds elements", function() {
+			binding = new Temple.HTML("<div><span></span></div>");
+			expect(binding.find("span")).to.equal(binding.firstNode().firstChild);
+			expect(binding.findAll("span")).to.deep.equal([ binding.firstNode().firstChild ]);
 		});
 	});
 
