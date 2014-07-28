@@ -2,9 +2,8 @@
 	"name": "temple-mustache",
 	"version": "1.0.0-alpha",
 	"dependencies": {
-		"debug": "^1.0.4",
+		"templejs": "0.3.x",
 		"hogan.js": "^3.0.2",
-		"templejs": "^0.2.12",
 		"underscore": "^1.6.0",
 		"observe-js": "git://github.com/Polymer/observe-js.git#0.3.4"
 	},

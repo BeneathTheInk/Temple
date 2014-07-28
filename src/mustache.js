@@ -6,13 +6,11 @@ var Temple = require("templejs"),
 	Context = require("./context"),
 	Model = require("./model"),
 	Section = require("./section"),
-	ArgParser = require("./arguments.js"),
-	debug = require("debug")("temple:mustache");
+	ArgParser = require("./arguments.js");
 
 var Mustache =
 module.exports = Context.extend({
 	constructor: function(template, data) {
-		debug("init mustache view");
 		this._partials = {};
 		this._components = {};
 
@@ -155,13 +153,10 @@ module.exports = Context.extend({
 		if (this._template == null)
 			throw new Error("Expected a template to be set before rendering.");
 
-		debug("rendering mustache view");
 		return this.convertTemplate(this._template);
 	},
 
 	renderPartial: function(name, ctx) {
-		debug("init partial binding: '%s'", name);
-
 		if (ctx == null) ctx = this;
 
 		var Partial = this.findPartial(name),
@@ -251,7 +246,6 @@ module.exports = Context.extend({
 				// 	return comp;
 
 				// } else {
-					debug("init element binding: '%s'", template.name);
 					var binding = new Temple.Element(template.name);
 					this.convertTemplate(template.children, ctx).forEach(binding.appendChild, binding);
 
@@ -263,17 +257,13 @@ module.exports = Context.extend({
 				// }
 
 			case NODE_TYPE.TEXT:
-				debug("init text binding");
 				return new Temple.Text(decodeEntities(template.value));
 
 			case NODE_TYPE.HTML:
-				debug("init html binding");
 				return new Temple.HTML(template.value);
 
 			case NODE_TYPE.INTERPOLATOR:
 			case NODE_TYPE.TRIPLE:
-				debug("init interpolator binding: '%s'", template.value);
-
 				var node = new Temple[template.type === NODE_TYPE.TRIPLE ? "HTML" : "Text"];
 
 				var comp = this.autorun(function() {
@@ -284,7 +274,6 @@ module.exports = Context.extend({
 
 			case NODE_TYPE.INVERTED:
 			case NODE_TYPE.SECTION:
-				debug("init section binding: '%s'", template.value);
 				var model = ctx.findModel(template.value, { depend: false }).getModel(template.value);
 
 				return new Section(model, ctx)
@@ -384,7 +373,6 @@ module.exports = Context.extend({
 			init = function() {
 				if (!destroyed) return;
 				destroyed = false;
-				debug("init decorator '%s'", attr.name);
 
 				processed = decorators.map(function(fn) {
 					return fn.call(temple, binding.node, attr.children);
@@ -404,7 +392,6 @@ module.exports = Context.extend({
 				init();
 
 				this.autorun(id, function() {
-					debug("updating decorator '%s'", attr.name);
 					var args = [];
 
 					if (rawargs != null)
@@ -419,7 +406,6 @@ module.exports = Context.extend({
 			});
 
 			binding.on("detach", function() {
-				debug("destroying decorator '%s'", attr.name);
 				this.stopComputation(id);
 				destroyed = true;
 
@@ -431,7 +417,6 @@ module.exports = Context.extend({
 
 		else {
 			this.autorun(function() {
-				debug("updating attribute '%s'", attr.name);
 				binding.attr(attr.name, temple.convertStringTemplate(attr.children, ctx));
 			}, true);
 		}
