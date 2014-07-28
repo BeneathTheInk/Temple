@@ -1,16 +1,16 @@
 module.exports = {
-	ROOT              : 0,
+	ROOT              : 1,
 
 	// XML/HTML
-	HTML              : 1,
-	TEXT              : 2,
-	ELEMENT           : 3,
-	ATTRIBUTE         : 4,
-	
+	HTML              : 2,
+	TEXT              : 3,
+	ELEMENT           : 4,
+	ATTRIBUTE         : 5,
+
 	// Mustache
-	INTERPOLATOR      : 5,
-	TRIPLE            : 6,
-	SECTION           : 7,
-	INVERTED          : 8,
-	PARTIAL           : 9
+	INTERPOLATOR      : 6,
+	TRIPLE            : 7,
+	SECTION           : 8,
+	INVERTED          : 9,
+	PARTIAL           : 10
 }

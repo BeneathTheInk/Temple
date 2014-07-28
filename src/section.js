@@ -59,15 +59,17 @@ module.exports = Context.extend({
 
 	render: function(onRow) {
 		var self = this,
-			val, isEmpty, inverted, observer,
+			omodel, val, isEmpty, inverted, observer,
 			rowSort, model, createRow;
 
-		val = this.get();
+		omodel = (this.findModel() || this).getModel();
+		val = omodel.get();
+		if (_.isFunction(val)) val = val.call(this);
 		isEmpty = Section.isEmpty(val);
 		inverted = this.isInverted();
 
 		model = new Model(val);
-		this.getAllProxies().reverse().forEach(model.registerProxy, model);
+		omodel.getAllProxies().reverse().forEach(model.registerProxy, model);
 
 		createRow = _.bind(function(model, key) {
 			var row = new Context(model, this);

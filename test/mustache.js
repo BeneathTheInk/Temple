@@ -425,7 +425,7 @@ describe("Mustache", function() {
 			expect(nodes[0].getAttribute("x-attr")).to.equal("Foo & \"Bar\" <span>");
 		});
 
-		it.skip("renders section attribute", function() {
+		it("renders section attribute", function() {
 			var nodes = render("<div x-attr='{{#section}}Hello World{{/section}}'></div>", { section: true });
 			expect(nodes).to.have.length(2);
 			expect(nodes[0].getAttribute("x-attr")).to.equal("Hello World");

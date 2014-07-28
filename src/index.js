@@ -10,3 +10,4 @@ Mustache.util = util;
 Mustache.Model = require("./model");
 Mustache.Proxy = require("./proxy");
 Mustache.Context = require("./context");
+Mustache.Section = require("./section");

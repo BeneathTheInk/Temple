@@ -312,15 +312,16 @@ module.exports = Context.extend({
 			case NODE_TYPE.INVERTED:
 				var inverted = template.type === NODE_TYPE.INVERTED,
 					path = template.value,
-					model, val, isEmpty, makeRow, cleanup, strval,
-					rows = [];
+					omodel, model, val, isEmpty, makeRow, strval;
 
-				model = (ctx.findModel(path) || ctx).getModel(path);
-				val = model.handle("toArray");
-				if (!_.isArray(val)) val = model.get();
+				omodel = (ctx.findModel(path) || ctx).getModel(path);
+				val = omodel.get();
 				if (_.isFunction(val)) val = val.call(ctx);
 				isEmpty = Section.isEmpty(val);
-				model.depend("*");
+
+				model = new Model(val);
+				omodel.getAllProxies().reverse().forEach(model.registerProxy, model);
+				if (model.proxy("isArray")) this.depend("length");
 
 				makeRow = function(i) {
 					var row, m;
@@ -333,17 +334,13 @@ module.exports = Context.extend({
 					}
 
 					var row = new Context(m);
-					row.addModel(new Temple.Model({ $key: i }));
+					row.addModel(new Model({ $key: i }));
 					row.setParentContext(ctx);
-					rows.push(row);
 
-					return temple.convertStringTemplate(template.children, row);
-				}
+					var val = temple.convertStringTemplate(template.children, row);
+					row.setParentContext(null);
 
-				cleanup = function() {
-					rows.forEach(function(r) {
-						r.setParentContext(null);
-					});
+					return val;
 				}
 
 				if (!(isEmpty ^ inverted)) {
@@ -352,9 +349,7 @@ module.exports = Context.extend({
 						makeRow();
 				}
 
-				if (Deps.active) Deps.currentComputation.onInvalidate(cleanup);
-				else cleanup();
-
+				model.cleanProxyTree();
 				return strval;
 
 			default:
