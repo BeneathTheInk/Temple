@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Temple Mustache Test Suite</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel="stylesheet" href="./vendor/mocha.css" />
+	</head>
+	<body>
+		<div id="mocha"></div>
+		<script type="text/javascript" src="./vendor/mocha.js"></script>
+		<script type="text/javascript" src="./vendor/chai.js"></script>
+		<script type="text/javascript" src="../dist/temple-mustache.dev.js"></script>
+		<script type="text/javascript">
+			window.expect = chai.expect;
+			mocha.setup('bdd');
+
+			chai.Assertion.addProperty('element', function() {
+				this.assert(
+					this._obj.nodeType === 1,
+					"expected #{this} to be an element",
+					"expected #{this} to not be an element"
+				);
+			});
+
+			chai.Assertion.addProperty('textNode', function() {
+				this.assert(
+					this._obj.nodeType === 3,
+					"expected #{this} to be a text node",
+					"expected #{this} to not be a text node"
+				);
+			});
+
+			chai.Assertion.addProperty('comment', function() {
+				this.assert(
+					this._obj.nodeType === 8,
+					"expected #{this} to be a comment node",
+					"expected #{this} to not be a comment node"
+				);
+			});
+
+			chai.Assertion.addMethod('nodeValue', function(expected_value) {
+				this.has.property("nodeValue", expected_value);
+			});
+
+			chai.Assertion.addMethod('tagName', function(expected_value) {
+				this.has.property("tagName", expected_value.toUpperCase());
+			});
+
+			function renderWait(fn, done) {
+				setTimeout(function() {
+					try { fn(); done(); }
+					catch(e) { done(e); }
+				}, 70);
+			}
+		</script>
+		<script type="text/javascript" src="./model.js"></script>
+		<script type="text/javascript" src="./reactive.js"></script>
+		<script type="text/javascript" src="./mustache-tests.js"></script>
+		<script type="text/javascript" src="./mustache.js"></script>
+		<script type="text/javascript">
+			mocha.checkLeaks();
+			mocha.run();
+		</script>
+	</body>
+</html>
