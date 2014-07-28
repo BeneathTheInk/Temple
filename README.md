@@ -2,9 +2,10 @@
 
 A modern JavaScript view framework.
 
-* __Reactive__ - Powered by [Meteor](http://meteor.com)'s [dependency package](https://github.com/meteor/meteor/blob/e78861b7d0dbb60e5e2bf59bab2cb06ce6596c04/packages/deps/deps.js), it is simple to automatically update the DOM as things change.
 * __Modular & Extensible__ - Views are encapsulated, reusable components, making testing and separation of concerns easy.
-* __Impartial__ - Temple is focused purely on the View aspect of web applications and can be easily integrated with existing platforms.
+* __Data Neutral__ - Temple is focused purely on the View aspect of web applications and can be easily integrated with existing frameworks and platforms.
+* __Tiny__ - Temple has no external dependencies and weighs in at just under 19KB minified.
+* __Reactive__ - Keep the interface up-to-date flexibly with auto-running computations powered by [Meteor](http://meteor.com)'s [dependency package](https://github.com/meteor/meteor/blob/e78861b7d0dbb60e5e2bf59bab2cb06ce6596c04/packages/deps/deps.js).
 
 __Note: This library is under active development. Use at your own risk!__
 
@@ -27,30 +28,27 @@ $ npm install templejs
 ```javascript
 // A simple clock component
 var Clock = Temple.extend({
-	
-	// we init and append a new text component when a clock is created
+	// on init, append a new text binding to hold the time value
 	initialize: function() {
-		this.appendChild(this.time = new Temple.Text());
+		this.time = this.appendChild(Clock.getTime());
 	},
 
-	// when clock mounts, we create an interval to continue updating the time
-	willMount: function() {
+	// start an interval on mount that will continiously update the time
+	beforeMount: function(comp) {
 		this.interval = setInterval(this.invalidate.bind(this), 500);
 	},
 
-	// when the clock unmounts, we clear the interval
-	didStop: function() {
+	// when the view is unmounted, clear the interval
+	onStop: function() {
 		clearInterval(this.interval);
 		delete this.interval;
 	},
 
-	// render updates the text component with the latest time
+	// updates the value of the text binding to the current time
 	render: function() {
 		this.time.setValue(Clock.getTime());
 	}
-
 }, {
-	
 	// a static method that returns the current time as a string
 	getTime: function() {
 		var date = new Date;
@@ -63,7 +61,6 @@ var Clock = Temple.extend({
 			return (digit < 10 ? "0" : "") + digit;
 		}).join(":");
 	}
-
 });
 
 // render a new instance of clock in the body element
