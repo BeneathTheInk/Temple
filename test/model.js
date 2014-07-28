@@ -61,48 +61,54 @@ describe("Model", function() {
 		});
 	});
 
-	describe.skip("Handlers", function() {
-		it("calls construct once on set and match", function() {
-			var obj, seen, handler;
+	describe("Proxies", function() {
+		it("constructs proxy once on set and match", function() {
+			var obj, seen, Proxy;
 
 			obj = {};
 			seen = 0;
 
-			handler = {
-				match: function(target) {
-					return target != null && typeof target === "object";
-				},
-				construct: function(target) {
-					if (target === obj) seen++;
+			Proxy = Mustache.Proxy.Object.extend({
+				constructor: function(target, model) {
+					if (!(this instanceof Proxy)) return new Proxy(target, model);
+
+					expect(target).to.equal(obj);
+					expect(model).to.be.instanceof(Mustache.Model);
+					seen++;
 				}
-			};
+			}, {
+				match: function(target) {
+					return target === obj;
+				}
+			});
 
-			model.handle(handler);
+			model.registerProxy(Proxy);
 			model.set("foo", obj);
-
 			expect(seen).to.equal(1);
 		});
 
 		it("calls destroy once for every construct", function() {
-			var obj, c, d, handler;
+			var obj, c, d, Proxy;
 
 			obj = {};
 			c = 0;
 			d = 0;
 
-			handler = {
-				match: function(target) {
-					return target != null && typeof target === "object";
+			Proxy = Mustache.Proxy.Object.extend({
+				constructor: function(target, model) {
+					if (!(this instanceof Proxy)) return new Proxy(target, model);
+					c++;
 				},
-				construct: function(target) {
-					if (target === obj) c++;
-				},
-				destroy: function(target) {
-					if (target === obj) d++;
+				destroy: function() {
+					d++;
 				}
-			};
+			}, {
+				match: function(target) {
+					return target === obj;
+				}
+			});
 
-			model.handle(handler);
+			model.registerProxy(Proxy);
 			model.set("foo", obj);
 			model.unset("foo");
 

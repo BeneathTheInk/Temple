@@ -164,6 +164,19 @@ module.exports = Temple.extend(_.extend(Observe, {
 			if (!intersectChange.call(self, model, nchg)) return;
 			ob.fn.call(self, nchg, opts, model);
 		});
+	},
+
+	// auto mount on paint
+	paint: function() {
+		Temple.prototype.paint.apply(this, arguments);
+		if (!this.isMounted()) this.mount();
+		return this;
+	},
+
+	// auto stop on detach
+	detach: function() {
+		this.stop();
+		return Temple.prototype.detach.apply(this, arguments);
 	}
 
 }), {

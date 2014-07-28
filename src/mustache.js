@@ -165,7 +165,7 @@ module.exports = Context.extend({
 			comp, detach;
 
 		if (Partial != null) {
-			comp = new Partial;
+			comp = Temple.Deps.nonreactive(function() { return new Partial; });
 
 			// make sure it's a binding
 			if (!(comp instanceof Temple.React))
@@ -180,8 +180,8 @@ module.exports = Context.extend({
 
 			// clean up when the partial is "stopped"
 			comp.once("stop", function() {
-				if (partial.parentContext === this) partial.setParentContext(null);
-				comps[name] = _.without(comps[name], partial);
+				if (comp.parentContext === this) comp.setParentContext(null);
+				comps[name] = _.without(comps[name], comp);
 			}, this);
 
 			// mount the partial
@@ -365,54 +365,41 @@ module.exports = Context.extend({
 	_attrToDecorator: function(attr, binding, ctx) {
 		var decorators = this.findDecorators(attr.name),
 			temple = this,
-			processed, rawargs, init,
-			id = _.uniqueId("dec"),
-			destroyed = true;
+			processed, rawargs;
 
 		if (decorators.length) {
-			init = function() {
-				if (!destroyed) return;
-				destroyed = false;
-
-				processed = decorators.map(function(fn) {
-					return fn.call(temple, binding.node, attr.children);
-				}).filter(function(d) {
-					return typeof d === "object";
-				});
-
-				processed.some(function(d) {
-					if (d.parse !== false) {
-						rawargs = convertTemplateToRawArgs(attr.children);
-						return true;
-					}
-				});
-			}
-
-			binding.on("mount", function() {
-				init();
-
-				this.autorun(id, function() {
-					var args = [];
-
-					if (rawargs != null)
-						args = ArgParser.parse(rawargs, { ctx: ctx });
-
-					processed.forEach(function(d) {
-						if (typeof d.update === "function") {
-							d.update.apply(ctx, d.parse !== false ? args : []);
-						}
-					});
-				});
+			processed = decorators.map(function(fn) {
+				return fn.call(this, binding.node, attr.children);
+			}, this).filter(function(d) {
+				return typeof d === "object";
 			});
 
-			binding.on("detach", function() {
-				this.stopComputation(id);
-				destroyed = true;
+			processed.some(function(d) {
+				if (d.parse !== false) {
+					rawargs = convertTemplateToRawArgs(attr.children);
+					return true;
+				}
+			});
+
+			this.autorun(function(comp) {
+				var args = [];
+
+				if (rawargs != null)
+					args = ArgParser.parse(rawargs, { ctx: ctx });
 
 				processed.forEach(function(d) {
-					if (typeof d.destroy === "function") d.destroy.call(temple);
+					if (typeof d.update === "function") {
+						d.update.apply(ctx, d.parse !== false ? args : []);
+					}
 				});
-			});
+
+				comp.onInvalidate(function() {
+					if (!comp.stopped) return;
+					processed.forEach(function(d) {
+						if (typeof d.destroy === "function") d.destroy.call(temple);
+					});
+				});
+			}, true);
 		}
 
 		else {

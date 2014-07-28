@@ -21,7 +21,7 @@ describe("Mustache", function() {
 
 	function render(template, data) {
 		tpl = new Mustache(template, data);
-		tpl.mount().paint(doc);
+		tpl.paint(doc);
 		return getNodes();
 	}
 
@@ -399,7 +399,7 @@ describe("Mustache", function() {
 			expect(nodes[0].childNodes[0]).to.be.an.element.with.tagName("span");
 		});
 
-		it.skip("renders element in section", function() {
+		it("renders element in section", function() {
 			var nodes = render("{{#section}}<div></div>{{/section}}", { section: true });
 			expect(nodes).to.have.length(2);
 			expect(nodes[0]).to.be.an.element.with.tagName("div");
@@ -441,7 +441,7 @@ describe("Mustache", function() {
 		});
 	});
 
-	describe.skip("Decorators", function() {
+	describe("Decorators", function() {
 		function render(template, scope) {
 			tpl = new Mustache(template, scope);
 			return getNodes();
@@ -469,9 +469,7 @@ describe("Mustache", function() {
 				}
 			});
 
-			tpl.paint(doc);
-			tpl.detach();
-
+			tpl.paint(doc).detach();
 			expect(seen).to.equal(3);
 		});
 
@@ -505,9 +503,7 @@ describe("Mustache", function() {
 				} }
 			});
 
-			tpl.paint(doc);
-			tpl.detach();
-
+			tpl.paint(doc).detach();
 			expect(seen).to.be.ok;
 		});
 
@@ -637,7 +633,7 @@ describe("Mustache", function() {
 			expect(nodes[0].childNodes[0]).to.be.a.textNode.with.nodeValue("Hello World");
 		});
 
-		it.skip("renders text node in section", function() {
+		it("renders text node in section", function() {
 			var nodes = render("{{#section}}Hello World{{/section}}", { section: true });
 			expect(nodes).to.have.length(2);
 			expect(nodes[0]).to.be.a.textNode.with.nodeValue("Hello World");
@@ -668,7 +664,7 @@ describe("Mustache", function() {
 			expect(nodes[0].childNodes[0]).to.be.a.textNode.with.nodeValue("Hello World");
 		});
 
-		it.skip("renders interpolator in section", function() {
+		it("renders interpolator in section", function() {
 			var nodes = render("{{#section}}{{ val }}{{/section}}", { section: true, val: "Hello World" });
 			expect(nodes).to.have.length(2);
 			expect(nodes[0]).to.be.a.textNode.with.nodeValue("Hello World");
@@ -702,9 +698,9 @@ describe("Mustache", function() {
 			expect(nodes[0].childNodes[0]).to.be.an.element.with.tagName("span");
 		});
 
-		it.skip("renders triple interpolator in section", function() {
+		it("renders triple interpolator in section", function() {
 			var nodes = render("{{#section}}{{{ val }}}{{/section}}", { section: true, val: "<span>" });
-			expect(nodes).to.have.length(3);
+			expect(nodes).to.have.length(2);
 			expect(nodes[0]).to.be.an.element.with.tagName("span");
 		});
 	});
@@ -767,7 +763,7 @@ describe("Mustache", function() {
 			expect(nodes[0].firstChild).to.be.textNode.with.nodeValue("Hello World");
 		});
 
-		it.skip("renders partial in section", function() {
+		it("renders partial in section", function() {
 			tpl = new Mustache("{{#section}}{{> partial }}{{/section}}", { value: "Hello World", section: true });
 			tpl.setPartial("partial", "<h1>{{ value }}</h1>");
 			tpl.paint(doc);
