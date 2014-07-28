@@ -36,8 +36,10 @@ module.exports = Temple.extend(_.extend(Observe, {
 		if (ctx != null && !Context.isContext(ctx))
 			throw new Error("Expecting null or instance of context to set as parent.");
 
-		if (this.parentContext != null) {
-			this.parentContext.off("change", this._onChange, this);
+		var prevctx = this.parentContext;
+
+		if (prevctx != null) {
+			prevctx.off("change", this._onChange, this);
 			this.parentContext = null;
 		}
 
@@ -46,6 +48,7 @@ module.exports = Temple.extend(_.extend(Observe, {
 			this.parentContext = ctx;
 		}
 
+		this.trigger("ctx", this.parentContext, prevctx);
 		return this;
 	},
 
@@ -157,15 +160,6 @@ module.exports = Temple.extend(_.extend(Observe, {
 		return this.set(path || [], true, _.extend({ remove: true }, options));
 	},
 
-	// custom observer handler
-	_handleObserver: function(ob, chg, opts, model) {
-		var self = this;
-		util.findAllChanges(chg, ob.parts, function(nchg) {
-			if (!intersectChange.call(self, model, nchg)) return;
-			ob.fn.call(self, nchg, opts, model);
-		});
-	},
-
 	// auto mount on paint
 	paint: function() {
 		Temple.prototype.paint.apply(this, arguments);
@@ -177,6 +171,29 @@ module.exports = Temple.extend(_.extend(Observe, {
 	detach: function() {
 		this.stop();
 		return Temple.prototype.detach.apply(this, arguments);
+	},
+
+	cleanProxyTree: function() {
+		_.invoke(this.models, "cleanProxyTree");
+		return this;
+	},
+
+	// cleans up the context so it can be GC'd
+	clean: function() {
+		this.detach();
+		this.setParentContext(null);
+		this.cleanProxyTree();
+		this.trigger("clean");
+		return this;
+	},
+
+	// custom observer handler
+	_handleObserver: function(ob, chg, opts, model) {
+		var self = this;
+		util.findAllChanges(chg, ob.parts, function(nchg) {
+			if (!intersectChange.call(self, model, nchg)) return;
+			ob.fn.call(self, nchg, opts, model);
+		});
 	}
 
 }), {

@@ -8,8 +8,8 @@ exports.isPlainObject = function(obj) {
 
 // tests obj as a subclass of parent
 // here, a class is technically a subclass of itself
-exports.isSubClass = function(parent, obj) {
-	return obj === parent || (obj != null && obj.prototype instanceof parent);
+exports.isSubClass = function(parent, fn) {
+	return fn === parent || (fn != null && fn.prototype instanceof parent);
 }
 
 // cleans an array of path parts
@@ -116,7 +116,7 @@ exports.findAllChanges = function(chg, parts, onPath, ctx) {
 		proxy = chg.model.getProxyByValue(obj);
 		if (_.isFunction(proxy.get)) return proxy.get(obj, path);
 
-		tproxy = proxy(obj, chg.model);
+		tproxy = new proxy(obj, chg.model);
 		val = _.isFunction(tproxy.get) ? tproxy.get(path) : void 0;
 		if (_.isFunction(tproxy.destroy)) tproxy.destroy();
 
@@ -179,7 +179,7 @@ exports.findAllMatchingPaths = function(model, value, parts, paths, base) {
 		return paths;
 	}
 
-	var proxy = model.getProxyByValue(value)(value, model),
+	var proxy = new (model.getProxyByValue(value))(value, model),
 		part = parts[0],
 		rest = parts.slice(1);
 
@@ -230,3 +230,25 @@ var changeType =
 exports.changeType = function(nval, oval) {
 	return _.isUndefined(oval) ? "add" : _.isUndefined(nval) ? "delete" : "update";
 }
+
+
+// cleans html, then converts html entities to unicode
+exports.decodeEntities = (function() {
+	if (typeof document === "undefined") return;
+
+	// this prevents any overhead from creating the object each time
+	var element = document.createElement('div');
+
+	return function decodeHTMLEntities(str) {
+		if(str && typeof str === 'string') {
+			// strip script/html tags
+			str = str.replace(/<script[^>]*>([\S\s]*?)<\/script>/gmi, '');
+			str = str.replace(/<\/?\w(?:[^"'>]|"[^"]*"|'[^']*')*>/gmi, '');
+			element.innerHTML = str;
+			str = element.textContent;
+			element.textContent = '';
+		}
+
+		return str;
+	}
+})();

@@ -5,6 +5,10 @@ describe("Model", function() {
 		model = new Mustache.Model({ foo: "bar" });
 	});
 
+	afterEach(function() {
+		model.cleanProxyTree();
+	});
+
 	describe("Basics", function() {
 		it("sets data on construction", function() {
 			var model = new Mustache.Model({ foo: "bar" });
@@ -70,11 +74,11 @@ describe("Model", function() {
 
 			Proxy = Mustache.Proxy.Object.extend({
 				constructor: function(target, model) {
-					if (!(this instanceof Proxy)) return new Proxy(target, model);
-
 					expect(target).to.equal(obj);
 					expect(model).to.be.instanceof(Mustache.Model);
 					seen++;
+
+					Mustache.Proxy.Object.apply(this, arguments);
 				}
 			}, {
 				match: function(target) {
@@ -96,11 +100,12 @@ describe("Model", function() {
 
 			Proxy = Mustache.Proxy.Object.extend({
 				constructor: function(target, model) {
-					if (!(this instanceof Proxy)) return new Proxy(target, model);
 					c++;
+					Mustache.Proxy.Object.apply(this, arguments);
 				},
 				destroy: function() {
 					d++;
+					Mustache.Proxy.Object.prototype.destroy.apply(this, arguments);
 				}
 			}, {
 				match: function(target) {

@@ -165,7 +165,9 @@ module.exports = Context.extend({
 			comp, detach;
 
 		if (Partial != null) {
-			comp = Temple.Deps.nonreactive(function() { return new Partial; });
+			comp = Temple.Deps.nonreactive(function() {
+				return new Partial;
+			});
 
 			// make sure it's a binding
 			if (!(comp instanceof Temple.React))
@@ -180,7 +182,7 @@ module.exports = Context.extend({
 
 			// clean up when the partial is "stopped"
 			comp.once("stop", function() {
-				if (comp.parentContext === this) comp.setParentContext(null);
+				if (comp instanceof Context) comp.clean();
 				comps[name] = _.without(comps[name], comp);
 			}, this);
 
@@ -250,14 +252,14 @@ module.exports = Context.extend({
 					this.convertTemplate(template.children, ctx).forEach(binding.appendChild, binding);
 
 					template.attributes.forEach(function(attr) {
-						this._attrToDecorator(attr, binding, ctx);
+						this._processAttribute(attr, binding, ctx);
 					}, this);
 
 					return binding;
 				// }
 
 			case NODE_TYPE.TEXT:
-				return new Temple.Text(decodeEntities(template.value));
+				return new Temple.Text(util.decodeEntities(template.value));
 
 			case NODE_TYPE.HTML:
 				return new Temple.HTML(template.value);
@@ -333,12 +335,11 @@ module.exports = Context.extend({
 						m = model.getModel(i);
 					}
 
-					var row = new Context(m);
+					var row = new Context(m, ctx);
 					row.addModel(new Model({ $key: i }));
-					row.setParentContext(ctx);
 
 					var val = temple.convertStringTemplate(template.children, row);
-					row.setParentContext(null);
+					row.clean();
 
 					return val;
 				}
@@ -357,7 +358,7 @@ module.exports = Context.extend({
 		}
 	},
 
-	_attrToDecorator: function(attr, binding, ctx) {
+	_processAttribute: function(attr, binding, ctx) {
 		var decorators = this.findDecorators(attr.name),
 			temple = this,
 			processed, rawargs;
@@ -371,7 +372,7 @@ module.exports = Context.extend({
 
 			processed.some(function(d) {
 				if (d.parse !== false) {
-					rawargs = convertTemplateToRawArgs(attr.children);
+					rawargs = Mustache.convertTemplateToRawArgs(attr.children);
 					return true;
 				}
 			});
@@ -416,60 +417,27 @@ module.exports = Context.extend({
 				value: str
 			} ]
 		};
+	},
+
+	convertTemplateToRawArgs: function(template) {
+		if (_.isArray(template)) return template.map(function(t) {
+			return Mustache.convertTemplateToRawArgs(t);
+		}).filter(function(b) { return b != null; }).join("");
+
+		switch (template.type) {
+			case NODE_TYPE.TEXT:
+				return template.value;
+
+			case NODE_TYPE.INTERPOLATOR:
+			case NODE_TYPE.TRIPLE:
+				return "{{" + template.value + "}}";
+
+			case NODE_TYPE.SECTION:
+			case NODE_TYPE.INVERTED:
+				throw new Error("Unexpected section in attribute value.");
+
+			case NODE_TYPE.PARTIAL:
+				throw new Error("Unexpected partial in attribute value.");
+		}
 	}
 });
-
-function convertTemplateToArgs(template) {
-	if (_.isArray(template)) return template.map(function(t) {
-		return convertTemplateToArgs(t);
-	}).filter(function(b) { return b != null; });
-
-	switch (template.type) {
-		case NODE_TYPE.INTERPOLATOR:
-		case NODE_TYPE.TRIPLE:
-			template = {
-				type: NODE_TYPE.TEXT,
-				value: "{{" + template.value + "}}"
-			}
-			break;
-
-		case NODE_TYPE.SECTION:
-		case NODE_TYPE.INVERTED:
-			throw new Error("Unexpected section in attribute value.");
-
-		case NODE_TYPE.PARTIAL:
-			throw new Error("Unexpected partial in attribute value.");
-	}
-
-	return template;
-}
-
-function convertTemplateToRawArgs(template) {
-	return convertTemplateToArgs(template)
-		.filter(function(t) { return t.type === NODE_TYPE.TEXT; })
-		.map(function(t) { return t.value; })
-		.join("");
-}
-
-// cleans html, then converts html entities to unicode
-var decodeEntities = (function() {
-	if (typeof document === "undefined") return;
-
-	// this prevents any overhead from creating the object each time
-	var element = document.createElement('div');
-
-	function decodeHTMLEntities (str) {
-		if(str && typeof str === 'string') {
-			// strip script/html tags
-			str = str.replace(/<script[^>]*>([\S\s]*?)<\/script>/gmi, '');
-			str = str.replace(/<\/?\w(?:[^"'>]|"[^"]*"|'[^']*')*>/gmi, '');
-			element.innerHTML = str;
-			str = element.textContent;
-			element.textContent = '';
-		}
-
-		return str;
-	}
-
-	return decodeHTMLEntities;
-})();

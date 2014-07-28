@@ -50,7 +50,7 @@ _.extend(Model.prototype, Temple.Events, Observe, {
 	},
 
 	registerProxy: function(proxy) {
-		if (!_.isFunction(proxy))
+		if (!util.isSubClass(Proxy, proxy))
 			throw new Error("Expecting function for Proxy.");
 
 		if (!_.isFunction(proxy.match))
@@ -82,9 +82,18 @@ _.extend(Model.prototype, Temple.Events, Observe, {
 		return !_.isFunction(method) ? method : method.apply(this._proxy, args);
 	},
 
+	_clearLocalProxy: function() {
+		if (this._proxy != null) {
+			this.proxy("destroy");
+			delete this._proxy;
+		}
+
+		return this;
+	},
+
 	_refreshLocalProxy: function() {
-		if (this._proxy != null) this.proxy("destroy");
-		this._proxy = this.getProxyByValue(this.value)(this.value, this);
+		this._clearLocalProxy();
+		this._proxy = new (this.getProxyByValue(this.value))(this.value, this);
 		return this;
 	},
 
@@ -96,8 +105,7 @@ _.extend(Model.prototype, Temple.Events, Observe, {
 
 		while (models.length) {
 			model = models.shift();
-			model.proxy("destroy");
-			delete model._proxy;
+			model._clearLocalProxy();
 			models.push.apply(models, _.values(model.children));
 		}
 

@@ -5,7 +5,6 @@ var Temple = require("templejs"),
 	util = require("./util")
 
 function Proxy(target) {
-	if (!(this instanceof Proxy)) return new Proxy(target);
 	this.target = target;
 }
 
@@ -29,10 +28,6 @@ _.extend(Proxy.prototype, {
 var ObjectProxy =
 Proxy.Object = Proxy.extend({
 	constructor: function(target, model) {
-		if (!(this instanceof ObjectProxy)) {
-			return ObjectProxy.match(target) ? new ObjectProxy(target, model) : false;
-		}
-
 		this.target = target;
 		this.model = model;
 
@@ -82,10 +77,6 @@ Proxy.Object = Proxy.extend({
 var ArrayProxy =
 Proxy.Array = ObjectProxy.extend({
 	constructor: function(target, model) {
-		if (!(this instanceof ArrayProxy)) {
-			return ArrayProxy.match(target) ? new ArrayProxy(target, model) : false;
-		}
-
 		this.target = target;
 		this.model = model;
 
