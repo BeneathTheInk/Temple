@@ -10,7 +10,7 @@ describe("Bindings", function() {
 
 	describe("Base", function() {
 		beforeEach(function() {
-			binding = new Temple.Binding();
+			binding = new Temple();
 		});
 
 		it("emits detach event on detach", function() {
@@ -21,23 +21,23 @@ describe("Bindings", function() {
 		});
 
 		it("adds child binding", function() {
-			binding.appendChild(new Temple.Binding());
+			binding.appendChild(new Temple());
 			expect(binding.children).to.have.length(1);
 		});
 
 		it("adds child binding before existing binding", function() {
-			var existing = binding.appendChild(new Temple.Binding()),
-				child = binding.insertBefore(new Temple.Binding(), existing);
+			var existing = binding.appendChild(new Temple()),
+				child = binding.insertBefore(new Temple(), existing);
 
 			expect(binding.children).to.have.length(2);
 			expect(binding.children).to.deep.equal([ child, existing ]);
 		});
 
 		it("throws error if existing binding is not a child of parent", function() {
-			var existing = new Temple.Binding();
+			var existing = new Temple();
 
 			expect(function() {
-				binding.insertBefore(new Temple.Binding(), existing);
+				binding.insertBefore(new Temple(), existing);
 			}).to.throw(Error);
 		});
 
@@ -48,14 +48,14 @@ describe("Bindings", function() {
 		});
 
 		it("removes child binding", function() {
-			var child = binding.appendChild(new Temple.Binding());
+			var child = binding.appendChild(new Temple());
 			binding.removeChild(child);
 			expect(binding.children).to.have.length(0);
 		});
 
 		it("removes child binding from exisiting parent before adding", function() {
-			var other = new Temple.Binding(),
-				child = new Temple.Binding(),
+			var other = new Temple(),
+				child = new Temple(),
 				removed = false;
 
 			other.on("child:remove", function(b) {
