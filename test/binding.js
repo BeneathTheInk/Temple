@@ -68,6 +68,11 @@ describe("Bindings", function() {
 			expect(child.parent).to.equal(binding);
 			expect(removed).to.be.ok;
 		});
+
+		it("toString produces children HTML equivalent", function() {
+			binding.appendChild("Hello World");
+			expect(binding.toString()).to.equal("Hello World");
+		});
 	});
 
 	describe("Element", function() {
@@ -121,12 +126,21 @@ describe("Bindings", function() {
 			expect(binding.find("div")).to.equal(binding.node);
 			expect(binding.findAll("div")).to.deep.equal([ binding.node ]);
 		});
+
+		it("toString produces HTML equivalent", function() {
+			binding.appendChild("Hello World");
+			expect(binding.toString()).to.equal("<div>Hello World</div>");
+		});
 	});
 
 	describe("Text", function() {
+		beforeEach(function() {
+			binding = new Temple.Text("Hello World")
+		});
+
 		it("appends text node to parent", function() {
 			var cont = document.createElement("div");
-			binding = new Temple.Text("Hello World").paint(cont);
+			binding.paint(cont);
 
 			expect(binding.node).to.be.textNode.with.nodeValue("Hello World");
 			expect(cont.childNodes[0]).to.equal(binding.node);
@@ -134,9 +148,12 @@ describe("Bindings", function() {
 
 		it("removes text node from DOM on detach", function() {
 			var cont = document.createElement("div");
-			binding = new Temple.Text("Hello World").paint(cont);
-			binding.detach();
+			binding.paint(cont).detach();
 			expect(binding.node.parentNode).to.be.null;
+		});
+
+		it("toString produces HTML equivalent", function() {
+			expect(binding.toString()).to.equal("Hello World");
 		});
 	});
 
@@ -163,8 +180,13 @@ describe("Bindings", function() {
 
 		it("finds elements", function() {
 			binding = new Temple.HTML("<div><span></span></div>");
-			expect(binding.find("span")).to.equal(binding.firstNode().firstChild);
-			expect(binding.findAll("span")).to.deep.equal([ binding.firstNode().firstChild ]);
+			expect(binding.find("span")).to.equal(binding.firstNode.firstChild);
+			expect(binding.findAll("span")).to.deep.equal([ binding.firstNode.firstChild ]);
+		});
+
+		it("toString produces HTML equivalent", function() {
+			binding = new Temple.HTML("<div></div><span>");
+			expect(binding.toString()).to.equal("<div></div><span></span>");
 		});
 	});
 
