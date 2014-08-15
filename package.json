@@ -22,15 +22,17 @@
 		"grunt-contrib-clean": "0.5.0",
 		"grunt-contrib-uglify": "0.5.0",
 		"grunt-contrib-watch": "0.6.1",
+		"grunt-wait": "0.1.0",
 		"grunt-wrap2000": "0.1.0"
 	},
 	"license": "MIT",
 	"keywords": [
 		"view",
+		"framework",
 		"DOM",
 		"html",
-		"data binding",
 		"binding",
-		"reactive"
+		"reactive",
+		"dependency"
 	]
 }
