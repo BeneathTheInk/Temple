@@ -5,49 +5,122 @@ describe("Bindings", function() {
 	this.slow(200);
 
 	afterEach(function() {
-		if (binding != null) binding.detach();
 		binding = null;
 	});
 
 	describe("Base", function() {
 		beforeEach(function() {
-			binding = new Temple.Binding();
+			binding = new Temple();
 		});
 
 		it("emits detach event on detach", function() {
 			var seen = false;
 			binding.once("detach", function() { seen = true; });
-			binding.mount();
 			binding.detach();
 			expect(seen).to.be.ok;
 		});
 
 		it("adds child binding", function() {
-			binding.addChild(new Temple.Binding());
+			binding.appendChild(new Temple());
 			expect(binding.children).to.have.length(1);
 		});
 
+		it("adds child binding before existing binding", function() {
+			var existing = binding.appendChild(new Temple()),
+				child = binding.insertBefore(new Temple(), existing);
+
+			expect(binding.children).to.have.length(2);
+			expect(binding.children).to.deep.equal([ child, existing ]);
+		});
+
+		it("throws error if existing binding is not a child of parent", function() {
+			var existing = new Temple();
+
+			expect(function() {
+				binding.insertBefore(new Temple(), existing);
+			}).to.throw(Error);
+		});
+
+		it("throws error when attempting to add binding as child of itself", function() {
+			expect(function() {
+				binding.appendChild(binding);
+			}).to.throw(Error);
+		});
+
+		it("does nothing when adding a child if it is already at position in parent", function() {
+			var child = binding.appendChild(new Temple());
+
+			binding.on("child:remove", function(b) {
+				throw new Error("child was removed!");
+			});
+
+			binding.on("child:add", function(b) {
+				throw new Error("child was added!");
+			});
+
+			binding.on("child:move", function(b) {
+				throw new Error("child was moved!");
+			});
+
+			binding.appendChild(child);
+			expect(child.parent).to.equal(binding);
+		});
+
+		it("moves child if already in parent at a different location", function() {
+			var first = binding.appendChild(new Temple()),
+				child = binding.appendChild(new Temple()),
+				moved = false;
+
+			binding.on("child:remove", function(b) {
+				throw new Error("child was removed!");
+			});
+
+			binding.on("child:add", function(b) {
+				throw new Error("child was added!");
+			});
+
+			binding.on("child:move", function(b) {
+				if (child === b) moved = true;
+			});
+
+			binding.insertBefore(child, first);
+			expect(child.parent).to.equal(binding);
+			expect(moved).to.be.ok;
+		});
+
 		it("removes child binding", function() {
-			var child = new Temple.Binding();
-			binding.addChild(child);
+			var child = binding.appendChild(new Temple());
 			binding.removeChild(child);
 			expect(binding.children).to.have.length(0);
 		});
 
-		it("removes child binding from exisiting parent before adding", function() {
-			var other = new Temple.Binding(),
-				child = new Temple.Binding(),
-				removed = false;
+		it("removes child binding from existing parent before adding", function() {
+			var other = new Temple(),
+				child = new Temple(),
+				removed = false,
+				added = false;
 
 			other.on("child:remove", function(b) {
 				if (child === b) removed = true;
+				expect(added).to.not.be.ok;
 			});
 
-			other.addChild(child);
-			binding.addChild(child);
+			binding.on("child:add", function(b) {
+				if (child === b) added = true;
+				expect(removed).to.be.ok;
+			});
+
+			other.appendChild(child);
+			binding.appendChild(child);
 
 			expect(child.parent).to.equal(binding);
 			expect(removed).to.be.ok;
+		});
+
+
+		it("toString produces children HTML equivalent", function() {
+			binding.appendChild("Hello World");
+			expect(binding.toString()).to.equal("Hello World");
 		});
 	});
 
@@ -66,227 +139,107 @@ describe("Bindings", function() {
 			expect(cont.childNodes[0]).to.equal(binding.node);
 		});
 
-		it("find returns element on matching selector", function() {
-			var cont = document.createElement("span");
-			binding.paint(cont);
-			expect(binding.find("div")).to.equal(binding.node);
+		it("removes element from DOM on detach", function() {
+			binding.paint(document.createElement("div"));
+			binding.detach();
+			expect(binding.node.parentNode).to.be.null;
 		});
 
 		it("sets string attribute", function() {
 			binding.attr("class", "active");
-			binding.paint();
 			expect(binding.node.getAttribute("class")).to.equal("active");
 		});
 
-		it("sets reactive attribute", function(done) {
-			var model = new Temple.Model({ className: "active" });
-			
-			binding.attr("class", function() {
-				return model.get("className");
-			});
-			binding.paint();
-			
-			expect(binding.node.getAttribute("class")).to.equal("active");
-			model.set("className", "inactive");
-
-			renderWait(function() {
-				expect(binding.node.getAttribute("class")).to.equal("inactive");
-			}, done);
-		});
-
-		it("sets mixed object of attributes", function() {
-			var model = new Temple.Model({ color: "red" });
-			
+		it("sets object of attributes", function() {
 			binding.attr({
-				"class": "active",
-				style: function() {
-					return "color: " + model.get("color") + ";";
-				}
+				class: "active",
+				style: "color: red;"
 			});
-			binding.paint();
 
 			expect(binding.node.getAttribute("class")).to.equal("active");
 			expect(binding.node.style.color).to.equal("red");
 		});
 
-		it("removes element from DOM on detach", function() {
-			binding.paint();
-			binding.detach();
-			expect(binding.node.parentNode).to.be.null;
+		it("gets attribute value", function() {
+			binding.attr("title", "Hello World");
+			expect(binding.attr("title")).to.equal("Hello World");
+		});
+
+		it("removes attribute", function() {
+			binding.attr("title", "Hello World");
+			binding.removeAttribute("title");
+			expect(binding.attr("title")).to.be.null;
+		});
+
+		it("finds the element", function() {
+			expect(binding.find("div")).to.equal(binding.node);
+			expect(binding.findAll("div")).to.deep.equal([ binding.node ]);
+		});
+
+		it("toString produces HTML equivalent", function() {
+			binding.appendChild("Hello World");
+			expect(binding.toString()).to.equal("<div>Hello World</div>");
 		});
 	});
 
 	describe("Text", function() {
+		beforeEach(function() {
+			binding = new Temple.Text("Hello World")
+		});
+
 		it("appends text node to parent", function() {
 			var cont = document.createElement("div");
-			binding = new Temple.Text("Hello World").paint(cont);
+			binding.paint(cont);
 
 			expect(binding.node).to.be.textNode.with.nodeValue("Hello World");
 			expect(cont.childNodes[0]).to.equal(binding.node);
 		});
 
-		it("updates value reactively", function(done) {
-			var model = new Temple.Model({ foo: "bar" });
-
-			binding = new Temple.Text(function() {
-				return model.get("foo");
-			}).paint();
-
-			expect(binding.node).to.be.textNode.with.nodeValue("bar");
-			model.set("foo", "Hello World");
-
-			renderWait(function() {
-				expect(binding.node).to.have.nodeValue("Hello World");
-			}, done);
+		it("removes text node from DOM on detach", function() {
+			var cont = document.createElement("div");
+			binding.paint(cont).detach();
+			expect(binding.node.parentNode).to.be.null;
 		});
 
-		it("removes text node from DOM on detach", function() {
-			binding = new Temple.Text("Hello World").paint();
-			binding.detach();
-			expect(binding.node.parentNode).to.be.null;
+		it("toString produces HTML equivalent", function() {
+			expect(binding.toString()).to.equal("Hello World");
 		});
 	});
 
 	describe("HTML", function() {
 		it("appends nodes to parent", function() {
-			binding = new Temple.HTML("<div></div><span></span>");
-			binding.paint();
-
-			expect(binding.nodes).to.have.length(2);
-			expect(binding.nodes[0]).to.be.element.with.tagName("div");
-			expect(binding.nodes[1]).to.be.element.with.tagName("span");
-
 			var cont = document.createElement("div");
-			binding.appendTo(cont);
+			binding = new Temple.HTML("<div></div><span></span>");
+			binding.paint(cont);
 
-			expect(binding.nodes[0].parentNode).to.equal(cont);
-			expect(binding.nodes[1].parentNode).to.equal(cont);
-		});
-
-		it("converts string value to html nodes, reactively", function(done) {
-			var model = new Temple.Model({ html: "<div>" });
-
-			binding = new Temple.HTML(function() {
-				return model.get("html");
-			});
-			binding.paint();
-
-			expect(binding.nodes).to.have.length(1);
-			expect(binding.nodes[0]).to.be.element.with.tagName("div");
-			model.set("html", "<span>");
-
-			renderWait(function() {
-				expect(binding.nodes).to.have.length(1);
-				expect(binding.nodes[0]).to.be.element.with.tagName("span");
-			}, done);
+			expect(cont.childNodes).to.have.length(3);
+			expect(cont.childNodes[0]).to.be.element.with.tagName("div");
+			expect(cont.childNodes[1]).to.be.element.with.tagName("span");
+			expect(cont.childNodes[2]).to.be.comment;
 		});
 
 		it("removes nodes from DOM on detach", function() {
 			binding = new Temple.HTML("<div>");
 			var cont = document.createElement("div");
 			binding.paint(cont);
+			expect(cont.childNodes).to.have.length(2);
 			binding.detach();
-			expect(binding.nodes).to.have.length(0);
 			expect(cont.childNodes).to.have.length(0);
 		});
-	});
 
-	describe("Each", function() {
-		it("renders children bindings for every value in array", function() {
-			var seen = 0;
-
-			binding = new Temple.Each(function() {
-				seen++;
-			}, [ 0, 1, 2 ]);
-
-			binding.paint();
-
-			expect(seen).to.equal(3);
+		it("finds elements", function() {
+			binding = new Temple.HTML("<div><span></span></div>");
+			expect(binding.find("span")).to.equal(binding.firstNode.firstChild);
+			expect(binding.findAll("span")).to.deep.equal([ binding.firstNode.firstChild ]);
 		});
 
-		it("renders each key in plain js objects", function() {
-			var seen = 0;
-
-			binding = new Temple.Each(function(row, key) {
-				seen++;
-				if (seen === 1) expect(key).to.equal("one");
-				if (seen === 2) expect(key).to.equal("two");
-			});
-
-			binding.set({ one: "Hello", two: "World" });
-			binding.paint();
-
-			expect(seen).to.equal(2);
-		});
-
-		it("renders nothing on empty array", function() {
-			binding = new Temple.Each(function() {
-				throw new Error("Row was rendered!");
-			}, []);
-
-			binding.paint();
-		});
-
-		it("renders new rows of bindings when added to array", function() {
-			var seen = 0;
-
-			binding = new Temple.Each(function() {
-				seen++;
-			}, [0]);
-
-			binding.paint();
-
-			binding.get().push(1);
-			expect(seen).to.equal(2);
-		});
-
-		it("removes rows of bindings when removed from array", function() {
-			var seen = false;
-
-			binding = new Temple.Each(function(model, key) {
-				var b = new Temple.Binding();
-				b.once("detach", function() {
-					seen = true;
-				});
-				return b;
-			});
-
-			binding.set(null, [0,1,2]);
-			binding.paint();
-
-			binding.get().pop();
-			expect(seen).to.be.ok;
-		});
-
-		it("removes all rows on detach", function() {
-			var seen = 0;
-
-			binding = new Temple.Each(function(model, key) {
-				var b = new Temple.Binding();
-				b.once("detach", function() {
-					seen++;
-				});
-				return b;
-			}, [0,1,2]);
-
-			binding.paint();
-
-			binding.detach();
-			expect(seen).to.equal(3);
+		it("toString produces HTML equivalent", function() {
+			binding = new Temple.HTML("<div></div><span>");
+			expect(binding.toString()).to.equal("<div></div><span></span>");
 		});
 	});
 
-	describe("Scope", function() {
-		var scope;
-
-		beforeEach(function() {
-			scope = new Temple.Scope();
-			scope.set("foo", "bar");
-		});
-
-		it("creates a model on constructor if a model isn't passed", function() {
-			expect(scope.model).to.be.instanceof(Temple.Model);
-		});
+	describe("React", function() {
 
 	});
 

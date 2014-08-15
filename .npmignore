@@ -1,5 +1,4 @@
 .git*
 dist/
-src/
 test/
 Gruntfile.js
