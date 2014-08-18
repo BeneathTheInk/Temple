@@ -129,6 +129,21 @@ describe("Bindings", function() {
 			binding = new Temple.Element("div");
 		});
 
+		it("accepts a string tagname on construction", function() {
+			binding = new Temple.Element("div");
+			expect(binding).to.be.instanceof(Temple);
+		});
+
+		it("accepts a DOM element on construction", function() {
+			var node = document.createElement("div");
+			node.appendChild(document.createTextNode("Hello World"));
+
+			binding = new Temple.Element(node);
+			expect(binding).to.be.instanceof(Temple);
+			expect(binding.tagname).to.equal("div");
+			expect(binding.firstChild).to.be.instanceof(Temple.Text);
+		});
+
 		it("appends element to parent node", function() {
 			expect(binding.node).to.be.element;
 			expect(binding.node).to.have.tagName("div");
@@ -185,6 +200,17 @@ describe("Bindings", function() {
 	describe("Text", function() {
 		beforeEach(function() {
 			binding = new Temple.Text("Hello World")
+		});
+
+		it("accepts a string value on construction", function() {
+			binding = new Temple.Text("Hello World");
+			expect(binding).to.be.instanceof(Temple);
+		});
+
+		it("accepts a DOM text node on construction", function() {
+			binding = new Temple.Text(document.createTextNode("Hello World"));
+			expect(binding).to.be.instanceof(Temple.Text);
+			expect(binding.value).to.equal("Hello World");
 		});
 
 		it("appends text node to parent", function() {
