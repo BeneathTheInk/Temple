@@ -158,7 +158,7 @@ _.extend(Model.prototype, Temple.Events, Observe, {
 
 	// returns the model at path, deeply
 	getModel: function(parts) {
-		parts = util.splitPath(parts);
+		parts = util.path.split(parts);
 		if (!parts.length) return this;
 
 		var path = parts[0],
@@ -180,7 +180,7 @@ _.extend(Model.prototype, Temple.Events, Observe, {
 
 	// the own properties of the model's value
 	keys: function(parts) {
-		parts = util.splitPath(parts);
+		parts = util.path.split(parts);
 		if (parts.length) return this.getModel(parts).keys();
 		return this.proxy("keys");
 	},
@@ -193,7 +193,7 @@ _.extend(Model.prototype, Temple.Events, Observe, {
 			parts = [];
 		}
 
-		parts = util.splitPath(parts);
+		parts = util.path.split(parts);
 		options = options || {};
 
 		// no path is a merge or reset

@@ -27,12 +27,9 @@ module.exports = Context.extend({
 		if (_.isObject(partials)) this.setPartial(partials);
 
 		Context.call(this, data);
-		this.initialize();
 	},
 
 	use: Temple.prototype.use,
-
-	initialize: function(){},
 
 	// parses and sets the root template
 	setTemplate: function(template) {
@@ -118,8 +115,8 @@ module.exports = Context.extend({
 
 		if (_.isString(partial)) partial = parse(partial);
 		if (_.isObject(partial) && partial.type === NODE_TYPE.ROOT) partial = Mustache.extend({ template: partial });
-		if (partial != null && !_.isFunction(Temple.Binding, partial))
-			throw new Error("Expecting string template, parsed template, Temple subclass or function for partial.");
+		if (partial != null && !util.isSubClass(Temple.React, partial))
+			throw new Error("Expecting string template, parsed template, Temple React subclass or function for partial.");
 
 		if (partial == null) {
 			delete this._partials[name];
@@ -169,11 +166,11 @@ module.exports = Context.extend({
 				return new Partial;
 			});
 
-			// make sure it's a binding
+			// make sure its a subclass of Temple React
 			if (!(comp instanceof Temple.React))
-				throw new Error("Expecting an instance of Temple React for partial.");
+				throw new Error("Expecting an subclass of Temple React for partial.");
 
-			// set the parent context if this is a context
+			// set parent context for instances of Context
 			if (comp instanceof Context) comp.setParentContext(ctx);
 
 			// add it to the list
@@ -208,46 +205,26 @@ module.exports = Context.extend({
 				return this.convertTemplate(template.children, ctx);
 
 			case NODE_TYPE.ELEMENT:
-				// var comp = temple.renderPartial(template.name, ctx);
+				var part = temple.renderPartial(template.name, ctx);
 
-				// if (comp != null) {
-				// 	if (comp instanceof Context) {
-				// 		comp.on("mount:before", function() {
-				// 			comp.autorun("values", function() {
-				// 				template.attributes.forEach(function(attr) {
-				// 					comp.autorun(function() {
-				// 						var val;
+				if (part != null) {
+					this.autorun(function() {
+						template.attributes.forEach(function(attr) {
+							var args = Mustache.convertTemplateToRawArgs(attr.children);
 
-				// 						if (attr.children.length) {
-				// 							var tpl = attr.children[0];
+							temple.autorun(function() {
+								var val = ArgParser.parse(args, { ctx: ctx });
+								if (val.length === 1) val = val[0];
+								else if (!val.length) val = null;
+								part.set(attr.name, val);
+							});
+						});
+					}, true);
 
-				// 							switch(tpl.type) {
-				// 								case NODE_TYPE.INTERPOLATOR:
-				// 								case NODE_TYPE.TRIPLE:
-				// 									val = ctx.get(tpl.value, { model: true }).value;
-				// 									break;
+					return part;
+				}
 
-				// 								case NODE_TYPE.TEXT:
-				// 									val = ArgParser.parse(tpl.value, { ctx: ctx });
-				// 									if (val.length === 1) val = val[0];
-				// 									break;
-				// 							}
-				// 						}
-
-				// 						comp.set(attr.name, val);
-				// 					});
-				// 				});
-				// 			});
-				// 		});
-
-				// 		comp.on("detach", function() {
-				// 			comp.stopComputation("values");
-				// 		});
-				// 	}
-
-				// 	return comp;
-
-				// } else {
+				else {
 					var binding = new Temple.Element(template.name);
 					this.convertTemplate(template.children, ctx).forEach(binding.appendChild, binding);
 
@@ -256,7 +233,7 @@ module.exports = Context.extend({
 					}, this);
 
 					return binding;
-				// }
+				}
 
 			case NODE_TYPE.TEXT:
 				return new Temple.Text(util.decodeEntities(template.value));
@@ -286,7 +263,7 @@ module.exports = Context.extend({
 				});
 
 			case NODE_TYPE.PARTIAL:
-				return this.renderPartial(template.value, ctx);
+				return this.renderPartial(template.value, ctx, void 0);
 
 			default:
 				console.log(template);

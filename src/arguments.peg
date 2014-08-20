@@ -32,7 +32,7 @@ variable
 		var path = s.join("").trim();
 
 		// we must listen to changes at all deep paths
-		options.ctx.depend(util.joinPathParts(path, "**"));
+		options.ctx.depend(util.path.join(path, "**"));
 		
 		return options.ctx.get(path);
 	}

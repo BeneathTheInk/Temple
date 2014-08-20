@@ -8,7 +8,7 @@ module.exports = {
 		if (!Temple.Deps.active) return this;
 		if (this._deps == null) this._deps = {};
 
-		var path = util.joinPathParts(parts),
+		var path = util.path.join(parts),
 			dep = this._deps[path];
 
 		// create if doesn't exist
@@ -32,7 +32,7 @@ module.exports = {
 
 		this._observers.push({
 			path: path,
-			parts: _.isArray(path) ? path : util.parsePath(path),
+			parts: _.isArray(path) ? path : util.parseObserveQuery(path),
 			fn: fn
 		});
 

@@ -12,48 +12,79 @@ exports.isSubClass = function(parent, fn) {
 	return fn === parent || (fn != null && fn.prototype instanceof parent);
 }
 
-// cleans an array of path parts
-var sanitizePathParts =
-exports.sanitizePathParts = function(parts) {
-	return parts.filter(function(a) {
-		return a != null && a !== "";
-	}).map(function(a) {
-		var s = a.toString();
-		if (s[0] === ".") s = s.substr(1);
-		if (s.substr(-1) === ".") s = s.substr(0, s.length - 1);
-		return s;
-	});
-}
+// regex for spotting vertical tree paths
+var vertrex = /^(\.\.\/|\.\/|\/|\.)/i;
 
-// splits a path by period
-var splitPath =
-exports.splitPath = function(path) {
-	var parts = _.isArray(path) ? path : _.isString(path) ? path.split(".") : [ path ];
-	return sanitizePathParts(parts);
+// path utilities
+var pathUtil =
+exports.path = {
+	// the path separator
+	sep: ".",
+
+	// cleans an array of path parts
+	sanitize: function(parts) {
+		return parts.filter(function(a) {
+			return a != null && a !== "";
+		}).map(function(a) {
+			var s = a.toString();
+			if (s[0] === ".") s = s.substr(1);
+			if (s.substr(-1) === ".") s = s.substr(0, s.length - 1);
+			return s;
+		});
+	},
+
+	// splits a path by period
+	split: function(path) {
+		var parts = _.isArray(path) ? path : _.isString(path) ? path.split(pathUtil.sep) : [ path ];
+		return pathUtil.sanitize(parts);
+	},
+
+	// parses a string as a context get path
+	parse: function(path) {
+		var parts = [], m;
+
+		while (m = vertrex.exec(path)) {
+			path = path.substr(m.index + m[1].length);
+
+			if (m[1] === "/") {
+				parts = [ "/" ];
+				break;
+			}
+
+			else if (m[1] === "./" || m[1] === ".") {
+				if (parts.length) continue;
+				parts.push("this");
+			}
+
+			else if (m[1] === "../") {
+				if (parts[0] === "this") parts.shift();
+				parts.push("../");
+			}
+		}
+
+		return parts.concat(pathUtil.split(path));
+	},
+
+	join: function() {
+		return pathUtil.sanitize(_.flatten(_.toArray(arguments))).join(pathUtil.sep);
+	}
 }
 
 // parses a string path as a dynamic path
-var parsePath =
-exports.parsePath = function(path) {
-	return splitPath(path).map(function(part) {
+exports.parseObserveQuery = function(path) {
+	return pathUtil.split(path).map(function(part) {
 		if (part.indexOf("*") > -1 && part !== "**") {
-			return new RegExp("^" + part.split("*").join("([^\\.]*)") + "$");
+			return new RegExp("^" + part.split("*").join("([^\\" + pathUtil.sep + "]*)") + "$");
 		}
 
 		return part;
 	});
 }
 
-// concats path parts together into a string
-var joinPathParts =
-exports.joinPathParts = function() {
-	return sanitizePathParts(_.flatten(_.toArray(arguments))).join(".");
-}
-
 // deeply looks for a value at path in obj
 var get =
 exports.get = function(obj, parts, getter) {
-	parts = splitPath(parts);
+	parts = pathUtil.split(parts);
 
 	// custom getter
 	if (!_.isFunction(getter)) {
@@ -109,7 +140,7 @@ exports.findAllChanges = function(chg, parts, onPath, ctx) {
 	if (!matchPathStart(chg.keypath, parts)) return;
 
 	paths = [];
-	base = joinPathParts(chg.keypath);
+	base = pathUtil.join(chg.keypath);
 	getter = function(obj, path) {
 		var proxy, tproxy, val;
 

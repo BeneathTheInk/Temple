@@ -5,7 +5,7 @@ var Temple = require("templejs"),
 	Observe = require("./observe");
 
 var Context =
-module.exports = Temple.extend(_.extend(Observe, {
+module.exports = Temple.React.extend(_.extend(Observe, {
 
 	constructor: function(model, ctx) {
 		this.models = [];
@@ -20,7 +20,7 @@ module.exports = Temple.extend(_.extend(Observe, {
 		this.setParentContext(ctx);
 		this.addModel(model);
 
-		Temple.call(this);
+		Temple.React.call(this);
 	},
 
 	defaults: function(){},
@@ -120,18 +120,50 @@ module.exports = Temple.extend(_.extend(Observe, {
 
 	get: function(parts, options) {
 		var val, model;
-		parts = util.splitPath(parts);
+		parts = util.path.parse(parts);
 		options = options || {};
 
+		// local model
 		if (parts[0] === "this") {
 			parts.shift();
-		} else {
+			model = this.models[0];
+		}
+
+		// the root model
+		else if (parts[0] === "/") {
+			parts.shift();
+			model = _.last(this.getModels());
+		}
+
+		// specific parent model
+		else if (parts[0] === "../") {
+			var models = this.getModels();
+
+			while (parts[0] === "../") {
+				models.shift();
+				parts.shift();
+			}
+
+			model = _.find(models, function(m) {
+				if (m.get(parts, options) !== void 0) {
+					model = m;
+					return true;
+				}
+			});
+
+			// return early if a model doesn't exist
+			if (model == null) return options.model ? null : void 0;
+		}
+
+		// or normal look up
+		else {
 			model = this.findModel(parts, options);
 		}
 
-		if (model == null) model = this.models[0];
+		// return the model if specified
 		if (options.model) return model.getModel(parts);
 
+		// get the value and process
 		val = model.get(parts, options);
 		if (_.isFunction(val)) val = val.call(this);
 
