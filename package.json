@@ -1,20 +1,45 @@
 {
 	"name": "temple-mustache",
 	"version": "1.0.0-alpha",
+	"description": "A Mustache view framework built on Temple.",
+	"author": "Beneath the Ink <info@beneaththeink.com>",
+	"contributors": [
+		{
+			"name": "Tyler Johnson",
+			"email": "tyler@beneaththeink.com",
+			"url": "http://github.com/tyler-johnson"
+		}
+	],
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/BeneathTheInk/temple-mustache.git"
+	},
+	"main": "./lib/index.js",
 	"dependencies": {
 		"templejs": "0.3.x",
 		"hogan.js": "^3.0.2",
-		"underscore": "^1.6.0",
+		"underscore": "^1.7.0",
 		"observe-js": "git://github.com/Polymer/observe-js.git#0.3.4"
 	},
 	"devDependencies": {
 		"grunt": "^0.4.5",
 		"grunt-browserify": "^2.1.4",
-		"grunt-contrib-clean": "^0.5.0",
+		"grunt-contrib-clean": "^0.6.0",
 		"grunt-contrib-copy": "^0.5.0",
 		"grunt-contrib-uglify": "^0.5.1",
 		"grunt-contrib-watch": "^0.6.1",
 		"grunt-peg": "^1.4.0",
 		"grunt-wrap2000": "^0.1.0"
-	}
+	},
+	"license": "MIT",
+	"keywords": [
+		"view",
+		"framework",
+		"DOM",
+		"html",
+		"binding",
+		"reactive",
+		"dependency",
+		"mustache"
+	]
 }
