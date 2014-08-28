@@ -29,8 +29,6 @@ module.exports = Context.extend({
 		Context.call(this, data);
 	},
 
-	use: Temple.prototype.use,
-
 	// parses and sets the root template
 	setTemplate: function(template) {
 		if (_.isString(template)) template = parse(template);
@@ -150,6 +148,9 @@ module.exports = Context.extend({
 		if (this._template == null)
 			throw new Error("Expected a template to be set before rendering.");
 
+		// flush partials after the tree has settled
+		this.once("render:after", this._flushPartials);
+
 		return this.convertTemplate(this._template);
 	},
 
@@ -183,13 +184,33 @@ module.exports = Context.extend({
 				comps[name] = _.without(comps[name], comp);
 			}, this);
 
-			// mount the partial
-			comp.mount();
+			// queue up partial for mount
+			this._enqueuePartial(comp);
 
 			return comp;
 		}
 
 		return null;
+	},
+
+	_enqueuePartial: function(partial) {
+		if (!(partial instanceof Temple.React))
+			throw new Error("Expecting an subclass of Temple React for partial.");
+
+		if (this._partial_queue == null) this._partial_queue = [];
+		this._partial_queue.push(partial);
+
+		return this;
+	},
+
+	_flushPartials: function() {
+		if (this._partial_queue != null) {
+			while (this._partial_queue.length) {
+				this._partial_queue.shift().mount();
+			}
+		}
+
+		return this;
 	},
 
 	convertTemplate: function(template, ctx) {
@@ -259,6 +280,7 @@ module.exports = Context.extend({
 				.invert(template.type === NODE_TYPE.INVERTED)
 				.mount(function(key) {
 					this.addModel(new Model({ $key: key }));
+					this.once("render:after", temple._flushPartials, temple);
 					return temple.convertTemplate(template.children, this);
 				});
 

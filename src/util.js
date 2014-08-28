@@ -13,7 +13,7 @@ exports.isSubClass = function(parent, fn) {
 }
 
 // regex for spotting vertical tree paths
-var vertrex = /^(\.\.\/|\.\/|\/|\.)/i;
+var vertrex = /^(\.\.\/|\/|\.\/|\.)/i;
 
 // path utilities
 var pathUtil =
@@ -35,34 +35,54 @@ exports.path = {
 
 	// splits a path by period
 	split: function(path) {
-		var parts = _.isArray(path) ? path : _.isString(path) ? path.split(pathUtil.sep) : [ path ];
-		return pathUtil.sanitize(parts);
+		return pathUtil.sanitize(
+			_.isArray(path) ? path :
+			_.isString(path) ? path.split(pathUtil.sep) :
+			[ path ]
+		);
 	},
 
 	// parses a string as a context get path
 	parse: function(path) {
-		var parts = [], m;
+		var m, query, ops = [];
 
+		// parse off special leading path operators
 		while (m = vertrex.exec(path)) {
 			path = path.substr(m.index + m[1].length);
-
-			if (m[1] === "/") {
-				parts = [ "/" ];
-				break;
-			}
-
-			else if (m[1] === "./" || m[1] === ".") {
-				if (parts.length) continue;
-				parts.push("this");
-			}
-
-			else if (m[1] === "../") {
-				if (parts[0] === "this") parts.shift();
-				parts.push("../");
-			}
+			ops.push(m[1]);
 		}
 
-		return parts.concat(pathUtil.split(path));
+		// split the path into parts
+		query = pathUtil.split(path);
+		query.type = "all";
+		query.distance = 0;
+
+		// parse off any leading "this" parts
+		while (query[0] === "this") {
+			ops.push(query.shift());
+		}
+
+		// translate operators onto the query
+		ops.some(function(op) {
+			switch(op) {
+				case "/":
+					query.type = "root";
+					return true;
+
+				case "./":
+				case ".":
+				case "this":
+					if (query.type === "all") query.type = "local";
+					break;
+
+				case "../":
+					query.type = "parent";
+					query.distance++;
+					break;
+			}
+		});
+
+		return query;
 	},
 
 	join: function() {

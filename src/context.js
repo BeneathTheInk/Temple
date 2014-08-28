@@ -23,6 +23,10 @@ module.exports = Temple.React.extend(_.extend(Observe, {
 		Temple.React.call(this);
 	},
 
+	use: function(p) {
+		return require("./plugins").loadPlugin(this, p, _.toArray(arguments).slice(1));
+	},
+
 	defaults: function(){},
 
 	spawnChildAtPath: function(path, klass) {
@@ -97,11 +101,17 @@ module.exports = Temple.React.extend(_.extend(Observe, {
 
 	// returns the first model whose value at path isn't undefined
 	findModel: function(path, options) {
-		var i, models = this.getModels();
+		var i, models;
 
-		for (var i in models)
-			if (models[i].get(path, options) !== void 0)
+		options = options || {};
+		models = _.isArray(options.models) ? options.models :
+			options.local ? this.models : this.getModels();
+
+		for (i in models) {
+			if (models[i].get(path, options) !== void 0) {
 				return models[i];
+			}
+		}
 
 		return null;
 	},
@@ -119,52 +129,43 @@ module.exports = Temple.React.extend(_.extend(Observe, {
 	},
 
 	get: function(parts, options) {
-		var val, model;
-		parts = util.path.parse(parts);
+		var val, model, query;
+		
 		options = options || {};
+		query = util.path.parse(parts);
 
 		// local model
-		if (parts[0] === "this") {
-			parts.shift();
-			model = this.models[0];
+		if (query.type === "local") {
+			model = this.findModel(query, _.extend({}, options, { local: true })) || this.models[0];
 		}
 
 		// the root model
-		else if (parts[0] === "/") {
-			parts.shift();
+		else if (query.type === "root") {
 			model = _.last(this.getModels());
 		}
 
 		// specific parent model
-		else if (parts[0] === "../") {
-			var models = this.getModels();
-
-			while (parts[0] === "../") {
-				models.shift();
-				parts.shift();
-			}
-
-			model = _.find(models, function(m) {
-				if (m.get(parts, options) !== void 0) {
-					model = m;
-					return true;
-				}
-			});
-
-			// return early if a model doesn't exist
-			if (model == null) return options.model ? null : void 0;
+		else if (query.type === "parent") {
+			var dist = query.distance;
+			query = query.slice(dist);
+			model = this.findModel(query, _.extend({}, options, {
+				models: this.getModels().slice(dist)
+			}));
 		}
 
 		// or normal look up
 		else {
-			model = this.findModel(parts, options);
+			model = this.findModel(query, options) || this.models[0];
 		}
 
+		// return early if a model doesn't exist
+		if (model == null) return options.model ? null : void 0;
+
 		// return the model if specified
-		if (options.model) return model.getModel(parts);
+		if (options.model) return model.getModel(query);
 
 		// get the value and process
-		val = model.get(parts, options);
+		val = model.get(query, options);
 		if (_.isFunction(val)) val = val.call(this);
 
 		return val;
