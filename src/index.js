@@ -5,7 +5,7 @@ var _ = require("underscore"),
 var Mustache =
 module.exports = require("./mustache");
 
-Mustache.VERSION = "1.0.0-alpha";
+Mustache.VERSION = "1.0.0";
 Mustache.util = util;
 _.defaults(Mustache, Temple);
 

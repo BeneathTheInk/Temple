@@ -129,12 +129,16 @@ exports.findShallowestUniquePaths = function(paths) {
 		})) return m;
 
 		// next check for any longer paths that need to be removed
-		m.slice(0).forEach(function(k, index) {
-			if (arrayStartsWith(k, keys)) m.splice(index, 1);
+		m.slice(0).forEach(function(k) {
+			if (arrayStartsWith(k, keys)) {
+				var index = m.indexOf(k);
+				if (~index) m.splice(index, 1);
+			}
 		});
 
 		// and lastly add the path to output
 		m.push(keys);
+
 		return m;
 	}, []);
 }
@@ -291,7 +295,7 @@ exports.decodeEntities = (function() {
 	var element = document.createElement('div');
 
 	return function decodeHTMLEntities(str) {
-		if(str && typeof str === 'string') {
+		if (str && typeof str === 'string') {
 			// strip script/html tags
 			str = str.replace(/<script[^>]*>([\S\s]*?)<\/script>/gmi, '');
 			str = str.replace(/<\/?\w(?:[^"'>]|"[^"]*"|'[^']*')*>/gmi, '');

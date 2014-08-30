@@ -91,9 +91,9 @@ Animation.prototype.start = function(from, to) {
 	function run() {
 		requestAnimationFrame(function(ts) {
 			try {
-				// immediately stop if animation was cancelled
-				if (self.cancelled) {
-					delete self.cancelled;
+				// immediately stop if animation was canceled
+				if (self.canceled) {
+					delete self.canceled;
 					self._complete(count);
 					return;
 				}
@@ -136,14 +136,15 @@ Animation.prototype._tick = function(elapsed) {
 }
 
 Animation.prototype._complete = function(count) {
+	if (!this.running) return this;
 	this.running = false;
 	this.trigger("complete", count);
 	return this;
 }
 
 Animation.prototype.cancel = function() {
-	if (!this.running || this.cancelled) return this;
-	this.cancelled = true;
+	if (!this.running || this.canceled) return this;
+	this.canceled = true;
 	this.trigger("cancel");
 	return this;
 }
