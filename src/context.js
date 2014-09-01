@@ -176,18 +176,21 @@ module.exports = Temple.React.extend(_.extend(Observe, {
 	},
 
 	keys: function(path) {
-		return (this.findModel(path) || this).keys(path);
+		var model = this.get(path, { model: true });
+		return model != null ? model.keys() : [];
 	},
 
-	set: function(path) {
+	set: function(path, value, options) {
 		var model, self = this;
 
-		if (_.isArray(path) || _.isString(path)) {
-			model = this.findModel(path, { depend: false });
+		if (path != null && value == null && !_.isArray(path) && !_.isString(path)) {
+			value = path;
+			path = [];
 		}
 
-		if (model == null) model = this.getModel();
-		model.set.apply(model, arguments);
+		model = this.get(path, { depend: false, model: true });
+		if (model == null) model = this.findModel();
+		model.set([], value, options);
 
 		return this;
 	},

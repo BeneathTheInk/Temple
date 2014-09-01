@@ -1,7 +1,7 @@
 var Temple = require("templejs"),
 	NODE_TYPE = require("./types"),
 	_ = require("underscore"),
-	parse = require("./xml").parse,
+	parse = require("./m+xml").parse,
 	util = require("./util"),
 	Context = require("./context"),
 	Model = require("./model"),
@@ -169,9 +169,6 @@ module.exports = Context.extend({
 				comps[name] = _.without(comps[name], comp);
 			}, this);
 
-			// queue up partial for mount
-			this._enqueuePartial(comp);
-
 			return comp;
 		}
 
@@ -183,86 +180,55 @@ module.exports = Context.extend({
 		return this._components[name] || [];
 	},
 
-	// opens a partial capture so they can all be mounted at the same time
-	_capturePartials: function() {
-		if (this._partial_capture == null) this._partial_capture = [];
-		if (this._partial_queue != null) this._partial_capture.unshift(this._partial_queue);
-		this._partial_queue = [];
-		return this;
-	},
-
-	// adds the partial to the currently open queue or does nothing
-	_enqueuePartial: function(partial) {
-		if (!(partial instanceof Temple.React))
-			throw new Error("Expecting an subclass of Temple React for partial.");
-
-		if (this._partial_queue != null)
-			this._partial_queue.push(partial);
-
-		return this;
-	},
-
-	// mounts all the partials in the open queue and shifts the queue
-	_flushPartials: function() {
-		if (this._partial_queue != null) {
-			while (this._partial_queue.length) {
-				this._partial_queue.shift().mount();
-			}
-			
-			if (this._partial_capture != null) {
-				this._partial_queue = this._partial_capture.shift();
-			} else {
-				delete this._partial_queue;
-			}
-		}
-
-		return this;
-	},
-
 	render: function() {
 		if (this._template == null)
 			throw new Error("Expected a template to be set before rendering.");
 
-		// flush partials after the tree has settled
-		this._capturePartials();
-		this.once("render:after", this._flushPartials);
+		var toMount, bindings;
+		bindings = this.convertTemplate(this._template, null, toMount = []);
+		this.once("render:after", function() { _.invoke(toMount, "mount"); });
 
-		return this.convertTemplate(this._template);
+		return bindings;
 	},
 
-	convertTemplate: function(template, ctx) {
+	convertTemplate: function(template, ctx, toMount) {
 		if (ctx == null) ctx = this;
+		if (toMount == null) toMount = [];
 		var temple = this;
 
 		if (_.isArray(template)) return template.map(function(t) {
-			return this.convertTemplate(t, ctx);
+			return this.convertTemplate(t, ctx, toMount);
 		}, this).filter(function(b) { return b != null; });
 
 		switch(template.type) {
 			case NODE_TYPE.ROOT:
-				return this.convertTemplate(template.children, ctx);
+				return this.convertTemplate(template.children, ctx, toMount);
 
 			case NODE_TYPE.ELEMENT:
 				var part = this.renderPartial(template.name, ctx);
 
 				if (part != null) {
-					this.autorun(function() {
+					if (part instanceof Context) {
 						template.attributes.forEach(function(attr) {
 							this.autorun(function() {
 								var val = this.convertArgumentTemplate(attr.arguments, ctx);
 								if (val.length === 1) val = val[0];
 								else if (!val.length) val = null;
-								part.set(attr.name, val);
+
+								var model = part.getModel();
+								if (model == null) return;
+								model.set(attr.name, val);
 							});
 						}, this);
-					}, true);
+					}
 
+					toMount.push(part);
 					return part;
 				}
 
 				else {
 					var binding = new Temple.Element(template.name);
-					this.convertTemplate(template.children, ctx).forEach(binding.appendChild, binding);
+					this.convertTemplate(template.children, ctx, toMount).forEach(binding.appendChild, binding);
 
 					template.attributes.forEach(function(attr) {
 						this._processAttribute(attr, binding, ctx);
@@ -294,15 +260,17 @@ module.exports = Context.extend({
 				.mount(template.value, function(key) {
 					this.addModel(new Model({ $key: key }));
 					
-					// mount partials in this context
-					temple._capturePartials();
-					this.once("render:after", temple._flushPartials, temple);
+					var toMount, bindings;
+					bindings = temple.convertTemplate(template.children, this, toMount = []);
+					this.once("render:after", function() { _.invoke(toMount, "mount"); });
 					
-					return temple.convertTemplate(template.children, this);
+					return bindings;
 				});
 
 			case NODE_TYPE.PARTIAL:
-				return this.renderPartial(template.value, ctx);
+				var partial = this.renderPartial(template.value, ctx);
+				toMount.push(partial);
+				return partial;
 
 			default:
 				console.log(template);

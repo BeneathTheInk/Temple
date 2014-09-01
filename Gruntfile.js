@@ -49,10 +49,17 @@ module.exports = function(grunt) {
 		wrap2000: {
 			dist: {
 				src: 'dist/temple-mustache.js',
-				dest: 'dist/temple-mustache.js'
+				dest: 'dist/temple-mustache.js',
+				options: {
+					header: "/*\n * Temple Mustache\n * (c) 2014 Beneath the Ink, Inc.\n * MIT License\n * Version <%= pkg.version %>\n */\n"
+				}
 			},
-			options: {
-				header: "/*\n * Temple Mustache\n * (c) 2014 Beneath the Ink, Inc.\n * MIT License\n * Version <%= pkg.version %>\n */\n"
+			test: {
+				src: 'dist/temple-mustache.dev.js',
+				dest: 'dist/temple-mustache.dev.js',
+				options: {
+					header: "/* Temple Mustache / (c) 2014 Beneath the Ink, Inc. / MIT License / Version <%= pkg.version %> */"
+				}
 			}
 		},
 		uglify: {
@@ -79,7 +86,7 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-wrap2000');
 
 	grunt.registerTask('build', [ 'copy', 'peg' ]);
-	grunt.registerTask('build-test', [ 'browserify:test' ]);
+	grunt.registerTask('build-test', [ 'browserify:test', 'wrap2000:test' ]);
 	grunt.registerTask('build-dist', [ 'browserify:dist', 'wrap2000:dist', 'uglify:dist' ]);
 	
 	grunt.registerTask('dist', [ 'clean', 'build', 'build-dist'  ]);
