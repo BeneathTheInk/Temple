@@ -57,12 +57,12 @@ module.exports = Context.extend({
 		return this;
 	},
 
-	render: function(onRow) {
+	render: function(path, onRow) {
 		var self = this,
 			omodel, val, isEmpty, inverted, observer,
 			rowSort, model, createRow;
 
-		omodel = (this.findModel() || this).getModel();
+		omodel = this.get(path, { model: true });
 		val = omodel.get();
 		if (_.isFunction(val)) val = val.call(this);
 		isEmpty = Section.isEmpty(val);

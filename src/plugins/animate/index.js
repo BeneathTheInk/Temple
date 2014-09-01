@@ -34,8 +34,16 @@ function stopAnimating(path) {
 }
 
 // some browsers are picky
-var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
-                            window.webkitRequestAnimationFrame || window.oRequestAnimationFrame;
+var requestAnimationFrame = typeof window !== "undefined" ?
+	window.requestAnimationFrame ||
+	window.mozRequestAnimationFrame ||
+	window.webkitRequestAnimationFrame ||
+	window.oRequestAnimationFrame :
+	function(f) {
+		setTimeout(function() {
+			f(Date.now());
+		}, 1000 / 30);
+	};
 
 function Animation(options) {
 	options = options || {};

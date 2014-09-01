@@ -40,14 +40,20 @@ describe("Mustache", function() {
 
 			expect(template).to.deep.equal({
 				type: NODE_TYPE.ROOT,
+				version: Mustache.VERSION,
 				children: [{
 					type: NODE_TYPE.ELEMENT,
 					name: "div",
 					attributes: [{
 						type: NODE_TYPE.ATTRIBUTE,
 						name: "class",
+						value: "container",
 						children: [{
 							type: NODE_TYPE.TEXT,
+							value: "container"
+						}],
+						arguments: [{
+							type: NODE_TYPE.LITERAL,
 							value: "container"
 						}]
 					}],
@@ -64,6 +70,7 @@ describe("Mustache", function() {
 
 			expect(template).to.deep.equal({
 				type: NODE_TYPE.ROOT,
+				version: Mustache.VERSION,
 				children: [{
 					type: NODE_TYPE.INTERPOLATOR,
 					value: "hello"
@@ -82,6 +89,7 @@ describe("Mustache", function() {
 
 			expect(template).to.deep.equal({
 				type: NODE_TYPE.ROOT,
+				version: Mustache.VERSION,
 				children: [{
 					type: NODE_TYPE.SECTION,
 					value: "good",
@@ -105,6 +113,7 @@ describe("Mustache", function() {
 
 			expect(template).to.deep.equal({
 				type: NODE_TYPE.ROOT,
+				version: Mustache.VERSION,
 				children: [{
 					type: NODE_TYPE.PARTIAL,
 					value: "partial"
@@ -117,7 +126,11 @@ describe("Mustache", function() {
 
 			expect(template).to.deep.equal({
 				type: NODE_TYPE.ROOT,
+				version: Mustache.VERSION,
 				children: [{
+					type: NODE_TYPE.COMMENT,
+					value: "comment"
+				},{
 					type: NODE_TYPE.ELEMENT,
 					name: "div",
 					attributes: [],
@@ -131,6 +144,7 @@ describe("Mustache", function() {
 
 			expect(template).to.deep.equal({
 				type: NODE_TYPE.ROOT,
+				version: Mustache.VERSION,
 				children: [{
 					type: NODE_TYPE.ELEMENT,
 					name: "div",

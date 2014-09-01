@@ -162,10 +162,14 @@ module.exports = Temple.React.extend(_.extend(Observe, {
 		if (model == null) return options.model ? null : void 0;
 
 		// return the model if specified
-		if (options.model) return model.getModel(query);
+		model = model.getModel(query);
+		if (options.model) return model;
 
+		// depend on all deep paths
+		model.depend("**");
+		
 		// get the value and process
-		val = model.get(query, options);
+		val = model.get([], _.extend({}, options, { depend: false }));
 		if (_.isFunction(val)) val = val.call(this);
 
 		return val;
@@ -236,17 +240,17 @@ module.exports = Temple.React.extend(_.extend(Observe, {
 });
 
 // chainable proxy methods
-// []
-// .forEach(function(method) {
-// 	Context.prototype[method] = function() {
-// 		var model = this.models[0];
-// 		model[method].apply(model, arguments);
-// 		return this;
-// 	}
-// });
+[ "registerProxy" ]
+.forEach(function(method) {
+	Context.prototype[method] = function() {
+		var model = this.models[0];
+		model[method].apply(model, arguments);
+		return this;
+	}
+});
 
 // proxy methods which don't return this
-[ "getModel", "getAllProxies", "proxy" ]
+[ "getModel", "getProxyByValue", "getAllProxies", "proxy" ]
 .forEach(function(method) {
 	Context.prototype[method] = function() {
 		var model = this.models[0];

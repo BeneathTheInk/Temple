@@ -1,12 +1,11 @@
 var Temple = require("templejs"),
 	NODE_TYPE = require("./types"),
 	_ = require("underscore"),
-	parse = require("./parse"),
+	parse = require("./xml").parse,
 	util = require("./util"),
 	Context = require("./context"),
 	Model = require("./model"),
-	Section = require("./section"),
-	ArgParser = require("./arguments.js");
+	Section = require("./section");
 
 var Mustache =
 module.exports = Context.extend({
@@ -139,21 +138,7 @@ module.exports = Context.extend({
 		}
 	},
 
-	// returns all the component instances as specified by partial name
-	getComponents: function(name) {
-		return this._components[name] || [];
-	},
-
-	render: function() {
-		if (this._template == null)
-			throw new Error("Expected a template to be set before rendering.");
-
-		// flush partials after the tree has settled
-		this.once("render:after", this._flushPartials);
-
-		return this.convertTemplate(this._template);
-	},
-
+	// renders the partials
 	renderPartial: function(name, ctx) {
 		if (ctx == null) ctx = this;
 
@@ -193,24 +178,56 @@ module.exports = Context.extend({
 		return null;
 	},
 
+	// returns all rendered partials by name
+	getComponents: function(name) {
+		return this._components[name] || [];
+	},
+
+	// opens a partial capture so they can all be mounted at the same time
+	_capturePartials: function() {
+		if (this._partial_capture == null) this._partial_capture = [];
+		if (this._partial_queue != null) this._partial_capture.unshift(this._partial_queue);
+		this._partial_queue = [];
+		return this;
+	},
+
+	// adds the partial to the currently open queue or does nothing
 	_enqueuePartial: function(partial) {
 		if (!(partial instanceof Temple.React))
 			throw new Error("Expecting an subclass of Temple React for partial.");
 
-		if (this._partial_queue == null) this._partial_queue = [];
-		this._partial_queue.push(partial);
+		if (this._partial_queue != null)
+			this._partial_queue.push(partial);
 
 		return this;
 	},
 
+	// mounts all the partials in the open queue and shifts the queue
 	_flushPartials: function() {
 		if (this._partial_queue != null) {
 			while (this._partial_queue.length) {
 				this._partial_queue.shift().mount();
 			}
+			
+			if (this._partial_capture != null) {
+				this._partial_queue = this._partial_capture.shift();
+			} else {
+				delete this._partial_queue;
+			}
 		}
 
 		return this;
+	},
+
+	render: function() {
+		if (this._template == null)
+			throw new Error("Expected a template to be set before rendering.");
+
+		// flush partials after the tree has settled
+		this._capturePartials();
+		this.once("render:after", this._flushPartials);
+
+		return this.convertTemplate(this._template);
 	},
 
 	convertTemplate: function(template, ctx) {
@@ -226,20 +243,18 @@ module.exports = Context.extend({
 				return this.convertTemplate(template.children, ctx);
 
 			case NODE_TYPE.ELEMENT:
-				var part = temple.renderPartial(template.name, ctx);
+				var part = this.renderPartial(template.name, ctx);
 
 				if (part != null) {
 					this.autorun(function() {
 						template.attributes.forEach(function(attr) {
-							var args = Mustache.convertTemplateToRawArgs(attr.children);
-
-							temple.autorun(function() {
-								var val = ArgParser.parse(args, { ctx: ctx });
+							this.autorun(function() {
+								var val = this.convertArgumentTemplate(attr.arguments, ctx);
 								if (val.length === 1) val = val[0];
 								else if (!val.length) val = null;
 								part.set(attr.name, val);
 							});
-						});
+						}, this);
 					}, true);
 
 					return part;
@@ -274,18 +289,20 @@ module.exports = Context.extend({
 
 			case NODE_TYPE.INVERTED:
 			case NODE_TYPE.SECTION:
-				var model = ctx.findModel(template.value, { depend: false }).getModel(template.value);
-
-				return new Section(model, ctx)
+				return new Section(null, ctx)
 				.invert(template.type === NODE_TYPE.INVERTED)
-				.mount(function(key) {
+				.mount(template.value, function(key) {
 					this.addModel(new Model({ $key: key }));
+					
+					// mount partials in this context
+					temple._capturePartials();
 					this.once("render:after", temple._flushPartials, temple);
+					
 					return temple.convertTemplate(template.children, this);
 				});
 
 			case NODE_TYPE.PARTIAL:
-				return this.renderPartial(template.value, ctx, void 0);
+				return this.renderPartial(template.value, ctx);
 
 			default:
 				console.log(template);
@@ -357,6 +374,26 @@ module.exports = Context.extend({
 		}
 	},
 
+	convertArgumentTemplate: function(arg, ctx) {
+		if (ctx == null) ctx = this;
+		var temple = this;
+
+		if (_.isArray(arg)) return arg.map(function(a) {
+			return temple.convertArgumentTemplate(a, ctx);
+		}).filter(function(a) { return a != null; });
+
+		switch(arg.type) {
+			case NODE_TYPE.INTERPOLATOR:
+				return ctx.get(arg.value);
+
+			case NODE_TYPE.LITERAL:
+				return arg.value;
+
+			default:
+				console.log(arg);
+		}
+	},
+
 	_processAttribute: function(attr, binding, ctx) {
 		var decorators = this.findDecorators(attr.name),
 			temple = this,
@@ -364,27 +401,22 @@ module.exports = Context.extend({
 
 		if (decorators.length) {
 			processed = decorators.map(function(fn) {
-				return fn.call(this, binding.node, attr.children);
-			}, this).filter(function(d) {
+				return Temple.Deps.nonreactive(function() {
+					return fn.call(temple, binding.node, attr, binding);
+				});
+			}).filter(function(d) {
 				return typeof d === "object";
 			});
 
-			processed.some(function(d) {
-				if (d.parse !== false) {
-					rawargs = Mustache.convertTemplateToRawArgs(attr.children);
-					return true;
-				}
-			});
+			// return early if there is nothing left to do
+			if (!processed.length) return;
 
 			this.autorun(function(comp) {
-				var args = [];
-
-				if (rawargs != null)
-					args = ArgParser.parse(rawargs, { ctx: ctx });
+				var args = this.convertArgumentTemplate(attr.arguments, ctx);
 
 				processed.forEach(function(d) {
 					if (typeof d.update === "function") {
-						d.update.apply(ctx, d.parse !== false ? args : []);
+						d.update.apply(ctx, args);
 					}
 				});
 
@@ -416,27 +448,5 @@ module.exports = Context.extend({
 				value: str
 			} ]
 		};
-	},
-
-	convertTemplateToRawArgs: function(template) {
-		if (_.isArray(template)) return template.map(function(t) {
-			return Mustache.convertTemplateToRawArgs(t);
-		}).filter(function(b) { return b != null; }).join("");
-
-		switch (template.type) {
-			case NODE_TYPE.TEXT:
-				return template.value;
-
-			case NODE_TYPE.INTERPOLATOR:
-			case NODE_TYPE.TRIPLE:
-				return "{{" + template.value + "}}";
-
-			case NODE_TYPE.SECTION:
-			case NODE_TYPE.INVERTED:
-				throw new Error("Unexpected section in attribute value.");
-
-			case NODE_TYPE.PARTIAL:
-				throw new Error("Unexpected partial in attribute value.");
-		}
 	}
 });

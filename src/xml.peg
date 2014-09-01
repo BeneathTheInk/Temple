@@ -1,22 +1,36 @@
 {
-	var _ = require("underscore");
+	var _ = require("underscore"),
+		NODE_TYPE = require("./types"),
+		Mustache = require("./");
 }
 
-start = html
+start = html:html {
+	return {
+		type: NODE_TYPE.ROOT,
+		children: html,
+		version: Mustache.VERSION
+	}
+}
 
 /*
 HTML
 */
-html = nodes:(commentNode / elementNode / textNode)* { return _.compact(nodes); }
+html = nodes:
+	( section
+	/ doubleStache
+	/ tripleStache
+	/ commentNode
+	/ elementNode
+	/ textNode )* { return _.compact(nodes); }
 
 // Text Node
 textNode
-	= text:[^<]+ { return { type: "text", value: text.join("") }; }
+	= text:[^<{]+ { return { type: NODE_TYPE.TEXT, value: text.join("") }; }
 
 // Comment Nodes
 commentNode
-	= "<!--" v:commentValue "-->" {
-		return { type: "comment", value: v.trim() };
+	= "<!--" v:commentValue "-->"  {
+		return { type: NODE_TYPE.COMMENT, value: v.trim() };
 	}
 	
 commentValue
@@ -31,7 +45,7 @@ elementNode
 			throw new Error("Element tag mismatch: " + start.name + " !== " + end);
 		}
 
-		start.type = "element";
+		start.type = NODE_TYPE.ELEMENT;
 		start.children = nodes;
 		return start;
 	}
@@ -41,8 +55,7 @@ elementSelfClosed
 		return {
 			name: tagname,
 			attributes: attributes,
-			children: [],
-			type: "element"
+			children: []
 		};
 	}
 
@@ -56,16 +69,131 @@ elementEnd
 
 // Element Attribute
 attribute
-	= key:key value:("=" ws string ws)? { return { name: key, value: value != null ? value[2] : "" }; }
+	= key:key value:("=" ws string ws)? {
+		value = value != null ? value[2] : "";
+		
+		return {
+			type: NODE_TYPE.ATTRIBUTE,
+			name: key,
+			value: value,
+			children: parse(value, { startRule: "attrValue" }),
+			arguments: parse(value, { startRule: "attrArguments" })
+		}
+	}
+
+attrValue = nodes: 
+	( section
+	/ doubleStache
+	/ tripleStache
+	/ textNode )* { return _.compact(nodes); }
+
+attrArguments =
+	l:attrArgValue r:("," attrArguments)?  { return r != null && r[1] != null ? [l].concat(r[1]) : [l]; }
+
+// Value
+attrArgValue = val:
+	( ( ws v:stache    ws attrArgNotEnd { return v; } )
+	/ ( ws v:string    ws attrArgNotEnd { return v; } )
+	/ ( ws v:boolean   ws attrArgNotEnd { return v; } )
+	/ ( ws v:number    ws attrArgNotEnd { return v; } )
+	/ ( ws v:null      ws attrArgNotEnd { return v; } )
+	/ ( ws v:undefined ws attrArgNotEnd { return v; } )
+	/ dumb_string ) {
+		if (_.isObject(val)) return val;
+		else return { type: NODE_TYPE.LITERAL, value: val };
+	}
+
+attrArgNotEnd = &([,] / !.)
+
+// mustache section
+section
+	= start:sectionStart nodes:html end:sectionEnd {
+		if (start.value.toLowerCase() !== end.toLowerCase()) {
+			throw new Error("Section tag mismatch: " + start.value + " !== " + end);
+		}
+
+		start.children = nodes;
+		return start;
+	}
+
+sectionStart
+	= "{{" type:[#\^] value:variable "}}" {
+		return {
+			type: NODE_TYPE[type === "#" ? "SECTION" : "INVERTED"],
+			value: value
+		}
+	}
+
+sectionEnd
+	= "{{/" value:variable "}}" { return value; }
+
+// Mustache staches without the prefixes
+stache
+	= value:("{{{" variable "}}}" / "{{" variable "}}") {
+		return {
+			type: NODE_TYPE.INTERPOLATOR,
+			value: value[1]
+		}
+	}
+
+// Mustache double stache
+doubleStache
+	= "{{" ![/#{] m:[!>&]? value:variable "}}" {
+		var type = NODE_TYPE.INTERPOLATOR;
+
+		switch(m) {
+			case "!":
+				type = NODE_TYPE.COMMENT;
+				break;
+
+			case ">":
+				type = NODE_TYPE.PARTIAL;
+				break;
+
+			case "&":
+				type = NODE_TYPE.TRIPLE;
+				break;
+		}
+
+		return {
+			type: type,
+			value: value
+		}
+	}
+
+// Mustache triple stache
+tripleStache
+	= "{{{" value:variable "}}}" {
+		return {
+			type: NODE_TYPE.TRIPLE,
+			value: value
+		}
+	}
+
+/*
+Literals
+*/
+boolean
+	= "true" { return true; }
+	/ "false" { return false; }
+	
+number = i:("-"? [0-9]+) d:("." [0-9]+)? { return parseFloat(_.flatten(i.concat(d)).join("")); }
+
+string
+	= "\"" v:(escape / [^"])* "\"" { return v.join(""); }
+	/ "'" v:(escape / [^'])* "'" { return v.join(""); }
+
+dumb_string = v:[^,]* { return v.join("").trim(); }
+
+null = "null" { return null; }
+undefined = ("undefined" / "void" ws [^,]+) { return void 0; }
 
 /*
 Utils
 */
 key = ws k:[a-z0-9_-]i+ ws { return k.join(""); }
 
-string
-	= "\"" v:(escape / [^"])* "\"" { return v.join(""); }
-	/ "'" v:(escape / [^'])* "'" { return v.join(""); }
+variable = s:(escape / [^}])+ { return s.join("").trim(); }
 
 ws "whitespace" = [ \t\n\r]*
 

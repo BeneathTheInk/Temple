@@ -12,5 +12,9 @@ module.exports = {
 	TRIPLE            : 7,
 	SECTION           : 8,
 	INVERTED          : 9,
-	PARTIAL           : 10
+	PARTIAL           : 10,
+
+	// MISC
+	COMMENT           : 11,
+	LITERAL           : 12
 }

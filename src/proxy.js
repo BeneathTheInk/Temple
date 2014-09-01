@@ -15,7 +15,7 @@ Proxy.match = function(target) {
 	return false;
 }
 
-_.extend(Proxy.prototype, {
+_.extend(Proxy.prototype, Temple.Events, {
 	isLeaf	: function()			{ return true; },
 	get		: function(path)		{ },
 	set		: function(path, val)	{ return false; },
@@ -67,7 +67,7 @@ Proxy.Object = Proxy.extend({
 	}
 }, {
 	match: function(target) {
-		return util.isPlainObject(target);
+		return _.isObject(target);
 	},
 	get: function(target, path) {
 		return target[path];
