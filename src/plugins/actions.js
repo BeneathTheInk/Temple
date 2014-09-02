@@ -132,13 +132,8 @@ function removeAction(name, fn) {
 		}, this);
 	}
 
-	else {
-		var d = this._actions[name], index;
-		
-		if (Array.isArray(d)) {
-			index = d.indexOf(fn);
-			if (~index) d.splice(index, 1);
-		}
+	else if (this._actions[name] != null) {
+		this._actions[name] = _.without(this._actions[name], fn);
 	}
 
 	return this;
@@ -146,7 +141,7 @@ function removeAction(name, fn) {
 
 function fireAction(action) {
 	if (typeof action === "string") action = new Action(action);
-	if (action != null && typeof action === "object" && !(action instanceof Action)) action = _.extend(new Action, action);
+	if (_.isObject(action) && !(action instanceof Action)) action = _.extend(new Action, action);
 	if (!(action instanceof Action)) throw new Error("Expecting action name, object or instance of Action.");
 	
 	var name = action.name,

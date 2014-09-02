@@ -112,8 +112,8 @@ module.exports = Context.extend({
 
 		if (_.isString(partial)) partial = parse(partial);
 		if (_.isObject(partial) && partial.type === NODE_TYPE.ROOT) partial = Mustache.extend({ template: partial });
-		if (partial != null && !util.isSubClass(Temple.React, partial))
-			throw new Error("Expecting string template, parsed template, Temple React subclass or function for partial.");
+		if (partial != null && !util.isSubClass(Temple, partial))
+			throw new Error("Expecting string template, parsed template, Temple subclass or function for partial.");
 
 		if (partial == null) {
 			delete this._partials[name];
@@ -152,9 +152,9 @@ module.exports = Context.extend({
 				return new Partial;
 			});
 
-			// make sure its a subclass of Temple React
-			if (!(comp instanceof Temple.React))
-				throw new Error("Expecting an subclass of Temple React for partial.");
+			// make sure its a subclass of Temple
+			if (!(comp instanceof Temple))
+				throw new Error("Expecting an subclass of Temple for partial.");
 
 			// set parent context for instances of Context
 			if (comp instanceof Context) comp.setParentContext(ctx);
@@ -227,11 +227,21 @@ module.exports = Context.extend({
 				}
 
 				else {
-					var binding = new Temple.Element(template.name);
+					var binding = new Temple.Element(template.name), willMount = false;
 					this.convertTemplate(template.children, ctx, toMount).forEach(binding.appendChild, binding);
 
 					template.attributes.forEach(function(attr) {
-						this._processAttribute(attr, binding, ctx);
+						if (this._processDecorations(attr, binding, ctx)) {
+							if (willMount) return;
+							toMount.push(binding);
+							willMount = true;
+						}
+
+						else {
+							this.autorun(function() {
+								binding.attr(attr.name, this.convertStringTemplate(attr.children, ctx));
+							}, true);
+						}
 					}, this);
 
 					return binding;
@@ -362,12 +372,15 @@ module.exports = Context.extend({
 		}
 	},
 
-	_processAttribute: function(attr, binding, ctx) {
-		var decorators = this.findDecorators(attr.name),
-			temple = this,
-			processed, rawargs;
+	_processDecorations: function(attr, binding, ctx) {
+		var decorators = this.findDecorators(attr.name);
+		if (!decorators.length) return false;
 
-		if (decorators.length) {
+		var temple = this,
+			processed;
+
+		binding.on("render", function() {
+			// init decorators
 			processed = decorators.map(function(fn) {
 				return Temple.Deps.nonreactive(function() {
 					return fn.call(temple, binding.node, attr, binding);
@@ -375,33 +388,32 @@ module.exports = Context.extend({
 			}).filter(function(d) {
 				return typeof d === "object";
 			});
-
-			// return early if there is nothing left to do
+			
+			// return early if there are no decorations
 			if (!processed.length) return;
 
+			// start update computation
 			this.autorun(function(comp) {
-				var args = this.convertArgumentTemplate(attr.arguments, ctx);
+				var args = temple.convertArgumentTemplate(attr.arguments, ctx);
 
 				processed.forEach(function(d) {
-					if (typeof d.update === "function") {
+					if (!_.isFunction(d.update)) return;
+					
+					this.autorun(function() {
 						d.update.apply(ctx, args);
-					}
-				});
-
-				comp.onInvalidate(function() {
-					if (!comp.stopped) return;
-					processed.forEach(function(d) {
-						if (typeof d.destroy === "function") d.destroy.call(temple);
 					});
-				});
-			}, true);
-		}
+				}, this);
+			});
 
-		else {
-			this.autorun(function() {
-				binding.attr(attr.name, temple.convertStringTemplate(attr.children, ctx));
-			}, true);
-		}
+			// destroy on invalidation
+			this.once("invalidate", function() {
+				processed.forEach(function(d) {
+					if (typeof d.destroy === "function") d.destroy.call(temple);
+				});
+			});
+		});
+
+		return true;
 	},
 }, {
 	parse: parse,

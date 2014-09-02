@@ -5,7 +5,7 @@ var Temple = require("templejs"),
 	Observe = require("./observe");
 
 var Context =
-module.exports = Temple.React.extend(_.extend(Observe, {
+module.exports = Temple.extend(_.extend(Observe, {
 
 	constructor: function(model, ctx) {
 		this.models = [];
@@ -20,7 +20,7 @@ module.exports = Temple.React.extend(_.extend(Observe, {
 		this.setParentContext(ctx);
 		this.addModel(model);
 
-		Temple.React.call(this);
+		Temple.call(this);
 	},
 
 	use: function(p) {
