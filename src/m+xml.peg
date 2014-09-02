@@ -54,9 +54,10 @@ elementSelfClosed
 	= "<" tagname:key attributes:(attribute)* "/>" {
 		return {
 			name: tagname,
+			type: NODE_TYPE.ELEMENT,
 			attributes: attributes,
 			children: []
-		};
+		}
 	}
 
 elementStart

@@ -50,3 +50,4 @@ exports.registerPlugin = function(name, fn) {
 
 registerPlugin("actions", require("./actions"));
 registerPlugin("animate", require("./animate"));
+registerPlugin("twoway", require("./twoway"));

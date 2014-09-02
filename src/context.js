@@ -29,13 +29,6 @@ module.exports = Temple.extend(_.extend(Observe, {
 
 	defaults: function(){},
 
-	spawnChildAtPath: function(path, klass) {
-		var model, ctx;
-		if (!util.isSubClass(Context, klass)) klass = Context;
-		model = (this.findModel(path) || this).getModel(path);
-		return new klass(model).setParentContext(this);
-	},
-
 	setParentContext: function(ctx) {
 		if (ctx != null && !Context.isContext(ctx))
 			throw new Error("Expecting null or instance of context to set as parent.");
