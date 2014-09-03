@@ -376,12 +376,13 @@ module.exports = Context.extend({
 		var decorators = this.findDecorators(attr.name);
 		if (!decorators.length) return false;
 
-		var temple = this,
-			processed;
+		var temple = this;
 
 		binding.on("render", function() {
+			var parseArgs = false, parseString = false;
+
 			// init decorators
-			processed = decorators.map(function(fn) {
+			var processed = decorators.map(function(fn) {
 				return Temple.Deps.nonreactive(function() {
 					return fn.call(temple, binding.node, attr, binding);
 				});
@@ -394,10 +395,20 @@ module.exports = Context.extend({
 
 			// start update computation
 			this.autorun(function(comp) {
-				var args = temple.convertArgumentTemplate(attr.arguments, ctx);
+				var argsValue, stringValue;
 
 				processed.forEach(function(d) {
 					if (!_.isFunction(d.update)) return;
+
+					var args = [];
+
+					if (d.parse === "string") {
+						if (stringValue == null) stringValue = temple.convertStringTemplate(attr.children, ctx);
+						args = [ stringValue ];
+					} else if (d.parse !== false) {
+						if (argsValue == null) argsValue = temple.convertArgumentTemplate(attr.arguments, ctx);
+						args = argsValue.slice(0);
+					}
 					
 					this.autorun(function() {
 						d.update.apply(ctx, args);

@@ -2,90 +2,148 @@ var _ = require("underscore"),
 	Mustache = require("../");
 
 var NODE_TYPE = Mustache.NODE_TYPE;
-var tagNames = [ "INPUT", "SELECT", "TEXTAREA" ];
 var nodeTypes = [ NODE_TYPE.INTERPOLATOR, NODE_TYPE.TRIPLE, NODE_TYPE.TEXT ];
 
-module.exports = function() {
-	this.decorate({ "bind-to": bindTo });
-}
+module.exports = function(options) {
+	options = options || {};
 
-function bindTo(el, attr) {
-	// check that it is a valid tag and pathname
-	if (!~tagNames.indexOf(el.tagName) || !attr.arguments.length || !~nodeTypes.indexOf(attr.arguments[0].type)) {
-		return;
-	}
+	this.decorate("bind-to", function(el, attr) {
+		var type = getType(el),
+			args = attr.arguments;
 
-	var type = getType(el),
-		path = attr.arguments[0].value,
-		eventName = "change",
-		onChange,
-		model;
-
-	switch (type) {
-		case "number":
-		case "text":
-			eventName = "keyup";
-			break;
-	}
-
-	el.addEventListener(eventName, onChange = function(e) {
-		var val;
-
-		switch (type) {
-			case "number":
-				val = parseFloat(this.value, 10);
-				break;
-
-			case "select":
-			case "text":
-				val = this.value;
-				break;
-
-			case "checkbox":
-				val = this.checked;
-				break;
+		if (type == null || !args.length || !~nodeTypes.indexOf(args[0].type)) {
+			return;
 		}
 
-		model.set([], val);
-	});
+		var path = args[0].value,
+			lazy, model;
 
-	return {
-		update: function() {
-			model = this.get(path, { model: true });
-			var val = model.get();
+		lazy = options.lazy || (args[1] && args[1].type === NODE_TYPE.LITERAL && args[1].value)
+		el.addEventListener("change", onChange);
+		if (!lazy) el.addEventListener("keyup", onChange);
 
-			if (document.activeElement === el) return;
+		function onChange(e) {
+			var val;
 
 			switch (type) {
 				case "number":
+					val = this.valueAsNumber;
+					break;
 				case "text":
-					el.value = val == null ? "" : val.toString();
+					val = this.value;
 					break;
 
 				case "checkbox":
-					el.checked = !!val;
+					val = this.checked;
+					break;
+
+				case "date":
+					val = this.valueAsDate;
 					break;
 
 				case "select":
-					_.toArray(el.querySelectorAll("option")).forEach(function(opt) {
-						opt.selected = opt.value == val;
-					});
+					var opt = this.querySelector("option:checked");
+					if (opt == null) return;
+					val = opt.$bound_value;
+					break;
+
+				case "file":
+					val = !this.multiple ? this.files[0] : _.toArray(this.files);
+					break;
+
+				case "radio":
+					val = this.$bound_value;
 					break;
 			}
-		},
-		destroy: function() {
-			el.removeEventListener(eventName, onChange);
+
+			model.set([], val);
 		}
-	}
+
+		return {
+			update: function() {
+				model = this.get(path, { model: true });
+				var val = model.get();
+
+				switch (type) {
+					case "number":
+						if (document.activeElement === el) return;
+						if (_.isNumber(val)) el.valueAsNumber = val;
+						else el.value = val;
+						break;
+
+					case "text":
+						if (document.activeElement === el) return;
+						el.value = val == null ? "" : val.toString();
+						break;
+
+					case "checkbox":
+						el.checked = !!val;
+						break;
+
+					case "date":
+						if (document.activeElement === el) return;
+						if (_.isDate(val)) el.valueAsDate = val;
+						else el.value = val;
+						break;
+
+					case "select":
+						_.toArray(el.querySelectorAll("option")).forEach(function(opt) {
+							opt.selected = opt.$bound_value === val;
+						});
+						break;
+
+					case "radio":
+						el.checked = el.$bound_value === val;
+						break;
+
+				}
+			},
+			destroy: function() {
+				el.removeEventListener("change", onChange);
+				if (!lazy) el.removeEventListener("keyup", onChange);
+			}
+		}
+	});
+
+	this.decorate("value", function(el, attr) {
+		var type = getType(el), self = this;
+		
+		if (!_.contains([ "radio", "option" ], type)) {
+			return {
+				parse: "string",
+				update: function(val) { el.value = val; }
+			}
+		}
+
+		return { update: function(val) {
+			el.$bound_value = val;
+			el.value = self.convertStringTemplate(attr.children, this);
+		} }
+	});
+}
+
+var type_map = {
+	"text": [ "text", "color", "email", "password", "search", "tel", "url", "hidden" ],
+	"number": [ "number", "range" ],
+	"date": [ "date", "datetime", "datetime-local", "month", "time", "week" ],
+	"file": [ "file" ],
+	"checkbox": [ "checkbox" ],
+	"radio": [ "radio" ]
 }
 
 function getType(el) {
 	switch (el.tagName.toLowerCase()) {
 		case "input":
-			return el.type;
+			for (var type in type_map) {
+				if (_.contains(type_map[type], el.type)) return type;
+			}
+			break;
 
 		case "select":
 			return "select";
+
+		case "option":
+			return "option";
 
 		case "textarea":
 			return "text";
