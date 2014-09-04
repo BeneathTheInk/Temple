@@ -310,7 +310,7 @@ module.exports = Context.extend({
 					path = template.value,
 					omodel, model, val, isEmpty, makeRow, strval;
 
-				omodel = (ctx.findModel(path) || ctx).getModel(path);
+				omodel = ctx.findModel(path) || ctx.getModel();
 				val = omodel.get();
 				if (_.isFunction(val)) val = val.call(ctx);
 				isEmpty = Section.isEmpty(val);

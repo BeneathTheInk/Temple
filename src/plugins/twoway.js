@@ -61,7 +61,7 @@ module.exports = function(options) {
 
 		return {
 			update: function() {
-				model = this.get(path, { model: true });
+				model = this.findModel(path);
 				var val = model.get();
 
 				switch (type) {

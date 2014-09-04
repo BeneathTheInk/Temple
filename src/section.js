@@ -62,7 +62,7 @@ module.exports = Context.extend({
 			omodel, val, isEmpty, inverted, observer,
 			rowSort, model, createRow;
 
-		omodel = this.get(path, { model: true });
+		omodel = this.findModel(path);
 		val = omodel.get();
 		if (_.isFunction(val)) val = val.call(this);
 		isEmpty = Section.isEmpty(val);

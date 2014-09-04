@@ -42,52 +42,58 @@ exports.path = {
 		);
 	},
 
-	// parses a string as a context get path
-	parse: function(path) {
-		var m, query, ops = [];
-
-		// parse off special leading path operators
-		while (m = vertrex.exec(path)) {
-			path = path.substr(m.index + m[1].length);
-			ops.push(m[1]);
-		}
-
-		// split the path into parts
-		query = pathUtil.split(path);
-		query.type = "all";
-		query.distance = 0;
-
-		// parse off any leading "this" parts
-		while (query[0] === "this") {
-			ops.push(query.shift());
-		}
-
-		// translate operators onto the query
-		ops.some(function(op) {
-			switch(op) {
-				case "/":
-					query.type = "root";
-					return true;
-
-				case "./":
-				case ".":
-				case "this":
-					if (query.type === "all") query.type = "local";
-					break;
-
-				case "../":
-					query.type = "parent";
-					query.distance++;
-					break;
-			}
-		});
-
-		return query;
-	},
-
 	join: function() {
 		return pathUtil.sanitize(_.flatten(_.toArray(arguments))).join(pathUtil.sep);
 	}
+}
+
+// parses a string as a context get path
+exports.parseContextQuery = function(path) {
+	var m, query, ops = [];
+
+	// pre process strings
+	if (!_.isString(path)) throw new Error("Expecting string for path.");
+
+	// shave off whitespace
+	path = path.trim();
+
+	// parse off special leading path operators
+	while (m = vertrex.exec(path)) {
+		path = path.substr(m.index + m[1].length);
+		ops.push(m[1]);
+	}
+
+	// split the path into parts
+	query = pathUtil.split(path);
+	query.type = "all";
+	query.distance = 0;
+
+	// parse off any leading "this" parts
+	while (query[0] === "this") {
+		ops.push(query.shift());
+	}
+
+	// translate operators onto the query
+	ops.some(function(op) {
+		switch(op) {
+			case "/":
+				query.type = "root";
+				return true;
+
+			case "./":
+			case ".":
+			case "this":
+				if (query.type === "all") query.type = "local";
+				break;
+
+			case "../":
+				query.type = "parent";
+				query.distance++;
+				break;
+		}
+	});
+
+	return query;
 }
 
 // parses a string path as a dynamic path

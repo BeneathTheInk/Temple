@@ -92,8 +92,21 @@ module.exports = Temple.extend(_.extend(Observe, {
 		return this;
 	},
 
+	// returns all models this context has access too
+	getModels: function() {
+		var m = [],
+			c = this;
+
+		while (c != null) {
+			if (_.isArray(c.models)) m = m.concat(c.models);
+			c = c.parentContext;
+		}
+
+		return _.unique(m);
+	},
+
 	// returns the first model whose value at path isn't undefined
-	findModel: function(path, options) {
+	firstModelWithValue: function(path, options) {
 		var i, models;
 
 		options = options || {};
@@ -109,27 +122,19 @@ module.exports = Temple.extend(_.extend(Observe, {
 		return null;
 	},
 
-	getModels: function() {
-		var m = [],
-			c = this;
-
-		while (c != null) {
-			if (_.isArray(c.models)) m = m.concat(c.models);
-			c = c.parentContext;
-		}
-
-		return _.unique(m);
-	},
-
-	get: function(parts, options) {
+	// returns a model specified by query
+	findModel: function(parts, options) {
 		var val, model, query;
-		
+
 		options = options || {};
-		query = util.path.parse(parts);
+
+		if (_.isString(parts)) query = util.parseContextQuery(parts);
+		else if (_.isArray(parts)) query = util.path.split(parts);
+		else parts = [];
 
 		// local model
 		if (query.type === "local") {
-			model = this.findModel(query, _.extend({}, options, { local: true })) || this.models[0];
+			model = this.firstModelWithValue(query, _.extend({}, options, { local: true })) || this.models[0];
 		}
 
 		// the root model
@@ -141,21 +146,33 @@ module.exports = Temple.extend(_.extend(Observe, {
 		else if (query.type === "parent") {
 			var dist = query.distance;
 			query = query.slice(dist);
-			model = this.findModel(query, _.extend({}, options, {
+			model = this.firstModelWithValue(query, _.extend({}, options, {
 				models: this.getModels().slice(dist)
 			}));
 		}
 
 		// or normal look up
 		else {
-			model = this.findModel(query, options) || this.models[0];
+			model = this.firstModelWithValue(query, options) || this.models[0];
 		}
 
-		// return early if a model doesn't exist
-		if (model == null) return options.model ? null : void 0;
+		// return the exact model
+		return model != null ? model.getModel(query) : null;
+	},
 
-		// return the model if specified
-		model = model.getModel(query);
+	get: function(parts, options) {
+		var val, model, filters, fmodel, fn;
+
+		options = options || {};
+
+		if (_.isString(parts)) {
+			filters = parts.split("|");
+			parts = filters.shift();
+		}
+		
+		// get the model from the path and return if specified
+		model = this.findModel(parts);
+		if (model == null) return options.model ? null : void 0;
 		if (options.model) return model;
 
 		// depend on all deep paths
@@ -165,11 +182,21 @@ module.exports = Temple.extend(_.extend(Observe, {
 		val = model.get([], _.extend({}, options, { depend: false }));
 		if (_.isFunction(val)) val = val.call(this);
 
+		// apply filters
+		while (filters.length) {
+			fmodel = this.findModel(filters.shift());
+			if (fmodel == null) continue;
+
+			fn = fmodel.get();
+			if (_.isFunction(fn)) val = fn.call(this, val);
+			else val = fn;
+		}
+
 		return val;
 	},
 
 	keys: function(path) {
-		var model = this.get(path, { model: true });
+		var model = this.findModel(path);
 		return model != null ? model.keys() : [];
 	},
 
@@ -181,8 +208,7 @@ module.exports = Temple.extend(_.extend(Observe, {
 			path = [];
 		}
 
-		model = this.get(path, { depend: false, model: true });
-		if (model == null) model = this.findModel();
+		model = this.findModel(path, { depend: false }) || this.getModel();
 		model.set([], value, options);
 
 		return this;
