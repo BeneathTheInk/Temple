@@ -48,6 +48,8 @@ exports.registerPlugin = function(name, fn) {
 	plugins[name] = fn;
 }
 
+// load built in plugins
 registerPlugin("actions", require("./actions"));
 registerPlugin("animate", require("./animate"));
 registerPlugin("twoway", require("./twoway"));
+registerPlugin("extras", require("./extras"));

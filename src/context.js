@@ -122,7 +122,7 @@ module.exports = Temple.extend(_.extend(Observe, {
 		return null;
 	},
 
-	// returns a model specified by query
+	// returns an exact model specified by query
 	findModel: function(parts, options) {
 		var val, model, query;
 
@@ -130,7 +130,7 @@ module.exports = Temple.extend(_.extend(Observe, {
 
 		if (_.isString(parts)) query = util.parseContextQuery(parts);
 		else if (_.isArray(parts)) query = util.path.split(parts);
-		else parts = [];
+		else query = [];
 
 		// local model
 		if (query.type === "local") {
@@ -142,13 +142,17 @@ module.exports = Temple.extend(_.extend(Observe, {
 			model = _.last(this.getModels());
 		}
 
-		// specific parent model
+		// specific parent context
 		else if (query.type === "parent") {
-			var dist = query.distance;
-			query = query.slice(dist);
-			model = this.firstModelWithValue(query, _.extend({}, options, {
-				models: this.getModels().slice(dist)
-			}));
+			var dist = query.distance,
+				ctx = this;
+			
+			while (dist && ctx) {
+				ctx = ctx.parentContext;
+				dist--;
+			}
+
+			if (ctx != null) model = ctx.firstModelWithValue(query, options);
 		}
 
 		// or normal look up
@@ -165,6 +169,7 @@ module.exports = Temple.extend(_.extend(Observe, {
 
 		options = options || {};
 
+		// parse for filters
 		if (_.isString(parts)) {
 			filters = parts.split("|");
 			parts = filters.shift();
@@ -188,8 +193,7 @@ module.exports = Temple.extend(_.extend(Observe, {
 			if (fmodel == null) continue;
 
 			fn = fmodel.get();
-			if (_.isFunction(fn)) val = fn.call(this, val);
-			else val = fn;
+			val = _.isFunction(fn) ? fn.call(this, val) : fn;
 		}
 
 		return val;
@@ -208,7 +212,7 @@ module.exports = Temple.extend(_.extend(Observe, {
 			path = [];
 		}
 
-		model = this.findModel(path, { depend: false }) || this.getModel();
+		model = this.findModel(path, { depend: false }) || this.getModel(path);
 		model.set([], value, options);
 
 		return this;
