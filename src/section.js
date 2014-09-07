@@ -64,12 +64,17 @@ module.exports = Context.extend({
 
 		omodel = this.findModel(path);
 		val = omodel.get();
-		if (_.isFunction(val)) val = val.call(this);
-		isEmpty = Section.isEmpty(val);
-		inverted = this.isInverted();
+		
+		if (_.isFunction(val)) {
+			val = val.call(this);
+			model = new Model(val);
+			omodel.getAllProxies().reverse().forEach(model.registerProxy, model);
+		} else {
+			model = omodel;
+		}
 
-		model = new Model(val);
-		omodel.getAllProxies().reverse().forEach(model.registerProxy, model);
+		isEmpty = Section.isEmpty(model);
+		inverted = this.isInverted();
 
 		createRow = _.bind(function(model, key) {
 			var row = new Context(model, this);
@@ -121,12 +126,12 @@ module.exports = Context.extend({
 		// auto clean
 		this.once("invalidate", function() {
 			this.removeAllRows();
-			model.cleanProxyTree();
+			if (omodel !== model) model.cleanProxyTree();
 			if (observer != null) this.stopObserving(observer);
 		});
 	}
 }, {
-	isEmpty: function(val) {
-		return !val || (_.isArray(val) && !val.length);
+	isEmpty: function(model) {
+		return !model.value || (model.proxy("isArray") && !model.get("length"));
 	}
 });

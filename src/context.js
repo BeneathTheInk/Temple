@@ -173,6 +173,8 @@ module.exports = Temple.extend(_.extend(Observe, {
 		if (_.isString(parts)) {
 			filters = parts.split("|");
 			parts = filters.shift();
+		} else {
+			filters = [];
 		}
 		
 		// get the model from the path and return if specified
@@ -180,8 +182,8 @@ module.exports = Temple.extend(_.extend(Observe, {
 		if (model == null) return options.model ? null : void 0;
 		if (options.model) return model;
 
-		// depend on all deep paths
-		model.depend("**");
+		// depend on the model
+		model.depend();
 		
 		// get the value and process
 		val = model.get([], _.extend({}, options, { depend: false }));

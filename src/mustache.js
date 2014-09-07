@@ -312,12 +312,17 @@ module.exports = Context.extend({
 
 				omodel = ctx.findModel(path) || ctx.getModel();
 				val = omodel.get();
-				if (_.isFunction(val)) val = val.call(ctx);
-				isEmpty = Section.isEmpty(val);
 
-				model = new Model(val);
-				omodel.getAllProxies().reverse().forEach(model.registerProxy, model);
-				if (model.proxy("isArray")) this.depend("length");
+				if (_.isFunction(val)) {
+					val = val.call(ctx);
+					model = new Model(val);
+					omodel.getAllProxies().reverse().forEach(model.registerProxy, model);
+				} else {
+					model = omodel;
+				}
+
+				isEmpty = Section.isEmpty(model);
+				if (model.proxy("isArray")) model.depend("length");
 
 				makeRow = function(i) {
 					var row, m;
