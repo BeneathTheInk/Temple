@@ -131,7 +131,7 @@ describe("Bindings", function() {
 
 		it("accepts a string tagname on construction", function() {
 			binding = new Temple.Element("div");
-			expect(binding).to.be.instanceof(Temple);
+			expect(binding).to.be.instanceof(Temple.Binding);
 		});
 
 		it("accepts a DOM element on construction", function() {
@@ -139,7 +139,7 @@ describe("Bindings", function() {
 			node.appendChild(document.createTextNode("Hello World"));
 
 			binding = new Temple.Element(node);
-			expect(binding).to.be.instanceof(Temple);
+			expect(binding).to.be.instanceof(Temple.Binding);
 			expect(binding.tagname).to.equal("div");
 			expect(binding.firstChild).to.be.instanceof(Temple.Text);
 		});
@@ -204,7 +204,7 @@ describe("Bindings", function() {
 
 		it("accepts a string value on construction", function() {
 			binding = new Temple.Text("Hello World");
-			expect(binding).to.be.instanceof(Temple);
+			expect(binding).to.be.instanceof(Temple.Binding);
 		});
 
 		it("accepts a DOM text node on construction", function() {
@@ -263,10 +263,6 @@ describe("Bindings", function() {
 			binding = new Temple.HTML("<div></div><span>");
 			expect(binding.toString()).to.equal("<div></div><span></span>");
 		});
-	});
-
-	describe("React", function() {
-
 	});
 
 });
