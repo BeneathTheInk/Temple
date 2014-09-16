@@ -49,9 +49,14 @@ function toggle(path) {
 	return this.set(path, !this.get(path, { depend: false }));
 }
 
-function expire(path, ttl, fn) {
+function expire(path, ttl, val, fn) {
 	var self = this;
 	if (this._ttl == null) this._ttl = {};
+
+	if (_.isFunction(val) && fn == null) {
+		fn = val;
+		val = void 0;
+	}
 
 	// clear existing ttl
 	if (_.has(this._ttl, path)) {
@@ -64,9 +69,10 @@ function expire(path, ttl, fn) {
 
 	// set the timeout
 	this._ttl[path] = setTimeout(function() {
-		self.unset(path);
+		if (_.isUndefined(val)) self.unset(path);
+		else self.set(path, val);
 		delete self._ttl[path];
-		if (_.isFunction(fn)) fn.call(self, path);
+		if (_.isFunction(fn)) fn.call(self, path, val);
 	}, ttl);
 
 	return this;

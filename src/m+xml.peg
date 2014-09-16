@@ -30,7 +30,7 @@ textNode
 // Comment Nodes
 commentNode
 	= "<!--" v:commentValue "-->"  {
-		return { type: NODE_TYPE.COMMENT, value: v.trim() };
+		return { type: NODE_TYPE.XCOMMENT, value: v.trim() };
 	}
 	
 commentValue
@@ -144,7 +144,7 @@ doubleStache
 
 		switch(m) {
 			case "!":
-				type = NODE_TYPE.COMMENT;
+				type = NODE_TYPE.MCOMMENT;
 				break;
 
 			case ">":

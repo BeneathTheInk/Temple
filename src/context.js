@@ -165,11 +165,13 @@ module.exports = Temple.extend(_.extend(Observe, {
 	},
 
 	get: function(parts, options) {
-		var val, model, filters, fmodel, fn;
+		var val, model, filters, fmodel, fn, args;
 
 		options = options || {};
+		args = _.isArray(options.args) ? options.args :
+			options.args != null ? [ options.args ] : [];
 
-		// parse for filters
+		// get all filters
 		if (_.isString(parts)) {
 			filters = parts.split("|");
 			parts = filters.shift();
@@ -178,24 +180,19 @@ module.exports = Temple.extend(_.extend(Observe, {
 		}
 		
 		// get the model from the path and return if specified
-		model = this.findModel(parts);
+		model = this.findModel(parts, options);
 		if (model == null) return options.model ? null : void 0;
 		if (options.model) return model;
-
-		// depend on the model
-		model.depend();
 		
-		// get the value and process
-		val = model.get([], _.extend({}, options, { depend: false }));
-		if (_.isFunction(val)) val = val.call(this);
+		// get the value
+		val = model.value;
+		if (_.isFunction(val)) val = val.apply(this, args);
 
 		// apply filters
 		while (filters.length) {
-			fmodel = this.findModel(filters.shift());
-			if (fmodel == null) continue;
-
-			fn = fmodel.get();
-			val = _.isFunction(fn) ? fn.call(this, val) : fn;
+			val = this.get(filters.shift(), _.extend({}, options, {
+				args: [ val ].concat(args)
+			}));
 		}
 
 		return val;
@@ -238,6 +235,18 @@ module.exports = Temple.extend(_.extend(Observe, {
 		return Temple.prototype.detach.apply(this, arguments);
 	},
 
+	// returns all proxies associated with this context
+	getAllProxies: function() {
+		var proxies = [];
+
+		this.getModels().forEach(function(model) {
+			proxies = _.union(proxies, model.getAllProxies());
+		});
+
+		return proxies;
+	},
+
+	// cleans the proxy tree on all local models
 	cleanProxyTree: function() {
 		_.invoke(this.models, "cleanProxyTree");
 		return this;
@@ -278,7 +287,7 @@ module.exports = Temple.extend(_.extend(Observe, {
 });
 
 // proxy methods which don't return this
-[ "getModel", "getProxyByValue", "getAllProxies", "proxy" ]
+[ "getModel", "getProxyByValue", "proxy" ]
 .forEach(function(method) {
 	Context.prototype[method] = function() {
 		var model = this.models[0];

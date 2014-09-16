@@ -253,6 +253,9 @@ module.exports = Context.extend({
 			case NODE_TYPE.HTML:
 				return new Temple.HTML(template.value);
 
+			case NODE_TYPE.XCOMMENT:
+				return new Temple.Comment(template.value);
+
 			case NODE_TYPE.INTERPOLATOR:
 			case NODE_TYPE.TRIPLE:
 				var node = new Temple[template.type === NODE_TYPE.TRIPLE ? "HTML" : "Text"];
@@ -265,9 +268,10 @@ module.exports = Context.extend({
 
 			case NODE_TYPE.INVERTED:
 			case NODE_TYPE.SECTION:
-				return new Section(null, ctx)
+				var section = new Section(null, ctx)
 				.invert(template.type === NODE_TYPE.INVERTED)
-				.mount(template.value, function(key) {
+				.setPath(template.value)
+				.onRow(function(key) {
 					this.addModel(new Model({ $key: key }));
 					
 					var toMount, bindings;
@@ -277,13 +281,13 @@ module.exports = Context.extend({
 					return bindings;
 				});
 
+				toMount.push(section);
+				return section;
+
 			case NODE_TYPE.PARTIAL:
 				var partial = this.renderPartial(template.value, ctx);
-				toMount.push(partial);
+				if (partial != null) toMount.push(partial);
 				return partial;
-
-			default:
-				console.log(template);
 		}
 	},
 
@@ -308,18 +312,11 @@ module.exports = Context.extend({
 			case NODE_TYPE.INVERTED:
 				var inverted = template.type === NODE_TYPE.INVERTED,
 					path = template.value,
-					omodel, model, val, isEmpty, makeRow, strval;
+					model, val, isEmpty, makeRow, strval;
 
-				omodel = ctx.findModel(path) || ctx.getModel();
-				val = omodel.get();
-
-				if (_.isFunction(val)) {
-					val = val.call(ctx);
-					model = new Model(val);
-					omodel.getAllProxies().reverse().forEach(model.registerProxy, model);
-				} else {
-					model = omodel;
-				}
+				val = ctx.get(path);
+				model = new Model(val);
+				ctx.getAllProxies().reverse().forEach(model.registerProxy, model);
 
 				isEmpty = Section.isEmpty(model);
 				if (model.proxy("isArray")) model.depend("length");
@@ -351,9 +348,6 @@ module.exports = Context.extend({
 
 				model.cleanProxyTree();
 				return strval;
-
-			default:
-				console.log(template);
 		}
 	},
 
@@ -363,7 +357,7 @@ module.exports = Context.extend({
 
 		if (_.isArray(arg)) return arg.map(function(a) {
 			return temple.convertArgumentTemplate(a, ctx);
-		}).filter(function(a) { return a != null; });
+		});
 
 		switch(arg.type) {
 			case NODE_TYPE.INTERPOLATOR:
@@ -371,9 +365,6 @@ module.exports = Context.extend({
 
 			case NODE_TYPE.LITERAL:
 				return arg.value;
-
-			default:
-				console.log(arg);
 		}
 	},
 

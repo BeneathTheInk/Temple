@@ -21,20 +21,35 @@ module.exports = Context.extend({
 		return !!this._inverted;
 	},
 
-	addRow: function(key, row) {
-		if (!Context.isContext(row))
-			throw new Error("Rows can only be instances of Context.");
+	setPath: function(path) {
+		this._path = path;
+		return this;
+	},
 
+	onRow: function(fn) {
+		if (!_.isFunction(fn))
+			throw new Error("Expecting function for row handler.");
+
+		this._onRow = fn;
+		return this;
+	},
+
+	addRow: function(key, model) {
+		// remove existing
 		this.removeRow(key);
+
+		// add new row
+		var row = new Context(model, this.parentContext || this);
+		row.render = this._onRow;
 		this.rows[key] = row;
 		this.appendChild(row);
 		row.mount(key);
 
-		return this;
+		return row;
 	},
 
 	hasRow: function(key) {
-		return this.getRow() != null;
+		return this.getRow(key) != null;
 	},
 
 	getRow: function(key) {
@@ -45,7 +60,7 @@ module.exports = Context.extend({
 		if (this.rows[key] == null) return this;
 
 		var row = this.rows[key];
-		row.stop();
+		row.clean();
 		this.removeChild(row);
 		delete this.rows[key];
 
@@ -57,41 +72,31 @@ module.exports = Context.extend({
 		return this;
 	},
 
-	render: function(path, onRow) {
+	render: function() {
+		if (this._path == null) throw new Error("Missing path.");
+
 		var self = this,
-			omodel, val, isEmpty, inverted, observer,
-			rowSort, model, createRow;
+			val, isEmpty, inverted, observer,
+			rowSort, model, ctx;
 
-		omodel = this.findModel(path);
-		val = omodel.get();
+		ctx = this.parentContext || this;
+		val = ctx.get(this._path);
+
+		model = new Model(val);
+		ctx.getAllProxies().reverse().forEach(model.registerProxy, model);
 		
-		if (_.isFunction(val)) {
-			val = val.call(this);
-			model = new Model(val);
-			omodel.getAllProxies().reverse().forEach(model.registerProxy, model);
-		} else {
-			model = omodel;
-		}
-
 		isEmpty = Section.isEmpty(model);
 		inverted = this.isInverted();
 
-		createRow = _.bind(function(model, key) {
-			var row = new Context(model, this);
-			row.render = onRow;
-			this.addRow(key, row);
-			return row;
-		}, this);
-
 		if (isEmpty && inverted) {
 			if (model.proxy("isArray")) model.depend("length");
-			createRow(model, 0);
+			this.addRow(0, model);
 		} else if (!isEmpty && !inverted) {
 			if (model.proxy("isArray")) {
 				// create rows
 				model.keys().forEach(function(key) {
-					createRow(model.getModel(key), key);
-				});
+					this.addRow(key, model.getModel(key));
+				}, this);
 
 				// a reactive context that continuously sorts rows
 				rowSort = this.autorun(function() {
@@ -111,13 +116,13 @@ module.exports = Context.extend({
 					if (key == null) return;
 
 					if (s.type === "delete") self.removeRow(key);
-					else if (!self.hasRow(key) && _.contains(model.keys(), key)) createRow(s.model, key);
+					else if (!self.hasRow(key) && _.contains(model.keys(), key)) self.addRow(key, s.model);
 					else return;
 
 					rowSort.invalidate();
 				});
 			} else {
-				createRow(model, 0);
+				this.addRow(0, model);
 			}
 		} else if (model.proxy("isArray")) {
 			model.depend("length");
@@ -126,8 +131,8 @@ module.exports = Context.extend({
 		// auto clean
 		this.once("invalidate", function() {
 			this.removeAllRows();
-			if (omodel !== model) model.cleanProxyTree();
-			if (observer != null) this.stopObserving(observer);
+			if (observer != null) model.stopObserving(observer);
+			model.cleanProxyTree();
 		});
 	}
 }, {

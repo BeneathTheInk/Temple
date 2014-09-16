@@ -32,7 +32,7 @@ Proxy.Object = Proxy.extend({
 		this.model = model;
 
 		(this._observer = new ObjectObserver(target)).open(function(added, removed, changed) {
-			_.flatten([ added, changed ].map(Object.keys)).forEach(function(key) {
+			_.flatten([ added, changed ].map(_.keys)).forEach(function(key) {
 				model.set(key, target[key]);
 			});
 

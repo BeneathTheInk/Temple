@@ -6,15 +6,16 @@ module.exports = {
 	TEXT              : 3,
 	ELEMENT           : 4,
 	ATTRIBUTE         : 5,
+	XCOMMENT          : 6,
 
 	// Mustache
-	INTERPOLATOR      : 6,
-	TRIPLE            : 7,
-	SECTION           : 8,
-	INVERTED          : 9,
-	PARTIAL           : 10,
+	INTERPOLATOR      : 7,
+	TRIPLE            : 8,
+	SECTION           : 9,
+	INVERTED          : 10,
+	PARTIAL           : 11,
+	MCOMMENT          : 12,
 
 	// MISC
-	COMMENT           : 11,
-	LITERAL           : 12
+	LITERAL           : 13
 }

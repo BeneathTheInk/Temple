@@ -128,7 +128,7 @@ describe("Mustache", function() {
 				type: NODE_TYPE.ROOT,
 				version: Mustache.VERSION,
 				children: [{
-					type: NODE_TYPE.COMMENT,
+					type: NODE_TYPE.XCOMMENT,
 					value: "comment"
 				},{
 					type: NODE_TYPE.ELEMENT,
@@ -786,6 +786,15 @@ describe("Mustache", function() {
 			expect(nodes).to.have.length(2);
 			expect(nodes[0]).to.be.element.with.tagName("h1");
 			expect(nodes[0].firstChild).to.be.textNode.with.nodeValue("Hello World");
+		});
+
+		it("renders nothing if partial doesn't exist", function() {
+			tpl = new Mustache("{{> partial }}");
+			tpl.paint(doc);
+
+			var nodes = getNodes();
+			expect(nodes).to.have.length(1);
+			expect(nodes[0]).to.be.comment;
 		});
 	});
 

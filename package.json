@@ -16,7 +16,7 @@
 	},
 	"main": "./lib/index.js",
 	"dependencies": {
-		"templejs": "0.3.x",
+		"templejs": "~0.3.2",
 		"underscore": "~1.7.0",
 		"observe-js": "git://github.com/Polymer/observe-js.git#0.4.0"
 	},
