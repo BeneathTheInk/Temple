@@ -209,3 +209,12 @@ var SelectorParser = require("./selector")
 exports.parseSelector = function(sel) {
 	return SelectorParser.parse(sel);
 }
+
+exports.closest = function(elem, selector) {
+	while (elem != null) {
+		if (elem.nodeType === 1 && matchesSelector.call(elem, selector)) return elem;
+		elem = elem.parentNode;
+	}
+
+	return false;
+}

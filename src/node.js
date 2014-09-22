@@ -1,6 +1,8 @@
 var Binding = require("./binding"),
 	util = require("./util");
 
+var delegateEventSplitter = /^(\S+)\s*(.*)$/;
+
 var Node =
 exports.Node = Binding.extend({
 	updateNodes: function() {
@@ -33,73 +35,47 @@ exports.Node = Binding.extend({
 	findAll: function() { return []; }
 });
 
-var Text =
-exports.Text = Node.extend({
-	constructor: function(nodeOrValue) {
-		// text node
-		if (nodeOrValue instanceof window.Node && nodeOrValue.nodeType === 3) {
-			this.node = nodeOrValue;
-			this.value = nodeOrValue.nodeValue;
+function leafNode(nodeType, methodName, humanType) {
+	return Node.extend({
+		constructor: function(nodeOrValue) {
+			// text node
+			if (nodeOrValue instanceof window.Node && nodeOrValue.nodeType === nodeType) {
+				this.node = nodeOrValue;
+				this.value = nodeOrValue.nodeValue;
+			}
+
+			// anything else
+			else {
+				this.node = document[methodName]("");
+				this.setValue(nodeOrValue);
+			}
+
+			Node.call(this);
+		},
+
+		insertBefore: function() {
+			throw new Error(humanType + " bindings can't have children.");
+		},
+
+		setValue: function(value) {
+			value = value != null ? value.toString() : "";
+			if (value !== this.node.nodeValue) this.node.nodeValue = value;
+			this.value = value;
+			return this;
+		},
+
+		toString: function() {
+			return this.node.nodeValue;
 		}
+	});
+}
 
-		// anything else
-		else {
-			this.node = document.createTextNode("");
-			this.setValue(nodeOrValue);
-		}
+var Text = exports.Text = leafNode(3, "createTextNode", "Text");
+var Comment = exports.Comment = leafNode(8, "createComment", "Comment");
 
-		Node.call(this);
-	},
-
-	insertBefore: function() {
-		throw new Error("Text bindings can't have children.");
-	},
-
-	setValue: function(value) {
-		value = value != null ? value.toString() : "";
-		if (value !== this.node.nodeValue) this.node.nodeValue = value;
-		this.value = value;
-		return this;
-	},
-
-	toString: function() {
-		return this.node.nodeValue;
-	}
-});
-
-var Comment =
-exports.Comment = Node.extend({
-	constructor: function(nodeOrValue) {
-		// comment node
-		if (nodeOrValue instanceof window.Node && nodeOrValue.nodeType === 8) {
-			this.node = nodeOrValue;
-			this.value = nodeOrValue.nodeValue;
-		}
-
-		// anything else
-		else {
-			this.node = document.createComment("");
-			this.setValue(nodeOrValue);
-		}
-
-		Node.call(this);
-	},
-
-	insertBefore: function() {
-		throw new Error("Comment bindings can't have children.");
-	},
-
-	setValue: function(value) {
-		value = value != null ? value.toString() : "";
-		if (value !== this.node.nodeValue) this.node.nodeValue = value;
-		this.value = value;
-		return this;
-	},
-
-	toString: function() {
-		return this.node.nodeValue;
-	}
-});
+Comment.prototype.toString = function() {
+	return "<!--" + this.node.nodeValue + "-->";
+}
 
 var Element =
 exports.Element = Node.extend({
@@ -126,7 +102,12 @@ exports.Element = Node.extend({
 		// or error
 		else throw new Error("Expecting string for element tag name.");
 
+		// run parent contstructor
 		Node.apply(this, children);
+
+		// apply events
+		var events = typeof this.events === "function" ? this.events.call(this) : this.events;
+		if (util.isObject(events)) this.addEventListener(events);
 	},
 
 	getAttribute: function(name) {
@@ -185,7 +166,7 @@ exports.Element = Node.extend({
 
 	addClass: function() {
 		util.flatten(util.toArray(arguments)).forEach(function(className) {
-			this.node.classList.add(className);
+			this.node.classList.add(className.split(" "));
 		}, this);
 
 		return this;
@@ -193,29 +174,85 @@ exports.Element = Node.extend({
 
 	removeClass: function() {
 		util.flatten(util.toArray(arguments)).forEach(function(className) {
-			this.node.classList.remove(className);
+			this.node.classList.remove(className.split(" "));
 		}, this);
 
 		return this;
 	},
 
-	addEventListener: function(type, listener) {
-		if (util.isObject(type) && listener == null) {
-			util.each(type, function(v, n) { this.addEventListener(n, v); }, this);
+	addEventListener: function(type, sel, listener) {
+		// syntax: addEventListener({ "type selector": listener })
+		if (util.isObject(type)) {
+			util.each(type, function(v, n) {
+				var m = n.match(delegateEventSplitter);
+				this.addEventListener(m[1], m[2], v);
+			}, this);
+			
 			return this;
 		}
 
-		this.node.addEventListener(type, listener);
+		// syntax: addEventListener(type, listener)
+		if (typeof sel === "function" && listener == null) {
+			listener = sel;
+			sel = null;
+		}
+
+		if (typeof type !== "string" || type === "") {
+			throw new Error("Expecting non-empty string event name.");
+		}
+
+		if (typeof listener !== "function") {
+			throw new Error("Expecting function for listener.");
+		}
+
+		if (this._eventListeners == null) this._eventListeners = [];
+		this._eventListeners.push({ type: type, listener: listener, event: eventListener });
+		this.node.addEventListener(type, eventListener);
+
 		return this;
+
+		function eventListener(e) {
+			var delegate;
+
+			if (typeof sel === "string" && sel !== "") {
+				delegate = util.closest(e.target, sel);
+				if (!delegate) return;
+			}
+
+			listener.call(self, e, delegate);
+		}
 	},
 
 	removeEventListener: function(type, listener) {
-		if (util.isObject(type) && listener == null) {
-			util.each(type, function(v, n) { this.removeEventListener(n, v); }, this);
-			return this;
+		var evts = [];
+
+		if (typeof type === "function" && listener == null) {
+			listener = type;
+			type = null;
 		}
 
-		this.node.removeEventListener(type, listener);
+		if (util.isObject(type)) {
+			util.each(type, function(v, n) {
+				var m = n.match(delegateEventSplitter);
+				evts.push.apply(evts, this._eventListeners.filter(function(e) {
+					return e.type === m[1] && e.listener === v && !~evts.indexOf(e);
+				}));
+			}, this);
+		} else {
+			evts = this._eventListeners.filter(function(e) {
+				return (type == null || type === e.type) && (listener == null || listener === e.listener);
+			});
+		}
+
+		evts.forEach(function(e) {
+			var index = this._eventListeners.indexOf(e);
+
+			if (~index) {
+				this.node.removeEventListener(e.type, e.event);
+				this._eventListeners.splice(index, 1);
+			}
+		}, this);
+
 		return this;
 	},
 
@@ -295,17 +332,14 @@ exports.fromNode = function(node) {
 
 // converts a string of HTML into a set of static bindings
 exports.fromHTML = function(html) {
-	var cont = document.createElement("div"),
-		binding = new Binding;
-
+	var cont, nodes;
+	cont = document.createElement("div")
 	cont.innerHTML = html;
-
-	fromNode(util.toArray(cont.childNodes))
-		.forEach(binding.appendChild, binding);
-
-	return binding;
+	nodes = util.toArray(cont.childNodes);
+	return fromNode(nodes.length === 1 ? nodes[0] : new Binding().append(nodes));
 }
 
+// converts a simple css selector to an element binding
 exports.fromSelector = function(sel) {
 	if (typeof sel !== "object") {
 		sel = util.parseSelector(sel);
@@ -313,7 +347,9 @@ exports.fromSelector = function(sel) {
 
 	var el = new Temple.Element(sel.tagname);
 	if (sel.id != null) el.prop("id", sel.id);
-	el.addClass(sel.classes).attr(sel.attributes);
+	el.addClass(sel.classes);
+	el.attr(sel.attributes);
+	el.append(util.toArray(arguments).slice(1));
 
 	return el;
 }
