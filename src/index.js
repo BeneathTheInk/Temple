@@ -14,7 +14,7 @@ module.exports = Binding.extend({
 });
 
 // static properties/methods
-Temple.VERSION = "0.3.3";
+Temple.VERSION = "0.3.4";
 Temple.util = util;
 Temple.Events = require("./events");
 Temple.Binding = Binding;
