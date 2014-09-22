@@ -52,18 +52,23 @@ module.exports = Binding.extend({
 	},
 
 	setValue: function(val) {
-		val = val != null ? val.toString() : "";
-		if (val === this.value) return this;
+		if (val instanceof Node) {
+			val = val.nodeType === 11 ? util.toArray(val.childNodes) : [ val ];
+		}
+
+		if (!Array.isArray(val)) {
+			val = val != null ? val.toString() : "";
+			
+			// convert html into DOM nodes
+			var div = document.createElement("div");
+			div.innerHTML = val;
+			val = util.toArray(div.childNodes);
+		}
 
 		this.removeNodes();
-		this.value = val;
-
-		// convert html into DOM nodes
-		div = document.createElement("div");
-		div.innerHTML = val;
-		this.nodes = util.toArray(div.childNodes);
-
+		this.nodes = val;
 		this.updateNodes();
+
 		return this;
 	},
 
