@@ -305,3 +305,15 @@ exports.fromHTML = function(html) {
 
 	return binding;
 }
+
+exports.fromSelector = function(sel) {
+	if (typeof sel !== "object") {
+		sel = util.parseSelector(sel);
+	}
+
+	var el = new Temple.Element(sel.tagname);
+	if (sel.id != null) el.prop("id", sel.id);
+	el.addClass(sel.classes).attr(sel.attributes);
+
+	return el;
+}

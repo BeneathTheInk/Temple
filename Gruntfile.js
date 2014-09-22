@@ -35,20 +35,46 @@ module.exports = function(grunt) {
 				}
 			}
 		},
-		clean: [ "dist/*.js" ],
+		clean: [ "lib/", "dist/*.js" ],
+		copy: {
+			main: {
+				files: [{
+					expand: true,
+					cwd: "src/",
+					src: [ "**/*.js" ],
+					dest: "lib/",
+					filter: 'isFile'
+				}]
+			}
+		},
+		peg: {
+			main: {
+				options: {
+					optimize: "size"
+				},
+				files: [{
+					expand: true,
+					cwd: "src/",
+					src: [ "**/*.peg" ],
+					dest: "lib/",
+					ext: ".js",
+					filter: 'isFile'
+				}]
+			}
+		},
 		browserify: {
 			dist: {
 				src: "lib/index.js",
 				dest: "dist/temple.js",
 				options: {
-					bundleOptions: { standalone: "Temple" }
+					browserifyOptions: { standalone: "Temple" }
 				}
 			},
 			test: {
 				src: "lib/index.js",
 				dest: "dist/temple.dev.js",
 				options: {
-					bundleOptions: { debug: true, standalone: "Temple" }
+					browserifyOptions: { debug: true, standalone: "Temple" }
 				}
 			}
 		},
@@ -76,7 +102,7 @@ module.exports = function(grunt) {
 		},
 		watch: {
 			main: {
-				files: [ "lib/**/*.js" ],
+				files: [ "src/**/*.{js,peg}" ],
 				tasks: [ 'test' ],
 				options: { spawn: false }
 			}
@@ -86,17 +112,21 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-watch');
 	grunt.loadNpmTasks('grunt-contrib-clean');
 	grunt.loadNpmTasks('grunt-browserify');
+	grunt.loadNpmTasks('grunt-peg');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
+	grunt.loadNpmTasks('grunt-contrib-copy');
 	grunt.loadNpmTasks('grunt-wrap2000');
 	grunt.loadNpmTasks('grunt-wait');
+
+	grunt.registerTask('build', [ 'clean', 'copy', 'peg' ]);
 
 	grunt.registerTask('build-test', [ 'wait', 'browserify:test', 'wrap2000:test' ]);
 	grunt.registerTask('build-dist', [ 'browserify:dist', 'wrap2000:dist', 'uglify:dist' ]);
 
-	grunt.registerTask('dist', [ 'clean', 'build-dist'  ]);
-	grunt.registerTask('test', [ 'clean', 'build-test' ]);
+	grunt.registerTask('dist', [ 'build', 'build-dist'  ]);
+	grunt.registerTask('test', [ 'build', 'build-test' ]);
 	grunt.registerTask('dev', [ 'test', 'watch' ]);
 
-	grunt.registerTask('default', [ 'clean', 'build-dist', 'build-test' ]);
+	grunt.registerTask('default', [ 'build', 'build-dist', 'build-test' ]);
 
 }

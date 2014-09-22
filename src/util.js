@@ -204,3 +204,8 @@ exports.runIfExists = function(obj, method) {
 		}
 	}
 }
+
+var SelectorParser = require("./selector")
+exports.parseSelector = function(sel) {
+	return SelectorParser.parse(sel);
+}

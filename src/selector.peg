@@ -1,0 +1,75 @@
+{
+	var hasId = false;
+}
+
+start = tag:element? props:(id / class / attr)* {
+	var el = {
+		tagname: tag,
+		id: null,
+		classes: [],
+		attributes: {}
+	};
+
+	props.forEach(function(prop) {
+		switch (prop.type) {
+			case "id":
+				el.id = prop.value;
+				break;
+
+			case "class":
+				el.classes.push(prop.value);
+				break;
+
+			case "attr":
+				el.attributes[prop.name] = prop.value;
+				break;
+		}
+	});
+
+	return el;
+}
+
+element = name:nmstart* { return name.join(""); }
+
+identity = i:(nmstart) j:(nmchar*) { return i + j.join(''); }
+
+id = '#' h:identity {
+	if (hasId) throw new Error("Elements cannot have multiple IDs.");
+	hasId = true;
+
+	return {
+		type: "id",
+		value: h
+	}
+}
+
+class = '.' c:identity {
+	return {
+		type: "class",
+		value: c
+	}
+}
+
+attr = "[" key:attr_name value:attr_value? "]" {
+	return {
+		type: "attr",
+		name: key,
+		value: value || ""
+	}
+}
+
+attr_name = ws k:[a-z0-9_-]i+ ws { return k.join(""); }
+
+attr_value = "=" ws v:(string / dumb_string) ws { return v; }
+
+string
+	= "\"" v:(escape / [^"])* "\"" { return v.join(""); }
+	/ "'" v:(escape / [^'])* "'" { return v.join(""); }
+
+dumb_string = v:[^\]]* { return v.join("").trim(); }
+
+nmstart    = [a-z] / nonascii
+nmchar     = [a-z0-9-] / nonascii
+nonascii   = [\x80-\xff]
+ws "whitespace" = [ \t\n\r]*
+escape = "\\" char:. { return char; }
