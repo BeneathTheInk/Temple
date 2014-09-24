@@ -29,7 +29,7 @@ start = tag:element? props:(id / class / attr)* {
 	return el;
 }
 
-element = name:nmstart* { return name.join(""); }
+element = name:identity* { return name.join(""); }
 
 identity = i:(nmstart) j:(nmchar*) { return i + j.join(''); }
 

@@ -125,6 +125,11 @@ util.extend(Binding.prototype, Events, {
 		return child;
 	},
 
+	empty: function() {
+		this.children.slice(0).forEach(this.removeChild, this);
+		return thisl
+	},
+
 	contains: function(child) {
 		return this.indexOf(child) > -1;
 	},
@@ -296,7 +301,7 @@ util.extend(Binding.prototype, Events, {
 		// the autorun computation
 		comp = this._comp = this.autorun(function(comp) {
 			// only render event without bindings
-			this.trigger("render:before", comp, args);
+			this.trigger("render:before", args, comp);
 
 			// run render and process the resulting bindings into an array
 			var bindings = this.render.apply(this, args);
@@ -305,25 +310,25 @@ util.extend(Binding.prototype, Events, {
 
 			// main render event execs after render but before appending
 			// the bindings array can be affected by this event
-			this.trigger("render", bindings, comp, args);
+			this.trigger("render", args, comp, bindings);
 
 			// append the bindings in order
 			bindings = bindings.map(this.appendChild, this);
 			
 			// the last render event
-			this.trigger("render:after", bindings, comp, args);
+			this.trigger("render:after", args, comp, bindings);
 
 			// auto clean up
 			comp.onInvalidate(function() {
 				// only invalidate event with bindings
-				this.trigger("invalidate:before", bindings, comp, args);
+				this.trigger("invalidate:before", args, comp, bindings);
 				
 				// remove the bindings added before
 				bindings.forEach(this.removeChild, this);
 				
 				// remaining invalidate events
-				this.trigger("invalidate", comp, args);
-				this.trigger("invalidate:after", comp, args);
+				this.trigger("invalidate", args, comp);
+				this.trigger("invalidate:after", args, comp);
 
 				// detect if the computation stopped
 				if (comp.stopped) {
@@ -335,8 +340,8 @@ util.extend(Binding.prototype, Events, {
 
 		// remaining mount events happen after the first render
 		Deps.nonreactive(function() {
-			this.trigger("mount", comp, args);
-			this.trigger("mount:after", comp, args);
+			this.trigger("mount", args, comp);
+			this.trigger("mount:after", args, comp);
 			delete this._mounting;
 		}, this);
 
@@ -389,6 +394,7 @@ util.extend(Binding.prototype, Events, {
 
 // aliases
 Binding.prototype.hasChild = Binding.prototype.contains;
+Binding.prototype.removeAllChildren = Binding.prototype.empty;
 Binding.prototype.toHTML = Binding.prototype.toString;
 
 // Load the bindings

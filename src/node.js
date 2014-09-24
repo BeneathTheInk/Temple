@@ -181,6 +181,8 @@ exports.Element = Node.extend({
 	},
 
 	addEventListener: function(type, sel, listener) {
+		var self = this;
+		
 		// syntax: addEventListener({ "type selector": listener })
 		if (util.isObject(type)) {
 			util.each(type, function(v, n) {
