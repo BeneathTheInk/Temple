@@ -42,5 +42,6 @@ function renderWait(fn, done) {
 	}, 50);
 }
 
-require("./class.js");
-require("./binding.js");
+require("./lib.js");
+require("./base.js");
+require("./node.js");

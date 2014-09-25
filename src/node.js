@@ -357,8 +357,8 @@ exports.fromHTML = function(html) {
 	var cont, nodes;
 	cont = document.createElement("div")
 	cont.innerHTML = html;
-	nodes = util.toArray(cont.childNodes);
-	return fromNode(nodes.length === 1 ? nodes[0] : new Binding().append(nodes));
+	nodes = fromNode(util.toArray(cont.childNodes));
+	return nodes.length === 1 ? nodes[0] : new Binding().append(nodes);
 }
 
 // converts a simple css selector to an element binding
