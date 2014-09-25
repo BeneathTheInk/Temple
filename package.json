@@ -14,19 +14,27 @@
 		"type": "git",
 		"url": "https://github.com/BeneathTheInk/Temple.git"
 	},
+	"scripts": {
+		"test": "node_modules/.bin/testling",
+		"test-cov": "node_modules/.bin/browserify -t coverify test/index.js | node_modules/.bin/testling --harness mocha-bdd | node_modules/.bin/coverify"
+	},
 	"main": "./lib/index.js",
-	"dependencies": {},
 	"devDependencies": {
-		"grunt": "0.4.5",
-		"grunt-browserify": "3.0.1",
-		"grunt-contrib-clean": "0.6.0",
-		"grunt-contrib-copy": "0.6.0",
-		"grunt-contrib-uglify": "0.6.0",
-		"grunt-contrib-watch": "0.6.1",
-		"grunt-copy": "0.1.0",
-		"grunt-peg": "1.5.0",
-		"grunt-wait": "0.1.0",
-		"grunt-wrap2000": "0.1.0"
+		"browserify": "~5.12.0",
+		"chai": "~1.9.1",
+		"coverify": "~1.0.7",
+		"grunt": "~0.4.5",
+		"grunt-browserify": "~3.0.1",
+		"grunt-contrib-clean": "~0.6.0",
+		"grunt-contrib-copy": "~0.6.0",
+		"grunt-contrib-uglify": "~0.6.0",
+		"grunt-contrib-watch": "~0.6.1",
+		"grunt-copy": "~0.1.0",
+		"grunt-peg": "~1.5.0",
+		"grunt-wait": "~0.1.0",
+		"grunt-wrap2000": "~0.1.0",
+		"mocha": "~1.21.4",
+		"testling": "~1.7.1"
 	},
 	"license": "MIT",
 	"keywords": [
@@ -37,5 +45,14 @@
 		"binding",
 		"reactive",
 		"dependency"
-	]
+	],
+	"testling": {
+		"harness": "mocha-bdd",
+		"files": "test/index.js",
+		"browsers": [
+			"ie/8..latest",
+			"chrome/latest",
+			"firefox/latest"
+		]
+	}
 }
