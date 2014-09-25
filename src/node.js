@@ -23,6 +23,116 @@ exports.Node = Binding.extend({
 		return this;
 	},
 
+	prop: function(name, value) {
+		if (util.isObject(name) && value == null) {
+			util.each(name, function(v, n) { this.prop(n, v); }, this);
+			return this;
+		}
+
+		if (typeof value === "undefined") return this.node[name];
+		else this.node[name] = value;
+
+		return this;
+	},
+
+	addEventListener: function(type, sel, listener, options) {
+		var self = this;
+		
+		// syntax: addEventListener({ "type selector": listener }, options)
+		if (util.isObject(type)) {
+			util.each(type, function(v, n) {
+				var m = n.match(delegateEventSplitter);
+				this.addEventListener(m[1], m[2], v, sel);
+			}, this);
+			
+			return this;
+		}
+
+		// syntax: addEventListener(type, listener, options)
+		if (typeof sel === "function") {
+			if (options == null) options = listener;
+			listener = sel;
+			sel = null;
+		}
+
+		options = options || {};
+
+		if (typeof type !== "string" || type === "") {
+			throw new Error("Expecting non-empty string event name.");
+		}
+
+		if (typeof listener !== "function") {
+			throw new Error("Expecting function for listener.");
+		}
+
+		if (this._eventListeners == null) this._eventListeners = [];
+		this._eventListeners.push({ type: type, listener: listener, event: eventListener, options: options });
+		this.node.addEventListener(type, eventListener);
+
+		return this;
+
+		function eventListener(e) {
+			var delegate;
+
+			if (typeof sel === "string" && sel !== "") {
+				delegate = util.closest(e.target, sel);
+				if (!delegate) return;
+			}
+
+			if (options.once) self.removeEventListener(type, listener);
+			listener.call(options.context || self, e, delegate);
+		}
+	},
+
+	addEventListenerOnce: function(type, sel, listener, options) {
+		if (util.isObject(type)) {
+			return this.addEventListener(type, _.extend({ once: true }, sel || {}));
+		}
+
+		if (typeof sel === "function") {
+			if (options == null) options = listener;
+			listener = sel;
+			sel = null;
+		}
+		
+		return this.addEventListener(type, sel, listener, _.extend({ once: true }, options || {}));
+	},
+
+	removeEventListener: function(type, listener) {
+		if (this._eventListeners == null) return this;
+
+		var evts = [];
+
+		if (typeof type === "function" && listener == null) {
+			listener = type;
+			type = null;
+		}
+
+		if (util.isObject(type)) {
+			util.each(type, function(v, n) {
+				var m = n.match(delegateEventSplitter);
+				evts.push.apply(evts, this._eventListeners.filter(function(e) {
+					return e.type === m[1] && e.listener === v && !~evts.indexOf(e);
+				}));
+			}, this);
+		} else {
+			evts = this._eventListeners.filter(function(e) {
+				return (type == null || type === e.type) && (listener == null || listener === e.listener);
+			});
+		}
+
+		evts.forEach(function(e) {
+			var index = this._eventListeners.indexOf(e);
+
+			if (~index) {
+				this.node.removeEventListener(e.type, e.event);
+				this._eventListeners.splice(index, 1);
+			}
+		}, this);
+
+		return this;
+	},
+
 	toNodes: function() {
 		return [ this.node ];
 	},
@@ -136,18 +246,6 @@ exports.Element = Node.extend({
 		return this;
 	},
 
-	prop: function(name, value) {
-		if (util.isObject(name) && value == null) {
-			util.each(name, function(v, n) { this.prop(n, v); }, this);
-			return this;
-		}
-
-		if (typeof value === "undefined") return this.node[name];
-		else this.node[name] = value;
-
-		return this;
-	},
-
 	style: function(name, value) {
 		if (util.isObject(name) && value == null) {
 			util.each(name, function(v, n) { this.style(n, v); }, this);
@@ -175,84 +273,6 @@ exports.Element = Node.extend({
 	removeClass: function() {
 		util.flatten(util.toArray(arguments)).forEach(function(className) {
 			this.node.classList.remove(className.split(" "));
-		}, this);
-
-		return this;
-	},
-
-	addEventListener: function(type, sel, listener) {
-		var self = this;
-		
-		// syntax: addEventListener({ "type selector": listener })
-		if (util.isObject(type)) {
-			util.each(type, function(v, n) {
-				var m = n.match(delegateEventSplitter);
-				this.addEventListener(m[1], m[2], v);
-			}, this);
-			
-			return this;
-		}
-
-		// syntax: addEventListener(type, listener)
-		if (typeof sel === "function" && listener == null) {
-			listener = sel;
-			sel = null;
-		}
-
-		if (typeof type !== "string" || type === "") {
-			throw new Error("Expecting non-empty string event name.");
-		}
-
-		if (typeof listener !== "function") {
-			throw new Error("Expecting function for listener.");
-		}
-
-		if (this._eventListeners == null) this._eventListeners = [];
-		this._eventListeners.push({ type: type, listener: listener, event: eventListener });
-		this.node.addEventListener(type, eventListener);
-
-		return this;
-
-		function eventListener(e) {
-			var delegate;
-
-			if (typeof sel === "string" && sel !== "") {
-				delegate = util.closest(e.target, sel);
-				if (!delegate) return;
-			}
-
-			listener.call(self, e, delegate);
-		}
-	},
-
-	removeEventListener: function(type, listener) {
-		var evts = [];
-
-		if (typeof type === "function" && listener == null) {
-			listener = type;
-			type = null;
-		}
-
-		if (util.isObject(type)) {
-			util.each(type, function(v, n) {
-				var m = n.match(delegateEventSplitter);
-				evts.push.apply(evts, this._eventListeners.filter(function(e) {
-					return e.type === m[1] && e.listener === v && !~evts.indexOf(e);
-				}));
-			}, this);
-		} else {
-			evts = this._eventListeners.filter(function(e) {
-				return (type == null || type === e.type) && (listener == null || listener === e.listener);
-			});
-		}
-
-		evts.forEach(function(e) {
-			var index = this._eventListeners.indexOf(e);
-
-			if (~index) {
-				this.node.removeEventListener(e.type, e.event);
-				this._eventListeners.splice(index, 1);
-			}
 		}, this);
 
 		return this;
