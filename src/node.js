@@ -347,7 +347,7 @@ exports.fromSelector = function(sel) {
 		sel = util.parseSelector(sel);
 	}
 
-	var el = new Temple.Element(sel.tagname);
+	var el = new Element(sel.tagname);
 	if (sel.id != null) el.prop("id", sel.id);
 	el.addClass(sel.classes);
 	el.attr(sel.attributes);
