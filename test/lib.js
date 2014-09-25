@@ -80,4 +80,18 @@ describe("Library Features", function() {
 		expect(b.getAttribute("attr3")).to.equal("baz");
 	});
 
+	it("use executes function with passed arguments in context of binding", function() {
+		var b = new Temple(),
+			seen = false;
+
+		b.use(function(a1, a2) {
+			expect(this).to.equal(b);
+			expect(a1).to.equal("foo");
+			expect(a2).to.equal(true);
+			seen = true;
+		}, "foo", true);
+
+		expect(seen).to.be.ok;
+	});
+
 });

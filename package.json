@@ -16,7 +16,7 @@
 	},
 	"scripts": {
 		"test": "node_modules/.bin/testling",
-		"test-cov": "node_modules/.bin/browserify -t coverify test/index.js | node_modules/.bin/testling --harness mocha-bdd | node_modules/.bin/coverify --output @1"
+		"test-cov": "node_modules/.bin/browserify -t coverify test/index.js | node_modules/.bin/testling --harness mocha-bdd | node_modules/.bin/coverify"
 	},
 	"main": "./lib/index.js",
 	"devDependencies": {

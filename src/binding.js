@@ -28,8 +28,9 @@ util.extend(Binding.prototype, Events, {
 	},
 	
 	insertBefore: function(child, before) {
-		// special case for strings
-		if (typeof child === "string") child = new Binding.Text(child);
+		// special case for strings and numbers
+		if (~["string","number"].indexOf(typeof child))
+			child = new Binding.Text(child);
 
 		if (!Binding.isBinding(child))
 			throw new Error("Expecting child to be a binding.");
@@ -127,7 +128,7 @@ util.extend(Binding.prototype, Events, {
 
 	empty: function() {
 		this.children.slice(0).forEach(this.removeChild, this);
-		return thisl
+		return this;
 	},
 
 	contains: function(child) {
