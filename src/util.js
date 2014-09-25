@@ -75,6 +75,7 @@ exports.uniqueId = (function() {
 })();
 
 // the subclassing function found in Backbone
+var subclass =
 exports.subclass = function(protoProps, staticProps) {
 	var parent = this;
 	var child;
@@ -218,3 +219,64 @@ exports.closest = function(elem, selector) {
 
 	return false;
 }
+
+exports.ReactiveDict = (function() {
+	function ReactiveDict() {
+		this._masterDep = new Deps.Dependency;
+		this._deps = {};
+		this._values = {};
+	}
+
+	ReactiveDict.extend = subclass;
+
+	ReactiveDict.prototype.get = function(key) {
+		this.depend(key);
+		return this.getValue(key);
+	}
+
+	ReactiveDict.prototype.getValue = function(key) {
+		return this._values[key];
+	}
+
+	ReactiveDict.prototype.set = function(key, value) {
+		if (this.getValue(key) === value) return this;
+		this._values[key] = value;
+		this.changed(key);
+		return this;
+	}
+
+	ReactiveDict.prototype.unset = function(key) {
+		if (typeof this.getValue(key) === "undefined") return this;
+		delete this._values[key];
+		this.changed(key);
+		return this;
+	}
+
+	ReactiveDict.prototype.has = function(key) {
+		return this.get(key) != null;
+	}
+
+	ReactiveDict.prototype.keys = function() {
+		this._masterDep.depend();
+		return Object.keys(this._values);
+	}
+
+	ReactiveDict.prototype.getDependency = function(key) {
+		var dep = this._deps[key];
+		if (dep == null) dep = this._deps[key] = new Deps.Dependency;
+		return dep;
+	}
+
+	ReactiveDict.prototype.depend = function(key) {
+		this.getDependency(key).depend();
+		return this;
+	}
+
+	ReactiveDict.prototype.changed = function(key) {
+		this.getDependency(key).changed();
+		this._masterDep.changed();
+		return this;
+	}
+
+	return ReactiveDict;
+})();
