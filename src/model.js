@@ -178,6 +178,11 @@ _.extend(Model.prototype, Temple.Events, Observe, {
 		return this.getModel(path, options).value;
 	},
 
+	// value at property isn't undefined
+	has: function(path, options) {
+		return !_.isUndefined(this.get(path, options));
+	},
+
 	// the own properties of the model's value
 	keys: function(parts) {
 		parts = util.path.split(parts);
@@ -198,7 +203,7 @@ _.extend(Model.prototype, Temple.Events, Observe, {
 
 		// no path is a merge or reset
 		if (!parts.length) {
-
+			
 			// try merge or reset
 			if (options.reset || this.proxy("isLeaf") || this.proxy("merge", value) === false) {
 

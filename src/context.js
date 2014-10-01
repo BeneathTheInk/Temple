@@ -9,16 +9,14 @@ module.exports = Temple.extend(_.extend(Observe, {
 
 	constructor: function(model, ctx) {
 		this.models = [];
+		this.setParentContext(ctx);
 
 		// convert data to model if isn't one already
-		if (!Model.isModel(model)) {
-			var data = model;
-			model = new Model(_.result(this, "defaults"));
-			if (!_.isUndefined(data)) model.set([], data);
-		}
-
-		this.setParentContext(ctx);
+		if (!Model.isModel(model)) model = new Model(model);
 		this.addModel(model);
+
+		var defaults = _.result(this, "defaults");
+		if (!_.isUndefined(defaults)) this.addModel(new Model(_.clone(defaults)));
 
 		Temple.call(this);
 	},
@@ -45,7 +43,8 @@ module.exports = Temple.extend(_.extend(Observe, {
 			this.parentContext = ctx;
 		}
 
-		this.trigger("ctx", this.parentContext, prevctx);
+		if (prevctx !== ctx) this.trigger("ctx", this.parentContext, prevctx);
+
 		return this;
 	},
 

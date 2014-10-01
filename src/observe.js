@@ -28,11 +28,13 @@ module.exports = {
 	observe: function(path, fn) {
 		if (!_.isFunction(fn)) throw new Error("Expecting a function to call on change.");
 		if (this._observers == null) this._observers = [];
-		this.getModel(path); // ensures the model exists
+		
+		var parts = _.isArray(path) ? path.slice(0) : util.parseObserveQuery(path);
+		util.findAllMatchingPaths(this, this.value, parts); // ensure all the models exist
 
 		this._observers.push({
 			path: path,
-			parts: _.isArray(path) ? path : util.parseObserveQuery(path),
+			parts: parts,
 			fn: fn
 		});
 
