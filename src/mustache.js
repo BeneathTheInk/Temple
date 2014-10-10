@@ -175,9 +175,36 @@ module.exports = Context.extend({
 		return null;
 	},
 
+	// returns first rendered partial by name
+	getComponent: function(name) {
+		var comps, comp, res, n, i;
+
+		comps = this._components;
+		if (comps[name] != null && comps[name].length) return comps[name][0];
+
+		for (n in comps) {
+			for (i in comps[n]) {
+				comp = comps[n][i]
+				if (!(comp instanceof Mustache)) continue;
+				res = comp.getComponent(name);
+				if (res != null) return res;
+			}
+		}
+
+		return null;
+	},
+
 	// returns all rendered partials by name
 	getComponents: function(name) {
-		return this._components[name] || [];
+		return _.reduce(this._components, function(m, comps, n) {
+			if (n === name) m.push.apply(m, comps);
+			
+			comps.forEach(function(c) {
+				if (c instanceof Mustache) m.push.apply(m, c.getComponents(name));
+			});
+
+			return m;
+		}, []);
 	},
 
 	render: function() {
