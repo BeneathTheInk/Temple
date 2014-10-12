@@ -234,6 +234,12 @@ module.exports = Temple.extend(_.extend(Observe, {
 		return Temple.prototype.detach.apply(this, arguments);
 	},
 
+	// registers proxy on all local models
+	registerProxy: function(proxy) {
+		_.invoke(this.models, "registerProxy", proxy);
+		return this;
+	},
+
 	// returns all proxies associated with this context
 	getAllProxies: function() {
 		var proxies = [];
@@ -276,14 +282,14 @@ module.exports = Temple.extend(_.extend(Observe, {
 });
 
 // chainable proxy methods
-[ "registerProxy" ]
-.forEach(function(method) {
-	Context.prototype[method] = function() {
-		var model = this.models[0];
-		model[method].apply(model, arguments);
-		return this;
-	}
-});
+// [ ]
+// .forEach(function(method) {
+// 	Context.prototype[method] = function() {
+// 		var model = this.models[0];
+// 		model[method].apply(model, arguments);
+// 		return this;
+// 	}
+// });
 
 // proxy methods which don't return this
 [ "getModel", "getProxyByValue", "proxy" ]
