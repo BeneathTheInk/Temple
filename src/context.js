@@ -16,7 +16,7 @@ module.exports = Temple.extend(_.extend(Observe, {
 		this.addModel(model);
 
 		var defaults = _.result(this, "defaults");
-		if (!_.isUndefined(defaults)) this.addModel(new Model(_.clone(defaults)));
+		if (!_.isUndefined(defaults)) model.set([], util.deepClone(defaults), { defaults: true });
 
 		Temple.call(this);
 	},

@@ -54,9 +54,9 @@ Proxy.Object = Proxy.extend({
 	keys: function() {
 		return Object.keys(this.target);
 	},
-	merge: function(mixin) {
+	merge: function(mixin, options) {
 		if (!util.isPlainObject(mixin)) return false;
-		_.each(mixin, function(v, k) { this.model.set(k, v); }, this);
+		_.each(mixin, function(v, k) { this.model.set(k, v, options); }, this);
 		return true;
 	},
 	unset: function(path) {

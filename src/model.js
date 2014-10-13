@@ -205,7 +205,10 @@ _.extend(Model.prototype, Temple.Events, Observe, {
 		if (!parts.length) {
 			
 			// try merge or reset
-			if (options.reset || this.proxy("isLeaf") || this.proxy("merge", value) === false) {
+			if (options.reset || this.proxy("isLeaf") || this.proxy("merge", value, options) === false) {
+
+				// only undefined values can be overwritten in defaults mode
+				if (!options.reset && options.defaults && !_.isUndefined(this.value)) return this;
 
 				var oval = this.value;
 				this.value = options.remove ? void 0 : value;
@@ -214,7 +217,6 @@ _.extend(Model.prototype, Temple.Events, Observe, {
 				if (options.notify !== false && (oval !== this.value || options.remove)) {
 					this.notify([], oval, options);
 				}
-
 			}
 		}
 

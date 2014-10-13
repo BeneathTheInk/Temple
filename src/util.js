@@ -12,6 +12,45 @@ exports.isSubClass = function(parent, fn) {
 	return fn === parent || (fn != null && fn.prototype instanceof parent);
 }
 
+var deepClone =
+exports.deepClone = function(v, mod) {
+	var prop, val, copy;
+
+	if (typeof v === "object") {
+		if (isPlainObject(v)) {
+			copy = {};
+			for (prop in v) {
+				if (_.has(v, prop)) {
+					val = typeof mod === "function" ? mod(v[prop], prop, v) : v[prop];
+					copy[prop] = deepClone(val, mod);
+				}
+			}
+		} else if (_.isArray(v)) {
+			copy = [];
+			for (prop = 0; prop < v.length; prop++) {
+				val = typeof mod === "function" ? mod(v[prop], prop, v) : v[prop];
+				copy.push(deepClone(val, mod));
+			}
+		} else if (_.isRegExp(v)) {
+			prop = ""; // prop == flags in this case
+            if (v.global) prop += "g";
+			if (v.ignoreCase) prop += "i";
+            if (v.multiline) prop += "m";
+            copy = new RegExp(v.source, prop);
+		} else if (_.isDate(v)) {
+			copy = new Date(v.getTime());
+		} else if (typeof window !== "undefined" && v instanceof window.Node) {
+			copy = v.cloneNode(true);
+		} else {
+			copy = v;
+		}
+	} else {
+		copy = v;
+	}
+
+	return copy;
+}
+
 // regex for spotting vertical tree paths
 var vertrex = /^(\.\.\/|\/|\.\/|\.)/i;
 
