@@ -213,7 +213,11 @@ module.exports = Context.extend({
 
 		var toMount, bindings;
 		bindings = this.convertTemplate(this._template, null, toMount = []);
-		this.once("render:after", function() { _.invoke(toMount, "mount"); });
+		
+		this.once("render:after", function() {
+			// we invoke them in reverse to ensure the DOM nodes are in the correct order
+			_.invoke(toMount.reverse(), "mount");
+		});
 
 		return bindings;
 	},
@@ -303,7 +307,7 @@ module.exports = Context.extend({
 					
 					var toMount, bindings;
 					bindings = temple.convertTemplate(template.children, this, toMount = []);
-					this.once("render:after", function() { _.invoke(toMount, "mount"); });
+					this.once("render:after", function() { _.invoke(toMount.reverse(), "mount"); });
 					
 					return bindings;
 				});
