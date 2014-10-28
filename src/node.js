@@ -86,7 +86,7 @@ exports.Node = Binding.extend({
 
 	addEventListenerOnce: function(type, sel, listener, options) {
 		if (util.isObject(type)) {
-			return this.addEventListener(type, _.extend({ once: true }, sel || {}));
+			return this.addEventListener(type, util.extend({ once: true }, sel || {}));
 		}
 
 		if (typeof sel === "function") {
@@ -95,7 +95,7 @@ exports.Node = Binding.extend({
 			sel = null;
 		}
 		
-		return this.addEventListener(type, sel, listener, _.extend({ once: true }, options || {}));
+		return this.addEventListener(type, sel, listener, util.extend({ once: true }, options || {}));
 	},
 
 	removeEventListener: function(type, listener) {
