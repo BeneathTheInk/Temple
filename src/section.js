@@ -82,11 +82,13 @@ module.exports = Context.extend({
 		ctx = this.parentContext || this;
 		val = ctx.get(this._path);
 
-		model = new Model(val);
-		ctx.getAllProxies().reverse().forEach(model.registerProxy, model);
+		Temple.Deps.nonreactive(function() {
+			model = new Model(val);
+			ctx.getAllProxies().reverse().forEach(model.registerProxy, model);
 		
-		isEmpty = Section.isEmpty(model);
-		inverted = this.isInverted();
+			isEmpty = Section.isEmpty(model);
+			inverted = this.isInverted();
+		}, this);
 
 		if (isEmpty && inverted) {
 			if (model.proxy("isArray")) model.depend("length");
