@@ -1,5 +1,5 @@
 // the current library version
-var VERSION = "1.1.3";
+var VERSION = "1.1.4";
 
 // no need for node js to hurt itself on any hard edges
 if (!process.browser) return module.exports = {
