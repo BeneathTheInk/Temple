@@ -31,7 +31,9 @@ Proxy.Object = Proxy.extend({
 		this.target = target;
 		this.model = model;
 
-		(this._observer = new ObjectObserver(target)).open(function(added, removed, changed) {
+		var observer = this._observer = new ObjectObserver(target);
+
+		observer.open(function(added, removed, changed) {
 			_.flatten([ added, changed ].map(_.keys)).forEach(function(key) {
 				model.set(key, target[key]);
 			});
@@ -49,6 +51,7 @@ Proxy.Object = Proxy.extend({
 	},
 	set: function(path, val) {
 		this.target[path] = val;
+		Platform.performMicrotaskCheckpoint();
 		return true;
 	},
 	keys: function() {
@@ -57,13 +60,15 @@ Proxy.Object = Proxy.extend({
 	merge: function(mixin, options) {
 		if (!util.isPlainObject(mixin)) return false;
 		_.each(mixin, function(v, k) { this.model.set(k, v, options); }, this);
+		Platform.performMicrotaskCheckpoint();
 		return true;
 	},
 	unset: function(path) {
+		Platform.performMicrotaskCheckpoint();
 		delete this.target[path];
 	},
 	destroy: function() {
-		this._observer.close();
+		if (this._observer) this._observer.close();
 	}
 }, {
 	match: function(target) {
@@ -74,6 +79,8 @@ Proxy.Object = Proxy.extend({
 	}
 });
 
+var mutatorMethods = [ 'pop', 'push', 'reverse', 'shift', 'sort', 'splice', 'unshift' ];
+
 var ArrayProxy =
 Proxy.Array = ObjectProxy.extend({
 	constructor: function(target, model) {
@@ -81,7 +88,9 @@ Proxy.Array = ObjectProxy.extend({
 		this.model = model;
 
 		// watch for changes to the array
-		(this._observer = new ArrayObserver(target)).open(function(splices) {
+		var observer = this._observer = new ArrayObserver(target);
+
+		observer.open(function(splices) {
 			if (!splices.length) return;
 			var start = 0, added = 0, removed = 0,
 				balance, size, i, nval;
@@ -103,6 +112,24 @@ Proxy.Array = ObjectProxy.extend({
 
 			model.set("length", target.length);
 		});
+
+		// if object.observe doesn't exist, we patch the common methods instead
+		// this is basically for every browser except Chrome
+		if (!Observer.hasObjectObserve) {
+			mutatorMethods.forEach(function(m) {
+				var orig = target[m];
+
+				Object.defineProperty(target, m, {
+					value: function() {
+						var r = orig.apply(this, arguments);
+						Platform.performMicrotaskCheckpoint();
+						return r;
+					},
+					configurable: true,
+					enumerable: false
+				});
+			});
+		}
 	},
 
 	isArray: function() { return true; },
@@ -112,6 +139,7 @@ Proxy.Array = ObjectProxy.extend({
 		// of any new or removed values. for now, ignored
 		if (path === "length") return false;
 		this.target[path] = val;
+		Platform.performMicrotaskCheckpoint();
 		return true;
 	},
 
@@ -124,6 +152,7 @@ Proxy.Array = ObjectProxy.extend({
 			this.target.length = this.target.length - 1;
 		}
 
+		Platform.performMicrotaskCheckpoint();
 		return true;
 	},
 

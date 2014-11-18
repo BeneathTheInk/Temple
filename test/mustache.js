@@ -4,7 +4,7 @@ describe("Mustache", function() {
 	var tpl, doc;
 
 	this.timeout(1000);
-	this.slow(200);
+	this.slow(400);
 
 	before(function() {
 		doc = document.createDocumentFragment();
