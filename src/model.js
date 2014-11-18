@@ -1,7 +1,6 @@
 var Temple = require("templejs"),
 	_ = require("underscore"),
 	util = require("./util"),
-	Proxy = require("./proxy"),
 	Observe = require("./observe");
 
 var Model =
@@ -12,7 +11,9 @@ module.exports = function Model(data) {
 }
 
 Model.extend = Temple.util.subclass;
-Model._defaultProxies = [ Proxy.Array, Proxy.Object ];
+
+var Proxy = require("./proxy");
+Model._defaultProxies = [ Proxy.Model, Proxy.Binding, Proxy.Array, Proxy.Object ];
 
 Model.isModel = function(obj) {
 	return obj instanceof Model;

@@ -2,7 +2,7 @@ require("observe-js");
 
 var Temple = require("templejs"),
 	_ = require("underscore"),
-	util = require("./util")
+	util = require("./util");
 
 function Proxy(target) {
 	this.target = target;
@@ -25,6 +25,7 @@ _.extend(Proxy.prototype, Temple.Events, {
 	destroy	: function()			{ }
 });
 
+// Plain object proxy
 var ObjectProxy =
 Proxy.Object = Proxy.extend({
 	constructor: function(target, model) {
@@ -81,6 +82,7 @@ Proxy.Object = Proxy.extend({
 
 var mutatorMethods = [ 'pop', 'push', 'reverse', 'shift', 'sort', 'splice', 'unshift' ];
 
+// plain array proxy
 var ArrayProxy =
 Proxy.Array = ObjectProxy.extend({
 	constructor: function(target, model) {
@@ -161,5 +163,66 @@ Proxy.Array = ObjectProxy.extend({
 }, {
 	match: function(val) {
 		return Array.isArray(val);
+	}
+});
+
+// Temple Mustache model proxy
+var ModelProxy =
+Proxy.Model = Proxy.extend({
+	constructor: function(target, model) {
+		this.target = target;
+		this.model = model;
+
+		target.observe("**", this._observer = function(s) {
+			if (s.type === "delete") model.unset(s.keypath);
+			else model.set(s.keypath, s.value, { reset: true });
+		});
+	},
+
+	isArray: function() { return false; },
+	isLeaf: function() { return false; },
+
+	get: function(path) {
+		return this.target.get(path);
+	},
+
+	set: function(path, val) {
+		this.target.set(path, val, { reset: true });
+		return true;
+	},
+
+	unset: function(path) {
+		this.target.unset(path);
+		return true;
+	},
+
+	merge: function(mixin) {
+		if (!util.isPlainObject(mixin)) return false;
+		this.target.set([], mixin);
+		return true;
+	},
+
+	keys: function() {
+		return this.target.keys();
+	},
+
+	destroy: function() {
+		if (this._observer) this.target.stopObserving(this._observer);
+	}
+}, {
+	match: function(val) {
+		return val instanceof require("./model") || val instanceof require("./context");
+	},
+
+	get: function(target, key) {
+		return target.get(key);
+	}
+});
+
+// Temple Binding proxy
+var BindingProxy =
+Proxy.Binding = Proxy.extend({}, {
+	match: function(val) {
+		return val instanceof Temple.Binding;
 	}
 });
