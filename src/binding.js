@@ -1,5 +1,5 @@
 var Events = require("./events"),
-	Deps = require("./deps"),
+	Trackr = require("trackr"),
 	util = require("./util");
 
 var computedProps = [
@@ -272,8 +272,8 @@ util.extend(Binding.prototype, Events, {
 	},
 
 	autorun: function(fn, onlyOnActive) {
-		var comp = Deps.autorun(fn, this);
-		if (onlyOnActive && !Deps.active) comp.stop();
+		var comp = Trackr.autorun(fn, this);
+		if (onlyOnActive && !Trackr.active) comp.stop();
 		return comp;
 	},
 
@@ -287,7 +287,7 @@ util.extend(Binding.prototype, Events, {
 	mount: function() {
 		var args = util.toArray(arguments), comp;
 
-		Deps.nonreactive(function() {
+		Trackr.nonreactive(function() {
 			// stop existing mount
 			this.stop();
 
@@ -340,7 +340,7 @@ util.extend(Binding.prototype, Events, {
 		});
 
 		// remaining mount events happen after the first render
-		Deps.nonreactive(function() {
+		Trackr.nonreactive(function() {
 			this.trigger("mount", args, comp);
 			this.trigger("mount:after", args, comp);
 			delete this._mounting;

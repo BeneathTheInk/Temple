@@ -1,3 +1,5 @@
+var Trackr = require("trackr");
+
 var toArray =
 exports.toArray = function(obj) {
 	return Array.prototype.slice.call(obj, 0);
@@ -124,8 +126,6 @@ exports.matchesSelector = function(elem, selector) {
 	return matchesSelector.call(elem, selector)
 }
 
-var Deps = require("./deps");
-
 var defineReactiveProperty =
 exports.defineReactiveProperty = function(obj, prop, value, coerce) {
 	if (!isObject(obj)) throw new Error("Expecting object to define the reactive property on.");
@@ -140,12 +140,12 @@ exports.defineReactiveProperty = function(obj, prop, value, coerce) {
 
 	// runs the coercion function non-reactively to prevent infinite loops
 	function process(v) {
-		return Deps.nonreactive(function() {
+		return Trackr.nonreactive(function() {
 			return coerce.call(obj, v, prop, obj);
 		});
 	}
 
-	var dep = new Deps.Dependency;
+	var dep = new Trackr.Dependency;
 	value = process(value);
 
 	Object.defineProperty(obj, prop, {
@@ -206,7 +206,7 @@ exports.runIfExists = function(obj, method) {
 	}
 }
 
-var SelectorParser = require("./selector")
+var SelectorParser = require("./selector");
 exports.parseSelector = function(sel) {
 	return SelectorParser.parse(sel);
 }
@@ -222,7 +222,7 @@ exports.closest = function(elem, selector) {
 
 exports.ReactiveDict = (function() {
 	function ReactiveDict() {
-		this._masterDep = new Deps.Dependency;
+		this._masterDep = new Trackr.Dependency;
 		this._deps = {};
 		this._values = {};
 	}
@@ -263,7 +263,7 @@ exports.ReactiveDict = (function() {
 
 	ReactiveDict.prototype.getDependency = function(key) {
 		var dep = this._deps[key];
-		if (dep == null) dep = this._deps[key] = new Deps.Dependency;
+		if (dep == null) dep = this._deps[key] = new Trackr.Dependency;
 		return dep;
 	}
 

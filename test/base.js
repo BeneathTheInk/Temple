@@ -1,3 +1,6 @@
+var expect = require("./utils/expect");
+var Temple = require("../");
+
 describe("Base Binding", function() {
 	var binding;
 

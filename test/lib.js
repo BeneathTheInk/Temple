@@ -1,3 +1,6 @@
+var expect = require("./utils/expect");
+var Temple = require("../");
+
 describe("Library Features", function() {
 
 	it("extend() should create a valid subclass", function() {

@@ -1,7 +1,5 @@
-global.Temple = require("../");
-
 var chai = require("chai");
-global.expect = chai.expect;
+module.exports = chai.expect;
 
 chai.Assertion.addProperty('element', function() {
 	this.assert(
@@ -34,14 +32,3 @@ chai.Assertion.addMethod('nodeValue', function(expected_value) {
 chai.Assertion.addMethod('tagName', function(expected_value) {
 	this.has.property("tagName", expected_value.toUpperCase());
 });
-
-function renderWait(fn, done) {
-	setTimeout(function() {
-		try { fn(); done(); }
-		catch(e) { done(e); }
-	}, 50);
-}
-
-require("./lib.js");
-require("./base.js");
-require("./node.js");

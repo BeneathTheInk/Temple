@@ -20,7 +20,7 @@ Temple.Events = require("./events");
 Temple.Binding = Binding;
 
 // deps setup
-var Deps = Temple.Deps = require("./deps");
+var Deps = Temple.Deps = require("trackr");
 Temple.autorun = Deps.autorun;
 Temple.nonreactive = Deps.nonreactive;
 Temple.nonreactable = Deps.nonreactable;

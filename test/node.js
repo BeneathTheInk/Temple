@@ -1,3 +1,6 @@
+var expect = require("./utils/expect");
+var Temple = require("../");
+
 describe("DOM Node Bindings", function() {
 	var binding;
 
