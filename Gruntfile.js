@@ -2,33 +2,7 @@ module.exports = function(grunt) {
 
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
-		clean: [ "lib/", "dist/*.js" ],
-		copy: {
-			main: {
-				files: [{
-					expand: true,
-					cwd: "src/",
-					src: [ "**/*.js" ],
-					dest: "lib/",
-					filter: 'isFile'
-				}]
-			}
-		},
-		peg: {
-			main: {
-				options: {
-					optimize: "size"
-				},
-				files: [{
-					expand: true,
-					cwd: "src/",
-					src: [ "**/*.peg" ],
-					dest: "lib/",
-					ext: ".js",
-					filter: 'isFile'
-				}]
-			}
-		},
+		clean: [ "dist/*.js" ],
 		browserify: {
 			dist: {
 				src: "lib/index.js",
@@ -83,7 +57,7 @@ module.exports = function(grunt) {
 		},
 		watch: {
 			test: {
-				files: [ "src/**/*.{js,peg}" ],
+				files: [ "src/**/*.js", "test/**/*.js" ],
 				tasks: [ 'test' ],
 				options: { spawn: false }
 			}
@@ -98,14 +72,14 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-copy');
 	grunt.loadNpmTasks('grunt-wrap2000');
 
-	grunt.registerTask('precompile', [ 'clean', 'copy', 'peg' ]);
-
 	grunt.registerTask('build-dev', [ 'browserify:dev', 'wrap2000:dev' ]);
 	grunt.registerTask('build-test', [ 'browserify:test', 'wrap2000:test' ]);
 	grunt.registerTask('build-dist', [ 'browserify:dist', 'wrap2000:dist', 'uglify:dist' ]);
 
-	grunt.registerTask('dev', [ 'precompile', 'build-dev' ]);
-	grunt.registerTask('test', [ 'precompile', 'build-test' ]);
-	grunt.registerTask('dist', [ 'precompile', 'build-dist' ]);
+	grunt.registerTask('dev', [ 'clean', 'build-dev' ]);
+	grunt.registerTask('test', [ 'clean', 'build-test' ]);
+	grunt.registerTask('dist', [ 'clean', 'build-dist' ]);
+
+	grunt.registerTask('default', [ 'dist' ]);
 
 }

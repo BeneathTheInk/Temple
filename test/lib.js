@@ -53,36 +53,6 @@ describe("Library Features", function() {
 		expect(b.tagname).to.equal("span");
 	});
 
-	it("fromSelector should take a basic css selector and return a new Temple Element binding.", function() {
-		var b = Temple.fromSelector("span.a-class#myid");
-		expect(b).to.be.instanceof(Temple.Element);
-		expect(b.tagname).to.equal("span");
-		expect(b.node.className).to.equal("a-class");
-		expect(b.node.id).to.equal("myid");
-	});
-
-	it("fromSelector should accept multiple classes and keep their order.", function() {
-		var b = Temple.fromSelector("span.class1.class2#myid.class3");
-		expect(b).to.be.instanceof(Temple.Element);
-		expect(b.tagname).to.equal("span");
-		expect(b.node.className).to.equal("class1 class2 class3");
-	});
-
-	it("fromSelector should accept only one id", function() {
-		expect(function() {
-			Temple.fromSelector("span#id1.myclass#id2");
-		}).to.throw(Error);
-	});
-
-	it("fromSelector should accept attribute tags, with and without quotes", function() {
-		var b = Temple.fromSelector("span[attr1=foo][attr2='bar'][attr3=\"baz\"]");
-		expect(b).to.be.instanceof(Temple.Element);
-		expect(b.tagname).to.equal("span");
-		expect(b.getAttribute("attr1")).to.equal("foo");
-		expect(b.getAttribute("attr2")).to.equal("bar");
-		expect(b.getAttribute("attr3")).to.equal("baz");
-	});
-
 	it("use executes function with passed arguments in context of binding", function() {
 		var b = new Temple(),
 			seen = false;
