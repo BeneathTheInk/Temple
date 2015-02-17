@@ -1,13 +1,11 @@
 # Temple
 
-A modern JavaScript view framework.
+A modern JavaScript view framework. <http://beneaththeink.com/temple>
 
 * __Modular & Extensible__ - Views are encapsulated, reusable components, making testing and separation of concerns easy.
 * __Data Neutral__ - Temple is focused purely on the View aspect of web applications and can be easily integrated with existing frameworks and platforms.
-* __Lightweight__ - Temple has no external dependencies and weighs in at just under 30KB minified.
-* __Reactive__ - Keep the interface up-to-date flexibly with auto-running computations powered by [Meteor](http://meteor.com)'s [dependency package](https://github.com/meteor/meteor/blob/e78861b7d0dbb60e5e2bf59bab2cb06ce6596c04/packages/deps/deps.js).
-
-__Note: This library is under active development. Use at your own risk!__
+* __Lightweight__ - The main Temple source has been kept to only the absolute essentials. All extras are available as external packages.
+* __Reactive__ - Keep the interface up-to-date with auto-running computations powered by [Trackr](https://github.com/beneaththeink/trackr).
 
 ## Install
 
