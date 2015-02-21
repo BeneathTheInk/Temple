@@ -20,10 +20,11 @@
 	"main": "dist/temple.js",
 	"ignore": [
 		"node_modules/",
-		"src/",
+		"lib/",
 		"test/",
 		".*",
 		"Gruntfile.js",
-		"package.json"
+		"package.json",
+		"component.json"
 	]
 }
