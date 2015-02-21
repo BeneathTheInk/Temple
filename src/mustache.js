@@ -4,26 +4,25 @@ var Temple = require("templejs"),
 	parse = require("./m+xml").parse,
 	util = require("./util"),
 	Context = require("./context"),
-	Model = require("./model"),
-	Section = require("./section");
+	Model = require("./model");
+	// Section = require("./section");
 
 var Mustache =
 module.exports = Context.extend({
-	constructor: function(template, data) {
+	constructor: function(data, options) {
+		options = options || {};
 		this._partials = {};
 		this._components = {};
 
-		// parse and add template
-		template = template || _.result(this, "template");
+		// add template
+		var template = options.template || _.result(this, "template");
 		if (template != null) this.setTemplate(template);
 
-		// check for class level decorators
-		var decorators = _.result(this, "decorators");
-		if (_.isObject(decorators)) this.decorate(decorators);
+		// add decorators
+		this.decorate(_.extend({}, options.decorators, _.result(this, "decorators")));
 
-		// check for class level partials
-		var partials = _.result(this, "partials");
-		if (_.isObject(partials)) this.setPartial(partials);
+		// add partials
+		this.setPartial(_.extend({}, options.partials, _.result(this, "partials")));
 
 		Context.call(this, data);
 	},
@@ -211,251 +210,38 @@ module.exports = Context.extend({
 		if (this._template == null)
 			throw new Error("Expected a template to be set before rendering.");
 
-		var toMount, bindings;
-		bindings = this.convertTemplate(this._template, null, toMount = []);
+		// var toMount, bindings;
+		// bindings = this.convertTemplate(this._template, null, toMount = []);
 		
-		this.once("render:after", function() {
-			// we invoke them in reverse to ensure the DOM nodes are in the correct order
-			_.invoke(toMount.reverse(), "mount");
-		});
+		// this.once("render:after", function() {
+		// 	// we invoke them in reverse to ensure the DOM nodes are in the correct order
+		// 	_.invoke(toMount.reverse(), "mount");
+		// });
 
-		return bindings;
+		// return bindings;
 	},
 
-	convertTemplate: function(template, ctx, toMount) {
-		if (ctx == null) ctx = this;
-		if (toMount == null) toMount = [];
-		var temple = this;
+	renderTemplate: function(t) {
 
-		if (_.isArray(template)) return template.map(function(t) {
-			return this.convertTemplate(t, ctx, toMount);
-		}, this).filter(function(b) { return b != null; });
+	}
 
-		switch(template.type) {
-			case NODE_TYPE.ROOT:
-				return this.convertTemplate(template.children, ctx, toMount);
-
-			case NODE_TYPE.ELEMENT:
-				var part = this.renderPartial(template.name, ctx);
-
-				if (part != null) {
-					if (part instanceof Context) {
-						template.attributes.forEach(function(attr) {
-							this.autorun(function() {
-								var val = this.convertArgumentTemplate(attr.arguments, ctx);
-								if (val.length === 1) val = val[0];
-								else if (!val.length) val = null;
-
-								var model = part.getModel();
-								if (model == null) return;
-								model.set(attr.name, val);
-							});
-						}, this);
-					}
-
-					toMount.push(part);
-					return part;
-				}
-
-				else {
-					var binding = new Temple.Element(template.name), willMount = false;
-					this.convertTemplate(template.children, ctx, toMount).forEach(binding.appendChild, binding);
-
-					template.attributes.forEach(function(attr) {
-						if (this._processDecorations(attr, binding, ctx)) {
-							if (willMount) return;
-							toMount.push(binding);
-							willMount = true;
-						}
-
-						else {
-							this.autorun(function() {
-								binding.attr(attr.name, this.convertStringTemplate(attr.children, ctx));
-							}, true);
-						}
-					}, this);
-
-					return binding;
-				}
-
-			case NODE_TYPE.TEXT:
-				return new Temple.Text(util.decodeEntities(template.value));
-
-			case NODE_TYPE.HTML:
-				return new Temple.HTML(template.value);
-
-			case NODE_TYPE.XCOMMENT:
-				return new Temple.Comment(template.value);
-
-			case NODE_TYPE.INTERPOLATOR:
-			case NODE_TYPE.TRIPLE:
-				var node = new Temple[template.type === NODE_TYPE.TRIPLE ? "HTML" : "Text"];
-
-				var comp = this.autorun(function() {
-					node.setValue(ctx.get(template.value));
-				}, true);
-
-				return node;
-
-			case NODE_TYPE.INVERTED:
-			case NODE_TYPE.SECTION:
-				var section = new Section(null, ctx)
-				.invert(template.type === NODE_TYPE.INVERTED)
-				.setPath(template.value)
-				.onRow(function(key) {
-					this.addModel(new Model({ $key: key }));
-					
-					var toMount, bindings;
-					bindings = temple.convertTemplate(template.children, this, toMount = []);
-					this.once("render:after", function() { _.invoke(toMount.reverse(), "mount"); });
-					
-					return bindings;
-				});
-
-				toMount.push(section);
-				return section;
-
-			case NODE_TYPE.PARTIAL:
-				var partial = this.renderPartial(template.value, ctx);
-				if (partial != null) toMount.push(partial);
-				return partial;
-		}
-	},
-
-	convertStringTemplate: function(template, ctx) {
-		if (ctx == null) ctx = this;
-		var temple = this;
-
-		if (_.isArray(template)) return template.map(function(t) {
-			return temple.convertStringTemplate(t, ctx);
-		}).filter(function(b) { return b != null; }).join("");
-
-		switch(template.type) {
-			case NODE_TYPE.TEXT:
-				return template.value;
-
-			case NODE_TYPE.INTERPOLATOR:
-			case NODE_TYPE.TRIPLE:
-				var val = ctx.get(template.value);
-				return val != null ? val.toString() : "";
-
-			case NODE_TYPE.SECTION:
-			case NODE_TYPE.INVERTED:
-				var inverted = template.type === NODE_TYPE.INVERTED,
-					path = template.value,
-					model, val, isEmpty, makeRow, strval;
-
-				val = ctx.get(path);
-				model = new Model(val);
-				ctx.getAllProxies().reverse().forEach(model.registerProxy, model);
-
-				isEmpty = Section.isEmpty(model);
-				if (model.proxy("isArray")) model.depend("length");
-
-				makeRow = function(i) {
-					var row, m;
-
-					if (i == null) {
-						m = model;
-						i = 0;
-					} else {
-						m = model.getModel(i);
-					}
-
-					var row = new Context(m, ctx);
-					row.addModel(new Model({ $key: i }));
-
-					var val = temple.convertStringTemplate(template.children, row);
-					row.clean();
-
-					return val;
-				}
-
-				if (!(isEmpty ^ inverted)) {
-					strval = _.isArray(val) && !inverted ?
-						model.keys().map(makeRow).join("") :
-						makeRow();
-				}
-
-				model.cleanProxyTree();
-				return strval;
-		}
-	},
-
-	convertArgumentTemplate: function(arg, ctx) {
-		if (ctx == null) ctx = this;
-		var temple = this;
-
-		if (_.isArray(arg)) return arg.map(function(a) {
-			return temple.convertArgumentTemplate(a, ctx);
-		});
-
-		switch(arg.type) {
-			case NODE_TYPE.INTERPOLATOR:
-				return ctx.get(arg.value);
-
-			case NODE_TYPE.LITERAL:
-				return arg.value;
-		}
-	},
-
-	_processDecorations: function(attr, binding, ctx) {
-		var decorators = this.findDecorators(attr.name);
-		if (!decorators.length) return false;
-
-		var temple = this;
-
-		binding.on("render", function() {
-			var parseArgs = false, parseString = false;
-
-			// init decorators
-			var processed = decorators.map(function(fn) {
-				return Temple.Deps.nonreactive(function() {
-					return fn.call(temple, binding.node, attr, binding);
-				});
-			}).filter(function(d) {
-				return typeof d === "object";
-			});
-			
-			// return early if there are no decorations
-			if (!processed.length) return;
-
-			// start update computation
-			this.autorun(function(comp) {
-				var argsValue, stringValue;
-
-				processed.forEach(function(d) {
-					if (!_.isFunction(d.update)) return;
-
-					var args = [];
-
-					if (d.parse === "string") {
-						if (stringValue == null) stringValue = temple.convertStringTemplate(attr.children, ctx);
-						args = [ stringValue ];
-					} else if (d.parse !== false) {
-						if (argsValue == null) argsValue = temple.convertArgumentTemplate(attr.arguments, ctx);
-						args = argsValue.slice(0);
-					}
-					
-					this.autorun(function() {
-						d.update.apply(ctx, args);
-					});
-				}, this);
-			});
-
-			// destroy on invalidation
-			this.once("invalidate", function() {
-				processed.forEach(function(d) {
-					if (typeof d.destroy === "function") d.destroy.call(temple);
-				});
-			});
-		});
-
-		return true;
-	},
 }, {
-	parse: parse,
+
 	NODE_TYPE: NODE_TYPE,
+
+	parse: parse,
+
+	parsePathQuery: function(s, opts) {
+		return parse(s, _.extend({}, opts, { startRule: "pathQuery" }));
+	},
+
+	parseAttribute: function() {
+		return parse(s, _.extend({}, opts, { startRule: "attrValue" }));
+	},
+
+	parseArguments: function() {
+		return parse(s, _.extend({}, opts, { startRule: "attrArguments" }));
+	},
 
 	// converts raw html str to template tree
 	parseHTML: function(str) {
@@ -467,4 +253,5 @@ module.exports = Context.extend({
 			} ]
 		};
 	}
+
 });

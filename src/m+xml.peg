@@ -77,8 +77,8 @@ attribute
 			type: NODE_TYPE.ATTRIBUTE,
 			name: key,
 			value: value,
-			children: parse(value, { startRule: "attrValue" }),
-			arguments: parse(value, { startRule: "attrArguments" })
+			children: parse(value, _.extend({}, options, { startRule: "attrValue" })),
+			arguments: parse(value,  _.extend({}, options, { startRule: "attrArguments" }))
 		}
 	}
 
@@ -89,7 +89,7 @@ attrValue = nodes:
 	/ textNode )* { return _.compact(nodes); }
 
 attrArguments =
-	l:attrArgValue r:("," attrArguments)?  { return r != null && r[1] != null ? [l].concat(r[1]) : [l]; }
+	l:attrArgValue r:("," attrArguments)? { return r != null && r[1] != null ? [l].concat(r[1]) : [l]; }
 
 // Value
 attrArgValue = val:
@@ -118,7 +118,7 @@ section
 	}
 
 sectionStart
-	= "{{" type:[#\^] value:variable "}}" {
+	= "{{" type:[#\^] value:pathQuery "}}" {
 		return {
 			type: NODE_TYPE[type === "#" ? "SECTION" : "INVERTED"],
 			value: value
@@ -126,11 +126,11 @@ sectionStart
 	}
 
 sectionEnd
-	= "{{/" value:variable "}}" { return value; }
+	= "{{/" value:pathQuery "}}" { return value; }
 
 // Mustache staches without the prefixes
 stache
-	= value:("{{{" variable "}}}" / "{{" variable "}}") {
+	= value:("{{{" pathQuery "}}}" / "{{" pathQuery "}}") {
 		return {
 			type: NODE_TYPE.INTERPOLATOR,
 			value: value[1]
@@ -139,7 +139,7 @@ stache
 
 // Mustache double stache
 doubleStache
-	= "{{" ![/#{] m:[!>&]? value:variable "}}" {
+	= "{{" ![/#{] m:[!>&]? value:pathQuery "}}" {
 		var type = NODE_TYPE.INTERPOLATOR;
 
 		switch(m) {
@@ -164,12 +164,44 @@ doubleStache
 
 // Mustache triple stache
 tripleStache
-	= "{{{" value:variable "}}}" {
+	= "{{{" value:pathQuery "}}}" {
 		return {
 			type: NODE_TYPE.TRIPLE,
 			value: value
 		}
 	}
+
+/*
+Paths
+*/
+pathQuery = l:path r:("|" pathQuery)? { return r != null && r[1] != null ? [l].concat(r[1]) : [l]; }
+
+path = ws p:pathPrefix? c:pathCore ws {
+	var path = { parts: c };
+
+	if (typeof p === "number") {
+		path.type = "parent";
+		path.distance = p;
+	} else if (typeof p === "string") {
+		path.type = p;
+	} else {
+		path.type = "all";
+	}
+	
+	return path;
+}
+
+pathPrefix
+	= d:"../"+ { return d.length; }
+	/ "./" { return "local"; }
+	/ "." { return "local"; }
+	/ "/" { return "root"; }
+
+pathCore = l:pathPart r:("." pathCore)? { return r != null && r[1] != null ? [l].concat(r[1]) : [l]; }
+
+pathPart = k:$([a-z$_]i [a-z0-9:\-_$]i*) c:pathDynamic* { return { key: k, children: c } }
+
+pathDynamic = "[" ws c:(integer / string / path) ws "]" { return c; }
 
 /*
 Literals
@@ -178,13 +210,15 @@ boolean
 	= "true" { return true; }
 	/ "false" { return false; }
 	
-number = i:("-"? [0-9]+) d:("." [0-9]+)? { return parseFloat(_.flatten(i.concat(d)).join("")); }
+number = "-"? [0-9]+ ("." [0-9]+)? { return parseFloat(text(), 10); }
+
+integer = [0-9]+ { return parseInt(text(), 10); }
 
 string
-	= "\"" v:(escape / [^"])* "\"" { return v.join(""); }
-	/ "'" v:(escape / [^'])* "'" { return v.join(""); }
+	= "\"" v:$(escape / [^"])* "\"" { return v; }
+	/ "'" v:$(escape / [^'])* "'" { return v; }
 
-dumb_string = v:[^,]* { return v.join("").trim(); }
+dumb_string = [^,]* { return text().trim(); }
 
 null = "null" { return null; }
 undefined = ("undefined" / "void" ws [^,]+) { return void 0; }
@@ -192,10 +226,8 @@ undefined = ("undefined" / "void" ws [^,]+) { return void 0; }
 /*
 Utils
 */
-key = ws k:[a-z0-9_-]i+ ws { return k.join(""); }
+key = ws k:$[a-z0-9_-]i+ ws { return k; }
 
-variable = s:(escape / [^}])+ { return s.join("").trim(); }
-
-ws "whitespace" = [ \t\n\r]*
+ws "whitespace" = $[ \t\n\r]*
 
 escape = "\\" char:. { return char; }

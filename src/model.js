@@ -1,269 +1,115 @@
 var Temple = require("templejs"),
 	_ = require("underscore"),
 	util = require("./util"),
-	Observe = require("./observe");
+	parse = require("./m+xml").parse;
 
 var Model =
-module.exports = function Model(data) {
-	this._proxies = [];
-	this.children = {};
-	this.set([], data);
+module.exports = function Model(data, parent) {
+	this.data = data;
+	this.proxies = [];
+	if (Model.isModel(parent)) this.parent = parent;
+}
+
+Model.isModel = function(o) {
+	return o instanceof Model;
 }
 
 Model.extend = Temple.util.subclass;
 
-var Proxy = require("./proxy");
-Model._defaultProxies = [ Proxy.Model, Proxy.Binding, Proxy.Array, Proxy.Object ];
+Model._defaultProxies = [];
 
-Model.isModel = function(obj) {
-	return obj instanceof Model;
-}
+_.extend(Model.prototype, Temple.Events, {
 
-_.extend(Model.prototype, Temple.Events, Observe, {
-	// returns the correct proxy function based on a value
-	getProxyByValue: function(val) {
-		var proxy;
-
-		// first look through local
-		proxy = _.find(this._proxies, function(p) {
-			return p.match(val);
-		});
-
-		// then try up the tree
-		if (proxy == null && this.parent != null) {
-			proxy = this.parent.getProxyByValue(val);
+	getModelAtOffset: function(index) {
+		if (index == null) index = 0;
+		var model = this;
+		while (index && model) {
+			model = model.parent;
+			index--;
 		}
-
-		// lastly match global defaults
-		if (proxy == null) {
-			proxy = _.find(Model._defaultProxies, function(p) {
-				return p.match(val);
-			});
-		}
-
-		return proxy || Proxy;
+		return model;
 	},
 
-	getAllProxies: function() {
-		var proxies = this._proxies.slice(0);
-		if (this.parent != null) proxies.push.apply(proxies, this.parent.getAllProxies());
-		return proxies;
+	getRootModel: function() {
+		var model = this;
+		while (model.parent != null) model = model.parent;
+		return model;
+	},
+
+	get: function(paths, options) {
+		var self = this;
+
+		options = options || {};
+		if (typeof paths === "string") paths = parse(paths, { startRule: "pathQuery" });
+		if (!_.isArray(paths)) paths = paths != null ? [ paths ] : [];
+		
+		return paths.reduce(function(result, path, index) {
+			var model = self,
+				scope = true,
+				val;
+
+			if (path.type === "root") {
+				model = self.getRootModel();
+			} else if (path.type === "parent") {
+				model = self.getModelAtOffset(path.distance);
+			} else if (path.type === "all") {
+				scope = false;
+			}
+
+			if (model == null) return;
+
+			while (_.isUndefined(val) && model != null) {
+				val = path.parts.reduce(function(target, part) {
+					target = self._get(target, part.key, options);
+
+					part.children.forEach(function(k) {
+						if (_.isObject(k)) k = self.get(k, options);
+						target = self._get(target, k, options);
+					});
+
+					return target;
+				}, model.data);
+
+				model = model.parent;
+				if (scope) break;
+			}
+
+			if (_.isFunction(val)) val = val.apply(self.data, index === 0 ? [] : [ result ]);
+
+			return val;
+		}, void 0);
+	},
+
+	_get: function(target, key, options) {
+		var proxy = this.getProxy(target, options);
+		if (proxy != null) return proxy.get(target, key, options);
+		else if (target != null) return target[key];
 	},
 
 	registerProxy: function(proxy) {
-		if (!util.isSubClass(Proxy, proxy))
-			throw new Error("Expecting function for Proxy.");
-
-		if (!_.isFunction(proxy.match))
-			throw new Error("Proxy is missing required 'match()' method.");
-
-		// push the proxy to the front
-		this._proxies.unshift(proxy);
-
-		// we have to tell all the models in the tree that
-		// a new proxy was added otherwise models will
-		// continue to use old proxies
-		var models = [ this ], model;
-
-		while (models.length) {
-			model = models.shift();
-			model._refreshLocalProxy();
-			models.push.apply(models, _.values(model.children));
-		}
-
+		if (typeof proxy !== "object" || proxy == null) throw new Error("Expecting object for proxy.");
+		if (typeof proxy.match !== "function") throw new Error("Layer missing required match method.");
+		if (typeof proxy.get !== "function") throw new Error("Layer missing required get method.");
+		this.proxies.unshift(proxy);
 		return this;
 	},
 
-	proxy: function(key) {
-		if (this._proxy == null) this._refreshLocalProxy();
+	getProxy: function(target, options) {
+		var model = this,
+			index = 0,
+			proxy;
 
-		var args = _.toArray(arguments).slice(1),
-			method = this._proxy[key];
+		while (model != null && model.proxies.length) {
+			proxy = model.proxies[index++];
+			if (proxy.match(target, options)) return proxy;
 
-		return !_.isFunction(method) ? method : method.apply(this._proxy, args);
-	},
-
-	_clearLocalProxy: function() {
-		if (this._proxy != null) {
-			this.proxy("destroy");
-			delete this._proxy;
-		}
-
-		return this;
-	},
-
-	_refreshLocalProxy: function() {
-		this._clearLocalProxy();
-		this._proxy = new (this.getProxyByValue(this.value))(this.value, this);
-		return this;
-	},
-
-	// forcefully cleans up all proxies in the tree
-	// proxies are a known source of memory leakage, so this method
-	// is to make sure models are properly GC'd.
-	cleanProxyTree: function() {
-		var models = [ this ], model;
-
-		while (models.length) {
-			model = models.shift();
-			model._clearLocalProxy();
-			models.push.apply(models, _.values(model.children));
-		}
-
-		return this;
-	},
-
-	// creates a child model from a value at local path
-	_spawn: function(path) {
-		if (!_.isString(path)) throw new Error("Expecting path to be a string.");
-
-		var child, parent, val;
-		parent = this;
-
-		this.children[path] = child = new (this.constructor)();
-		child.parent = parent;
-		child.set([], this.proxy("get", path));
-		child.on("change", onChange);
-		child.notify([], void 0, { initial: true });
-
-		return child;
-
-		function onChange(summary, options) {
-			if (options.bubble === false) return;
-
-			if (!summary.keypath.length) {
-				// reset value to generic object if parent is a leaf node
-				if (parent.proxy("isLeaf")) {
-					if (!options.remove) {
-						var reset = {};
-						reset[path] = summary.value;
-						parent.set([], reset, _.defaults({ reset: true }, options));
-					}
-
-					return;
-				}
-
-				// otherwise do a local set at the path
-				else {
-					if (options.remove) parent.proxy("unset", path);
-					else parent.proxy("set", path, summary.value);
-				}
-			}
-
-			// bubble the event
-			parent._onChange(_.extend({}, summary, {
-				keypath: [ path ].concat(summary.keypath)
-			}), options, parent);
-		}
-	},
-
-	// returns the model at path, deeply
-	getModel: function(parts) {
-		parts = util.path.split(parts);
-		if (!parts.length) return this;
-
-		var path = parts[0],
-			rest = parts.slice(1),
-			model;
-
-		if (this.children[path] != null) model = this.children[path];
-		else model = this._spawn(path);
-
-		return model.getModel(rest);
-	},
-
-	// return the value of the model at path, deeply
-	get: function(path, options) {
-		options = options || {};
-		if (options.depend !== false) this.depend(path);
-		return this.getModel(path, options).value;
-	},
-
-	// value at property isn't undefined
-	has: function(path, options) {
-		return !_.isUndefined(this.get(path, options));
-	},
-
-	// the own properties of the model's value
-	keys: function(parts) {
-		parts = util.path.split(parts);
-		if (parts.length) return this.getModel(parts).keys();
-		return this.proxy("keys");
-	},
-
-	// sets a value at path, deeply
-	set: function(parts, value, options) {
-		// accept .set(value)
-		if (value == null && parts != null && !_.isArray(parts) && !_.isString(parts)) {
-			value = parts;
-			parts = [];
-		}
-
-		parts = util.path.split(parts);
-		options = options || {};
-
-		// no path is a merge or reset
-		if (!parts.length) {
-			
-			// try merge or reset
-			if (options.reset || this.proxy("isLeaf") || this.proxy("merge", value, options) === false) {
-
-				// only undefined values can be overwritten in defaults mode
-				if (!options.reset && options.defaults && !_.isUndefined(this.value)) return this;
-
-				var oval = this.value;
-				this.value = options.remove ? void 0 : value;
-				this._refreshLocalProxy();
-
-				if (options.notify !== false && (oval !== this.value || options.remove)) {
-					this.notify([], oval, options);
-				}
+			if (index >= model.proxies.length) {
+				model = model.parent;
+				index = 0;
 			}
 		}
 
-		// otherwise recurse to the correct model and try again
-		else {
-			this.getModel(parts).set([], value, options);
-		}
-
-		return this;
-	},
-
-	// removes the value at path
-	unset: function(path, options) {
-		return this.set(path || [], true, _.extend({ remove: true }, options));
-	},
-
-	// let's the model and its children know that something changed
-	notify: function(path, oval, options) {
-		var summary, childOptions;
-		options = options || {};
-
-		// notify only works on the model at path
-		if (!_.isArray(path) || path.length) {
-			return this.getModel(path).notify([], oval, options);
-		}
-
-		// lol why are we here?
-		if (oval === this.value) return this;
-
-		childOptions = _.extend({ reset: true }, options, { bubble: false });
-		summary = {
-			model: this,
-			keypath: [],
-			value: this.value,
-			oldValue: oval,
-			type: util.changeType(this.value, oval)
-		}
-
-		// reset all the children values
-		_.each(this.children, function(c, p) {
-			c.set([], this.proxy("get", p), childOptions);
-		}, this);
-
-		// announce the change
-		this._onChange(summary, options, this);
-
-		return this;
+		return _.find(Model._defaultProxies, function(l) { return l.match(target, options); });
 	}
+
 });

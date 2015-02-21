@@ -18,7 +18,7 @@ module.exports = function(grunt) {
 			main: {
 				options: {
 					optimize: "size",
-					allowedStartRules: [ "start", "attrValue", "attrArguments" ]
+					allowedStartRules: [ "start", "attrValue", "attrArguments", "pathQuery", "path" ]
 				},
 				files: [{
 					expand: true,
@@ -35,14 +35,21 @@ module.exports = function(grunt) {
 				src: "lib/index.js",
 				dest: "dist/temple-mustache.js",
 				options: {
-					bundleOptions: { standalone: "Mustache" }
+					browserifyOptions: { standalone: "Mustache" }
 				}
 			},
-			test: {
+			dev: {
 				src: "lib/index.js",
 				dest: "dist/temple-mustache.dev.js",
 				options: {
-					bundleOptions: { debug: true, standalone: "Mustache" }
+					browserifyOptions: { debug: true, standalone: "Mustache" }
+				}
+			},
+			test: {
+				src: "test/*.js",
+				dest: "dist/temple-mustache.test.js",
+				options: {
+					browserifyOptions: { debug: true }
 				}
 			}
 		},
@@ -54,11 +61,18 @@ module.exports = function(grunt) {
 					header: "/*\n * Temple Mustache\n * (c) 2014 Beneath the Ink, Inc.\n * MIT License\n * Version <%= pkg.version %>\n */\n"
 				}
 			},
-			test: {
+			dev: {
 				src: 'dist/temple-mustache.dev.js',
 				dest: 'dist/temple-mustache.dev.js',
 				options: {
-					header: "/* Temple Mustache / (c) 2014 Beneath the Ink, Inc. / MIT License / Version <%= pkg.version %> */"
+					header: "/*\n * Temple Mustache (with Source Map)\n * (c) 2014 Beneath the Ink, Inc.\n * MIT License\n * Version <%= pkg.version %>\n */\n"
+				}
+			},
+			test: {
+				src: 'dist/temple-mustache.test.js',
+				dest: 'dist/temple-mustache.test.js',
+				options: {
+					header: "/* Temple Mustache Tests / (c) 2014 Beneath the Ink, Inc. / MIT License / Version <%= pkg.version %> */"
 				}
 			}
 		},
@@ -69,8 +83,13 @@ module.exports = function(grunt) {
 			}
 		},
 		watch: {
-			main: {
-				files: [ "src/**/*.js", "src/**/*.peg" ],
+			dev: {
+				files: [ "src/**/*.{js,peg}" ],
+				tasks: [ 'dev' ],
+				options: { spawn: false }
+			},
+			test: {
+				files: [ "src/**/*.{js,peg}", "test/*.js" ],
 				tasks: [ 'test' ],
 				options: { spawn: false }
 			}
@@ -79,20 +98,22 @@ module.exports = function(grunt) {
 
 	grunt.loadNpmTasks('grunt-contrib-watch');
 	grunt.loadNpmTasks('grunt-contrib-clean');
-	grunt.loadNpmTasks('grunt-peg');
-	grunt.loadNpmTasks('grunt-contrib-copy');
 	grunt.loadNpmTasks('grunt-browserify');
+	grunt.loadNpmTasks('grunt-peg');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
+	grunt.loadNpmTasks('grunt-contrib-copy');
 	grunt.loadNpmTasks('grunt-wrap2000');
 
-	grunt.registerTask('build', [ 'copy', 'peg' ]);
+	grunt.registerTask('precompile', [ 'copy', 'peg' ]);
+
+	grunt.registerTask('build-dev', [ 'browserify:dev', 'wrap2000:dev' ]);
 	grunt.registerTask('build-test', [ 'browserify:test', 'wrap2000:test' ]);
 	grunt.registerTask('build-dist', [ 'browserify:dist', 'wrap2000:dist', 'uglify:dist' ]);
-	
-	grunt.registerTask('dist', [ 'clean', 'build', 'build-dist'  ]);
-	grunt.registerTask('test', [ 'clean', 'build', 'build-test' ]);
-	grunt.registerTask('dev', [ 'test', 'watch' ]);
 
-	grunt.registerTask('default', [ 'clean', 'build', 'build-dist', 'build-test' ]);
+	grunt.registerTask('dev', [ 'clean', 'precompile', 'build-dev' ]);
+	grunt.registerTask('test', [ 'clean', 'precompile', 'build-test' ]);
+	grunt.registerTask('dist', [ 'clean', 'precompile', 'build-dist' ]);
+
+	grunt.registerTask('default', [ 'dist' ]);
 
 }

@@ -1,5 +1,5 @@
 // the current library version
-var VERSION = "1.1.5";
+var VERSION = "2.0.0-alpha";
 
 // no need for node js to hurt itself on any hard edges
 if (!process.browser) return module.exports = {
@@ -20,7 +20,6 @@ Mustache.util = util;
 _.defaults(Mustache, Temple);
 
 Mustache.Model = require("./model");
-Mustache.Proxy = require("./proxy");
 Mustache.Context = require("./context");
-Mustache.Section = require("./section");
-_.extend(Mustache, require("./plugins"));
+// Mustache.Section = require("./section");
+// _.extend(Mustache, require("./plugins"));
