@@ -4,8 +4,8 @@ var Temple = require("templejs"),
 	parse = require("./m+xml").parse,
 	util = require("./util"),
 	Context = require("./context"),
-	Model = require("./model");
-	// Section = require("./section");
+	Model = require("./model"),
+	Section = require("./section");
 
 var Mustache =
 module.exports = Context.extend({
@@ -137,43 +137,6 @@ module.exports = Context.extend({
 		}
 	},
 
-	// renders the partials
-	renderPartial: function(name, ctx) {
-		if (ctx == null) ctx = this;
-
-		var Partial = this.findPartial(name),
-			comps = this._components,
-			self = this,
-			comp, detach;
-
-		if (Partial != null) {
-			comp = Temple.Deps.nonreactive(function() {
-				return new Partial;
-			});
-
-			// make sure its a subclass of Temple
-			if (!(comp instanceof Temple))
-				throw new Error("Expecting an subclass of Temple for partial.");
-
-			// set parent context for instances of Context
-			if (comp instanceof Context) comp.setParentContext(ctx);
-
-			// add it to the list
-			if (comps[name] == null) comps[name] = [];
-			comps[name].push(comp);
-
-			// clean up when the partial is "stopped"
-			comp.once("stop", function() {
-				if (comp instanceof Context) comp.clean();
-				comps[name] = _.without(comps[name], comp);
-			}, this);
-
-			return comp;
-		}
-
-		return null;
-	},
-
 	// returns first rendered partial by name
 	getComponent: function(name) {
 		var comps, comp, res, n, i;
@@ -210,48 +173,204 @@ module.exports = Context.extend({
 		if (this._template == null)
 			throw new Error("Expected a template to be set before rendering.");
 
-		// var toMount, bindings;
-		// bindings = this.convertTemplate(this._template, null, toMount = []);
+		var toMount, bindings;
+		bindings = this.renderTemplate(this._template, null, toMount = []);
 		
-		// this.once("render:after", function() {
-		// 	// we invoke them in reverse to ensure the DOM nodes are in the correct order
-		// 	_.invoke(toMount.reverse(), "mount");
-		// });
+		this.once("render:after", function() {
+			// we invoke them in reverse to ensure the DOM nodes are in the correct order
+			_.invoke(toMount.reverse(), "mount");
+		});
 
-		// return bindings;
+		return bindings;
 	},
 
-	renderTemplate: function(t) {
+	renderTemplate: function(template, ctx, toMount) {
+		if (ctx == null) ctx = this.model;
+		if (toMount == null) toMount = [];
+		var self = this;
 
-	}
+		if (_.isArray(template)) return template.map(function(t) {
+			return this.renderTemplate(t, ctx, toMount);
+		}, this).filter(function(b) { return b != null; });
 
-}, {
+		switch(template.type) {
+			case NODE_TYPE.ROOT:
+				return this.renderTemplate(template.children, ctx, toMount);
 
-	NODE_TYPE: NODE_TYPE,
+			case NODE_TYPE.ELEMENT:
+				var part = this.renderPartial(template.name, ctx);
 
-	parse: parse,
+				if (part != null) {
+					break;
+					// if (part instanceof Context) {
+					// 	template.attributes.forEach(function(attr) {
+					// 		this.autorun(function() {
+					// 			var val = this.convertArgumentTemplate(attr.arguments, ctx);
+					// 			if (val.length === 1) val = val[0];
+					// 			else if (!val.length) val = null;
 
-	parsePathQuery: function(s, opts) {
-		return parse(s, _.extend({}, opts, { startRule: "pathQuery" }));
+					// 			var model = part.getModel();
+					// 			if (model == null) return;
+					// 			model.set(attr.name, val);
+					// 		});
+					// 	}, this);
+					// }
+
+					// toMount.push(part);
+					// return part;
+				}
+
+				else {
+					var binding = new Temple.Element(template.name);
+					this.renderTemplate(template.children, ctx, toMount).forEach(binding.appendChild, binding);
+					toMount.push(binding);
+
+					binding.render = function() {
+						template.attributes.forEach(function(attr) {
+							// if (this._processDecorations(attr, binding, ctx)) {
+							// 	if (willMount) return;
+							// 	toMount.push(binding);
+							// 	willMount = true;
+							// }
+
+							// else {
+								this.autorun(function() {
+									this.attr(attr.name, self.renderTemplateAsString(attr.children, ctx));
+								});
+							// }
+						}, this);	
+					}
+
+					return binding;
+				}
+
+			case NODE_TYPE.TEXT:
+				return new Temple.Text(util.decodeEntities(template.value));
+
+			case NODE_TYPE.HTML:
+				return new Temple.HTML(template.value);
+
+			case NODE_TYPE.XCOMMENT:
+				return new Temple.Comment(template.value);
+
+			case NODE_TYPE.INTERPOLATOR:
+			case NODE_TYPE.TRIPLE:
+				var node = new Temple[template.type === NODE_TYPE.TRIPLE ? "HTML" : "Text"];
+				toMount.push(node);
+
+				node.render = function() {
+					this.setValue(ctx.get(template.value));
+				}
+
+				return node;
+
+			case NODE_TYPE.INVERTED:
+			case NODE_TYPE.SECTION:
+				var section = new Section(ctx)
+				.invert(template.type === NODE_TYPE.INVERTED)
+				.setPath(template.value)
+				.onRow(function(key) {
+					var toMount, bindings;
+					bindings = self.renderTemplate(template.children, this.model, toMount = []);
+					this.once("render:after", function() { _.invoke(toMount.reverse(), "mount"); });
+					
+					return bindings;
+				});
+
+				toMount.push(section);
+				return section;
+
+			case NODE_TYPE.PARTIAL:
+
+		}
 	},
 
-	parseAttribute: function() {
-		return parse(s, _.extend({}, opts, { startRule: "attrValue" }));
+	renderTemplateAsString: function(template, ctx) {
+		if (ctx == null) ctx = this;
+		var temple = this;
+
+		if (_.isArray(template)) return template.map(function(t) {
+			return temple.renderTemplateAsString(t, ctx);
+		}).filter(function(b) { return b != null; }).join("");
+
+		switch(template.type) {
+			case NODE_TYPE.ROOT:
+				return this.renderTemplateAsString(template.children, ctx);
+
+			case NODE_TYPE.TEXT:
+				return template.value;
+
+			case NODE_TYPE.INTERPOLATOR:
+			case NODE_TYPE.TRIPLE:
+				var val = ctx.get(template.value);
+				return val != null ? val.toString() : "";
+
+			case NODE_TYPE.SECTION:
+			case NODE_TYPE.INVERTED:
+				// var inverted = template.type === NODE_TYPE.INVERTED,
+				// 	path = template.value,
+				// 	model, val, isEmpty, makeRow, strval;
+
+				// val = ctx.get(path);
+				// model = new Model(val);
+				// ctx.getAllProxies().reverse().forEach(model.registerProxy, model);
+
+				// isEmpty = Section.isEmpty(model);
+				// if (model.proxy("isArray")) model.depend("length");
+
+				// makeRow = function(i) {
+				// 	var row, m;
+
+				// 	if (i == null) {
+				// 		m = model;
+				// 		i = 0;
+				// 	} else {
+				// 		m = model.getModel(i);
+				// 	}
+
+				// 	var row = new Context(m, ctx);
+				// 	row.addModel(new Model({ $key: i }));
+
+				// 	var val = temple.convertStringTemplate(template.children, row);
+				// 	row.clean();
+
+				// 	return val;
+				// }
+
+				// if (!(isEmpty ^ inverted)) {
+				// 	strval = _.isArray(val) && !inverted ?
+				// 		model.keys().map(makeRow).join("") :
+				// 		makeRow();
+				// }
+
+				// model.cleanProxyTree();
+				// return strval;
+		}
 	},
 
-	parseArguments: function() {
-		return parse(s, _.extend({}, opts, { startRule: "attrArguments" }));
-	},
+	// generates a new component from a partial or partial's name
+	renderPartial: function(klass, ctx, options) {
+		if (ctx == null) ctx = this.model;
+		var comps = this._components;
 
-	// converts raw html str to template tree
-	parseHTML: function(str) {
-		return {
-			type: NODE_TYPE.ROOT,
-			children: [ {
-				type: NODE_TYPE.HTML,
-				value: str
-			} ]
-		};
+		if (typeof klass === "string") klass = this.findPartial(klass);
+		if (!util.isSubClass(Temple, klass)) return null;
+
+		// create it non-reactively
+		var component = Temple.Deps.nonreactive(function() {
+			return util.isSubClass(Context, klass) ? new klass(ctx, options) : new klass();
+		});
+
+		// add it to the list
+		if (comps[name] == null) comps[name] = [];
+		comps[name].push(component);
+
+		// clean up when the partial is "stopped"
+		component.once("stop", function() {
+			comps[name] = _.without(comps[name], this);
+		});
+
+		return component;
 	}
 
 });

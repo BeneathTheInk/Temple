@@ -34,12 +34,15 @@ module.exports = Context.extend({
 		return this;
 	},
 
-	addRow: function(key, model) {
+	addRow: function(key, data) {
 		// remove existing
 		this.removeRow(key);
 
 		// add new row
-		var row = new Context(model, this.parentContext || this);
+		var row = new Context(this.model);
+		row.addData({ $key: key }).addData(data);
+
+		// set up render and mount it
 		row.render = this._onRow;
 		this.rows[key] = row;
 		this.appendChild(row);
@@ -53,14 +56,14 @@ module.exports = Context.extend({
 	},
 
 	getRow: function(key) {
-		return this.rows[key] || null;
+		return this.rows[key];
 	},
 
 	removeRow: function(key) {
 		if (this.rows[key] == null) return this;
 
 		var row = this.rows[key];
-		row.clean();
+		row.stop();
 		this.removeChild(row);
 		delete this.rows[key];
 
@@ -76,35 +79,40 @@ module.exports = Context.extend({
 		if (this._path == null) throw new Error("Missing path.");
 
 		var self = this,
-			val, isEmpty, inverted, observer,
-			rowSort, model, ctx;
+			val, isEmpty, inverted, isList,
+			rowSort, model, proxy;
 
-		ctx = this.parentContext || this;
-		val = ctx.get(this._path);
+		val = this.get(this._path);
+		model = new Model(val, this.model);
+		proxy = model.getProxy(val);
+		inverted = this.isInverted();
+		isList = util.result(proxy, "isList", val);
 
 		Temple.Deps.nonreactive(function() {
-			model = new Model(val);
-			ctx.getAllProxies().reverse().forEach(model.registerProxy, model);
+		// 	model = new Model(val);
+		// 	ctx.getAllProxies().reverse().forEach(model.registerProxy, model);
 		
-			isEmpty = Section.isEmpty(model);
-			inverted = this.isInverted();
+			isEmpty = Section.isEmpty(val, proxy);
 		}, this);
 
 		if (isEmpty && inverted) {
-			if (model.proxy("isArray")) model.depend("length");
+			if (isList) proxy.get(val, "length");
 			this.addRow(0, model);
 		} else if (!isEmpty && !inverted) {
-			if (model.proxy("isArray")) {
+			if (isList) {
 				// create rows
-				model.keys().forEach(function(key) {
-					this.addRow(key, model.getModel(key));
+				proxy.keys(val).forEach(function(key) {
+					this.autorun(function(comp) {
+						this.addRow(key, proxy.get(val, key));
+						if (!comp.firstRun) rowSort.invalidate();
+					});
 				}, this);
 
 				// a reactive context that continuously sorts rows
 				rowSort = this.autorun(function() {
 					var before = null;
 
-					model.keys().reverse().forEach(function(key) {
+					proxy.keys(val).reverse().forEach(function(key) {
 						var row = this.getRow(key);
 						if (row == null) return;
 						this.insertBefore(row, before);
@@ -112,33 +120,36 @@ module.exports = Context.extend({
 					}, this);
 				});
 
-				// watch for row changes and invalidate the row update context
-				model.observe("*", observer = function(s) {
-					var key = s.keypath[0];
-					if (key == null) return;
+		// 		// watch for row changes and invalidate the row update context
+		// 		model.observe("*", observer = function(s) {
+		// 			var key = s.keypath[0];
+		// 			if (key == null) return;
 
-					if (s.type === "delete") self.removeRow(key);
-					else if (!self.hasRow(key) && _.contains(model.keys(), key)) self.addRow(key, s.model);
-					else return;
+		// 			if (s.type === "delete") self.removeRow(key);
+		// 			else if (!self.hasRow(key) && _.contains(model.keys(), key)) self.addRow(key, s.model);
+		// 			else return;
 
-					rowSort.invalidate();
-				});
+		// 			rowSort.invalidate();
+		// 		});
 			} else {
 				this.addRow(0, model);
 			}
-		} else if (model.proxy("isArray")) {
-			model.depend("length");
+		} else if (isList) {
+			proxy.get(val, "length");
 		}
 
 		// auto clean
 		this.once("invalidate", function() {
 			this.removeAllRows();
-			if (observer != null) model.stopObserving(observer);
-			model.cleanProxyTree();
+			// if (observer != null) model.stopObserving(observer);
+			// model.cleanProxyTree();
 		});
 	}
+
 }, {
-	isEmpty: function(model) {
-		return !model.value || (model.proxy("isArray") && !model.get("length"));
+
+	isEmpty: function(data, proxy) {
+		return !data || (util.result(proxy, "isList", data) && !proxy.get(data, "length"));
 	}
+
 });

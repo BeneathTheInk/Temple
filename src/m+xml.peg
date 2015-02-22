@@ -2,6 +2,10 @@
 	var _ = require("underscore"),
 		NODE_TYPE = require("./types"),
 		Mustache = require("./");
+
+	options = _.defaults(options || {}, {
+		strict: true
+	});
 }
 
 start = html:html {
@@ -109,16 +113,17 @@ attrArgNotEnd = &([,] / !.)
 // mustache section
 section
 	= start:sectionStart nodes:html end:sectionEnd {
-		if (start.value.toLowerCase() !== end.toLowerCase()) {
-			throw new Error("Section tag mismatch: " + start.value + " !== " + end);
+		if (options.strict && !_.isEqual(start.value.raw, end.raw)) {
+			throw new Error("Section tag mismatch: " + start.value.raw + " !== " + end.raw);
 		}
 
+		start.value = start.value.result;
 		start.children = nodes;
 		return start;
 	}
 
 sectionStart
-	= "{{" type:[#\^] value:pathQuery "}}" {
+	= "{{" type:[#\^] value:pathQueryWithRaw "}}" {
 		return {
 			type: NODE_TYPE[type === "#" ? "SECTION" : "INVERTED"],
 			value: value
@@ -126,7 +131,7 @@ sectionStart
 	}
 
 sectionEnd
-	= "{{/" value:pathQuery "}}" { return value; }
+	= "{{/" value:pathQueryWithRaw "}}" { return value; }
 
 // Mustache staches without the prefixes
 stache
@@ -176,26 +181,21 @@ Paths
 */
 pathQuery = l:path r:("|" pathQuery)? { return r != null && r[1] != null ? [l].concat(r[1]) : [l]; }
 
-path = ws p:pathPrefix? c:pathCore ws {
-	var path = { parts: c };
+pathQueryWithRaw = m:pathQuery { return { raw: text(), result: m } }
 
-	if (typeof p === "number") {
-		path.type = "parent";
-		path.distance = p;
-	} else if (typeof p === "string") {
-		path.type = p;
-	} else {
-		path.type = "all";
+path
+	= ws p:pathPrefix ws { p.parts = []; return p; }
+	/ ws p:pathPrefix? c:pathCore ws {
+		if (p == null) p = { type: "all" };
+		p.parts = c;
+		return p;
 	}
-	
-	return path;
-}
 
 pathPrefix
-	= d:"../"+ { return d.length; }
-	/ "./" { return "local"; }
-	/ "." { return "local"; }
-	/ "/" { return "root"; }
+	= d:"../"+ { return { type: "parent", distances: d.length }; }
+	/ "./" { return { type: "local" }; }
+	/ "." { return { type: "local" }; }
+	/ "/" { return { type: "root" }; }
 
 pathCore = l:pathPart r:("." pathCore)? { return r != null && r[1] != null ? [l].concat(r[1]) : [l]; }
 

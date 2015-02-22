@@ -1,25 +1,46 @@
-// the current library version
-var VERSION = "2.0.0-alpha";
-
-// no need for node js to hurt itself on any hard edges
-if (!process.browser) return module.exports = {
-	parse: require("./m+xml").parse,
-	VERSION: VERSION
-};
-
-// get on with the rest for the browser
 var _ = require("underscore"),
 	Temple = require("templejs"),
-	util = _.extend(require("./util"), Temple.util);
+	parse = require("./m+xml").parse,
+	NODE_TYPE = require("./types");
 
-var Mustache =
-module.exports = require("./mustache");
+var mixin = _.defaults({
+	VERSION: "2.0.0-alpha",
+	NODE_TYPE: NODE_TYPE,
+	Temple: Temple,
 
-Mustache.VERSION = VERSION;
-Mustache.util = util;
-_.defaults(Mustache, Temple);
+	parse: parse,
 
+	parsePathQuery: function(s, opts) {
+		return parse(s, _.extend({}, opts, { startRule: "pathQuery" }));
+	},
+
+	parseAttribute: function(s, opts) {
+		return parse(s, _.extend({}, opts, { startRule: "attrValue" }));
+	},
+
+	parseArguments: function(s, opts) {
+		return parse(s, _.extend({}, opts, { startRule: "attrArguments" }));
+	},
+
+	// converts raw html str to template tree
+	parseHTML: function(str) {
+		return {
+			type: NODE_TYPE.ROOT,
+			children: [ {
+				type: NODE_TYPE.HTML,
+				value: str
+			} ]
+		};
+	}
+}, Temple);
+
+// no need for node js to hurt itself on any hard edges
+if (!process.browser) return mixin;
+
+var Mustache = module.exports = _.extend(require("./mustache"), mixin);
+
+_.extend(Mustache.util, require("./util"));
 Mustache.Model = require("./model");
 Mustache.Context = require("./context");
-// Mustache.Section = require("./section");
+Mustache.Section = require("./section");
 // _.extend(Mustache, require("./plugins"));

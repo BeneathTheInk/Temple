@@ -17,8 +17,8 @@ module.exports = function(grunt) {
 		peg: {
 			main: {
 				options: {
-					optimize: "size",
-					allowedStartRules: [ "start", "attrValue", "attrArguments", "pathQuery", "path" ]
+					optimize: "speed",
+					allowedStartRules: [ "start", "attrValue", "attrArguments", "pathQuery" ]
 				},
 				files: [{
 					expand: true,

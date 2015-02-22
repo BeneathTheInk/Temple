@@ -16,26 +16,57 @@ Model.isModel = function(o) {
 
 Model.extend = Temple.util.subclass;
 
-Model._defaultProxies = [];
+Model._defaultProxies = [ {
+	isList: true,
+	match: function(obj) {
+		return _.isArray(obj);
+	},
+	get: function(arr, k) {
+		return arr[k];
+	},
+	keys: function(arr) {
+		return _.range(arr.length);
+	}
+} ];
 
 _.extend(Model.prototype, Temple.Events, {
 
+	// an array of models in the current stack, with the root as the first
+	getAllModels: function() {
+		var models = [ this ],
+			model = this;
+
+		while (model.parent) {
+			models.unshift(model = model.parent);
+		}
+
+		return models
+	},
+
+	// gets the model in the stack at the index
+	// negative values start at root
 	getModelAtOffset: function(index) {
-		if (index == null) index = 0;
+		if (!_.isNumber(index) || isNaN(index)) index = 0;
+		if (index < 0) return this.getAllModels()[~index];
+
 		var model = this;
+		
 		while (index && model) {
 			model = model.parent;
 			index--;
 		}
+		
 		return model;
 	},
 
+	// gets the last model in the stack
 	getRootModel: function() {
 		var model = this;
 		while (model.parent != null) model = model.parent;
 		return model;
 	},
 
+	// retrieves value with path query
 	get: function(paths, options) {
 		var self = this;
 
@@ -43,6 +74,12 @@ _.extend(Model.prototype, Temple.Events, {
 		if (typeof paths === "string") paths = parse(paths, { startRule: "pathQuery" });
 		if (!_.isArray(paths)) paths = paths != null ? [ paths ] : [];
 		
+		if (!paths.length) {
+			var val = this.data;
+			if (_.isFunction(val)) val = val.call(val, null, this);
+			return val;
+		}
+
 		return paths.reduce(function(result, path, index) {
 			var model = self,
 				scope = true,
@@ -74,7 +111,7 @@ _.extend(Model.prototype, Temple.Events, {
 				if (scope) break;
 			}
 
-			if (_.isFunction(val)) val = val.apply(self.data, index === 0 ? [] : [ result ]);
+			if (_.isFunction(val)) val = val.call(self.data, index === 0 ? null : result, self);
 
 			return val;
 		}, void 0);

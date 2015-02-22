@@ -1,5 +1,11 @@
 var _ = require("underscore");
 
+// like underscore's result, but pass arguments through
+exports.result = function(object, property) {
+	var value = object == null ? void 0 : object[property];
+	return _.isFunction(value) ? value.apply(object, Array.prototype.slice(arguments, 1)) : value;
+};
+
 // tests value as pojo (plain old javascript object)
 var isPlainObject =
 exports.isPlainObject = function(obj) {
