@@ -7,6 +7,7 @@ var Model =
 module.exports = function Model(data, parent) {
 	this.data = data;
 	this.proxies = [];
+	this._proxy_dep = new Temple.Dependency();
 	if (Model.isModel(parent)) this.parent = parent;
 }
 
@@ -17,17 +18,23 @@ Model.isModel = function(o) {
 Model.extend = Temple.util.subclass;
 
 Model._defaultProxies = [ {
-	isList: true,
-	match: function(obj) {
-		return _.isArray(obj);
-	},
-	get: function(arr, k) {
-		return arr[k];
-	},
-	keys: function(arr) {
-		return _.range(arr.length);
-	}
+	isList:  true,
+	match:   function(arr)    { return _.isArray(arr); },
+	get:     function(arr, k) { return k === "length" ? this.length(arr) : arr[k]; },
+	length:  function(arr)    { var len; return typeof(len = arr.$length) === "number" ? len : arr.length; },
+	keys:    function(arr)    { return _.range(this.length(arr)); },
+	isEmpty: function(arr)    { return !!this.length(arr); }
+}, {
+	match: function()     { return true; },
+	get:   function(t, k) { if (t != null) return t[k]; }
 } ];
+
+Model.callProxyMethod = function(proxy, target, method, args, ctx) {
+	var args = _.isArray(args) ? _.clone(args) : [];
+	args.unshift(proxy, method, target);
+	args.push(ctx);
+	return util.result.apply(null, args);
+}
 
 _.extend(Model.prototype, Temple.Events, {
 
@@ -67,16 +74,15 @@ _.extend(Model.prototype, Temple.Events, {
 	},
 
 	// retrieves value with path query
-	get: function(paths, options) {
+	get: function(paths) {
 		var self = this;
 
-		options = options || {};
 		if (typeof paths === "string") paths = parse(paths, { startRule: "pathQuery" });
 		if (!_.isArray(paths)) paths = paths != null ? [ paths ] : [];
 		
 		if (!paths.length) {
 			var val = this.data;
-			if (_.isFunction(val)) val = val.call(val, null, this);
+			if (_.isFunction(val)) val = val.call(this, null);
 			return val;
 		}
 
@@ -97,11 +103,11 @@ _.extend(Model.prototype, Temple.Events, {
 
 			while (_.isUndefined(val) && model != null) {
 				val = path.parts.reduce(function(target, part) {
-					target = self._get(target, part.key, options);
+					target = self._get(target, part.key);
 
 					part.children.forEach(function(k) {
-						if (_.isObject(k)) k = self.get(k, options);
-						target = self._get(target, k, options);
+						if (_.isObject(k)) k = self.get(k);
+						target = self._get(target, k);
 					});
 
 					return target;
@@ -111,16 +117,28 @@ _.extend(Model.prototype, Temple.Events, {
 				if (scope) break;
 			}
 
-			if (_.isFunction(val)) val = val.call(self.data, index === 0 ? null : result, self);
+			if (_.isFunction(val)) {
+				val = val.call(self, index === 0 ? null : result);
+			}
 
 			return val;
 		}, void 0);
 	},
 
-	_get: function(target, key, options) {
-		var proxy = this.getProxy(target, options);
-		if (proxy != null) return proxy.get(target, key, options);
-		else if (target != null) return target[key];
+	_get: function(target, key) {
+		return this.callProxyMethod(this.getProxyByValue(target), target, "get", key);
+	},
+
+	proxy: function(key) {
+		var proxy = this.getProxyByValue(this.data);
+		if (key == null) return proxy;
+		var args = _.toArray(arguments);
+		args.unshift(proxy, this.data);
+		return this.callProxyMethod.apply(this, args);
+	},
+
+	callProxyMethod: function(proxy, target, method) {
+		return Model.callProxyMethod(proxy, target, method, Array.prototype.slice.call(arguments, 3), this);
 	},
 
 	registerProxy: function(proxy) {
@@ -128,25 +146,29 @@ _.extend(Model.prototype, Temple.Events, {
 		if (typeof proxy.match !== "function") throw new Error("Layer missing required match method.");
 		if (typeof proxy.get !== "function") throw new Error("Layer missing required get method.");
 		this.proxies.unshift(proxy);
+		this._proxy_dep.changed();
 		return this;
 	},
 
-	getProxy: function(target, options) {
-		var model = this,
-			index = 0,
-			proxy;
+	getProxyByValue: function(target) {
+		this._proxy_dep.depend();
+		var proxy;
+		
+		proxy = _.find(this.proxies, function(p) {
+			return p.match(target);
+		});
 
-		while (model != null && model.proxies.length) {
-			proxy = model.proxies[index++];
-			if (proxy.match(target, options)) return proxy;
-
-			if (index >= model.proxies.length) {
-				model = model.parent;
-				index = 0;
-			}
+		if (proxy == null && this.parent != null) {
+			proxy = this.parent.getProxyByValue(target);
 		}
 
-		return _.find(Model._defaultProxies, function(l) { return l.match(target, options); });
+		if (proxy == null) {
+			proxy = _.find(Model._defaultProxies, function(p) {
+				return p.match(target);
+			});
+		}
+
+		return proxy;
 	}
 
 });

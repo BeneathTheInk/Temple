@@ -7,7 +7,7 @@ var Context =
 module.exports = Temple.extend({
 
 	constructor: function(data) {
-		if (data != null) this.addData(data);
+		if (!_.isUndefined(data)) this.addData(data);
 		Temple.call(this);
 	},
 
@@ -15,6 +15,11 @@ module.exports = Temple.extend({
 		if (!Model.isModel(data)) data = new Model(data, this.model);
 		this.model = data;
 		return this;
+	},
+
+	set: function(data) {
+		if (!Model.isModel(data)) data = util.reactify(data);
+		return this.addData(data);
 	}
 
 });

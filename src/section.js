@@ -80,76 +80,84 @@ module.exports = Context.extend({
 
 		var self = this,
 			val, isEmpty, inverted, isList,
-			rowSort, model, proxy;
+			rowSort, model, proxy, keys;
 
 		val = this.get(this._path);
 		model = new Model(val, this.model);
-		proxy = model.getProxy(val);
+		proxy = model.getProxyByValue(val);
 		inverted = this.isInverted();
-		isList = util.result(proxy, "isList", val);
+		isList = model.callProxyMethod(proxy, val, "isList");
+
+		function getEmptiness() {
+			return model.callProxyMethod(proxy, val, "isEmpty");
+		}
 
 		Temple.Deps.nonreactive(function() {
-		// 	model = new Model(val);
-		// 	ctx.getAllProxies().reverse().forEach(model.registerProxy, model);
-		
-			isEmpty = Section.isEmpty(val, proxy);
-		}, this);
+			isEmpty = !val || (isList && !getEmptiness())
+		});
 
 		if (isEmpty && inverted) {
-			if (isList) proxy.get(val, "length");
+			if (isList) getEmptiness();
 			this.addRow(0, model);
 		} else if (!isEmpty && !inverted) {
 			if (isList) {
-				// create rows
-				proxy.keys(val).forEach(function(key) {
-					this.autorun(function(comp) {
-						this.addRow(key, proxy.get(val, key));
-						if (!comp.firstRun) rowSort.invalidate();
+				keys = [];
+
+				this.autorun(function(comp) {
+					var nkeys = model.callProxyMethod(proxy, val, "keys");
+
+					// remove removed rows
+					_.difference(keys, nkeys).forEach(self.removeRow, self);
+
+					// trick Trackr so autoruns aren't controlled by this one
+					Temple.Deps.currentComputation = comp._parent;
+
+					// add added rows
+					_.difference(nkeys, keys).forEach(function(key) {
+						self.autorun(function(c) {
+							this.addRow(key, model.callProxyMethod(proxy, val, "get", key));
+							if (!c.firstRun) rowSort.invalidate();
+						});
 					});
-				}, this);
+						
+					// pretend like nothing happended
+					Temple.Deps.currentComputation = comp;
+
+					// the new set of keys
+					keys = nkeys;
+				});
 
 				// a reactive context that continuously sorts rows
 				rowSort = this.autorun(function() {
-					var before = null;
+					var before = null, i, row;
 
-					proxy.keys(val).reverse().forEach(function(key) {
-						var row = this.getRow(key);
-						if (row == null) return;
+					for (i = keys.length - 1; i >= 0; i--) {
+						row = this.getRow(keys[i]);
+						if (row == null) continue;
 						this.insertBefore(row, before);
 						before = row;
-					}, this);
+					}
 				});
-
-		// 		// watch for row changes and invalidate the row update context
-		// 		model.observe("*", observer = function(s) {
-		// 			var key = s.keypath[0];
-		// 			if (key == null) return;
-
-		// 			if (s.type === "delete") self.removeRow(key);
-		// 			else if (!self.hasRow(key) && _.contains(model.keys(), key)) self.addRow(key, s.model);
-		// 			else return;
-
-		// 			rowSort.invalidate();
-		// 		});
 			} else {
 				this.addRow(0, model);
 			}
 		} else if (isList) {
-			proxy.get(val, "length");
+			getEmptiness();
 		}
 
 		// auto clean
 		this.once("invalidate", function() {
 			this.removeAllRows();
-			// if (observer != null) model.stopObserving(observer);
-			// model.cleanProxyTree();
 		});
 	}
 
 }, {
 
-	isEmpty: function(data, proxy) {
-		return !data || (util.result(proxy, "isList", data) && !proxy.get(data, "length"));
+	isEmpty: function(model, proxy) {
+		if (!model.data) return true;
+		if (proxy == null) proxy = model.getProxyByValue(model.data);
+		return model.callProxyMethod(proxy, model.data, "isList") &&
+			model.callProxyMethod(proxy, model.data, "isEmpty");
 	}
 
 });

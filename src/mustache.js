@@ -312,7 +312,7 @@ module.exports = Context.extend({
 				// 	model, val, isEmpty, makeRow, strval;
 
 				// val = ctx.get(path);
-				// model = new Model(val);
+				// model = new Model(val, ctx);
 				// ctx.getAllProxies().reverse().forEach(model.registerProxy, model);
 
 				// isEmpty = Section.isEmpty(model);
@@ -371,6 +371,18 @@ module.exports = Context.extend({
 		});
 
 		return component;
+	}
+
+}, {
+
+	render: function(template, data, options) {
+		options = _.extend({}, options || {}, {
+			template: template
+		});
+
+		var tpl = new Mustache(null, options);
+		tpl.set(data);
+		return tpl;
 	}
 
 });
