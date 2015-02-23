@@ -26,19 +26,19 @@ var slice = Array.prototype.slice;
 var decorators = {};
 
 eventNames.forEach(function(event) {
-	decorators["on-" + event] = function(el) {
-		var temple = this,
-			key, args, ctx;
+	decorators["on-" + event] = function(decor, key) {
+		var self = this,
+			args, node;
 
 		function listener(e) {
 			// create a new action object
 			var action = new Action(key);
 			action.original = e;
-			action.node = el;
-			action.context = ctx;
+			action.node = node;
+			action.context = decor.context;
 
 			// find the first parent with the fire method
-			var fireOn = temple;
+			var fireOn = self;
 			while (typeof fireOn.fireAction !== "function") {
 				// if it has no parent, we can't do anything
 				if (fireOn.parent == null) return;
@@ -49,19 +49,13 @@ eventNames.forEach(function(event) {
 			fireOn.fireAction.apply(fireOn, [ action ].concat(args));
 		}
 
-		el.addEventListener(event, listener);
+		node = decor.node;
+		args = _.toArray(arguments).slice(2);
+		node.addEventListener(event, listener);
 
-		return {
-			update: function(emitName) {
-				if (typeof emitName !== "string") throw new Error("Expecting string for event name.");
-				key = emitName;
-				args = slice.call(arguments, 1);
-				ctx = this;
-			},
-			destroy: function() {
-				el.removeEventListener(event, listener);
-			}
-		}
+		decor.comp.onInvalidate(function() {
+			if (decor.comp.stopped) node.removeEventListener(event, listener);
+		});
 	}
 });
 

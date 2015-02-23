@@ -3,7 +3,7 @@ var _ = require("underscore"),
 	parse = require("./m+xml").parse,
 	NODE_TYPE = require("./types");
 
-var mixin = _.defaults({
+module.exports = _.defaults({
 	VERSION: "2.0.0-alpha",
 	NODE_TYPE: NODE_TYPE,
 	Temple: Temple,
@@ -35,12 +35,12 @@ var mixin = _.defaults({
 }, Temple);
 
 // no need for node js to hurt itself on any hard edges
-if (!process.browser) return mixin;
+if (!process.browser) return;
 
-var Mustache = module.exports = _.extend(require("./mustache"), mixin);
+var Mustache = module.exports = _.extend(require("./mustache"), module.exports);
 
 _.extend(Mustache.util, require("./util"));
 Mustache.Model = require("./model");
 Mustache.Context = require("./context");
 Mustache.Section = require("./section");
-// _.extend(Mustache, require("./plugins"));
+_.extend(Mustache, require("./plugins"));

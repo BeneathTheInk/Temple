@@ -1,13 +1,9 @@
-var _ = require("underscore"),
-	Mustache = require("../");
+var _ = require("underscore");
 
 var plugins =
 exports._plugins = {};
 
 exports.loadPlugin = function(tpl, plugin, args) {
-	if (!(tpl instanceof Mustache))
-		throw new Error("Plugins can only be loaded on instances of Mustache.");
-
 	if (_.isString(plugin)) {
 		if (plugins[plugin] == null)
 			throw new Error("No plugin exists with id '" + plugin + "'.");
@@ -50,6 +46,6 @@ exports.registerPlugin = function(name, fn) {
 
 // load built in plugins
 registerPlugin("actions", require("./actions"));
-registerPlugin("animate", require("./animate"));
-registerPlugin("twoway", require("./twoway"));
-registerPlugin("extras", require("./extras"));
+// registerPlugin("animate", require("./animate"));
+// registerPlugin("twoway", require("./twoway"));
+// registerPlugin("extras", require("./extras"));

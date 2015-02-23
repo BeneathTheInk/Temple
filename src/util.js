@@ -57,7 +57,7 @@ exports.patchArray = function(arr) {
 		});
 
 		function method() {
-			var spliceEquivalent, summary, args;
+			var spliceEquivalent, summary, args, res;
 
 			args = _.toArray(arguments);
 
@@ -66,12 +66,15 @@ exports.patchArray = function(arr) {
 			summary = summariseSpliceOperation(this, spliceEquivalent);
 
 			// run the intended method
-			Array.prototype[methodName].apply(this, args);
+			res = Array.prototype[methodName].apply(this, args);
 
 			// call the obersvsers
 			observers.forEach(function(fn) {
 				fn.call(this, summary);
 			}, this);
+
+			// return the result of the method
+			return res;
 		};
 	});
 
@@ -286,45 +289,45 @@ exports.reactifyArray = function(arr, replacer) {
 		return values[name];
 	}
 
-	function define(i, opts) {
+	function define(i) {
+		var dep;
+
 		if (typeof i === "number" && i >= narr.length) {
-			if (deps[i] != null) {
-				deps[i].changed();
+			if ((dep = deps[i]) != null) {
 				delete deps[i];
 			}
 
 			delete narr[i];
+			delete values[i];
+			dep.changed();
 			return;
 		}
 
-		// var value = replace(i, narr[i]);
-		// console.log(value);
-		// if (deps[i] == null) deps[i] = new Temple.Dependency();
-
-		setter(i, narr[i]);
+		setter.call(this, i, narr[i]);
 
 		Object.defineProperty(narr, i.toString(), {
-			configurable: opts == null || opts.configurable !== false,
-			enumerable: opts == null || opts.enumerable !== false,
+			configurable: true,
+			enumerable: true,
 			get: getter.bind(narr, i),
 			set: setter.bind(narr, i)
 		});
 	}
 
 	narr.observe(function(chg) {		
-		var balance = Math.abs(chg.added - chg.removed),
-			start, end, size, i;
+		var balance, start, end, len, i, prevlen;
 
-		if (chg != null) {
-			start = chg.index;
-			end = Math.max(narr.length, start + balance);
-		} else {
-			start = 0;
-			end = narr.length;
-		}
+		if (chg == null) return;
+
+		balance = chg.added - chg.removed;
+		if (!balance) return;
+
+		len = narr.length;
+		prevlen = len - balance;
+		start = Math.min(prevlen, len);
+		end = Math.max(prevlen, len);
 
 		for (i = start; i < end; i++) define(i);
-		if (balance) deps.length.changed();
+		deps.length.changed();
 	});
 
 	Object.defineProperty(narr, "__reactive", {

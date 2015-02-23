@@ -1,7 +1,8 @@
 var Temple = require("templejs"),
 	_ = require("underscore"),
 	util = require("./util"),
-	Model = require("./model");
+	Model = require("./model"),
+	Plugins = require("./plugins");
 
 var Context =
 module.exports = Temple.extend({
@@ -9,6 +10,10 @@ module.exports = Temple.extend({
 	constructor: function(data) {
 		if (!_.isUndefined(data)) this.addData(data);
 		Temple.call(this);
+	},
+
+	use: function(p) {
+		return Plugins.loadPlugin(this, p, _.toArray(arguments).slice(1));
 	},
 
 	addData: function(data) {
@@ -19,7 +24,22 @@ module.exports = Temple.extend({
 
 	set: function(data) {
 		if (!Model.isModel(data)) data = util.reactify(data);
-		return this.addData(data);
+		if (this.model) this.model.data = data;
+		else this.addData(data);
+		return this;
+	},
+
+	// auto mount on paint
+	paint: function() {
+		Temple.prototype.paint.apply(this, arguments);
+		if (!this.isMounted()) this.mount();
+		return this;
+	},
+
+	// auto stop on detach
+	detach: function() {
+		this.stop();
+		return Temple.prototype.detach.apply(this, arguments);
 	}
 
 });

@@ -227,17 +227,11 @@ module.exports = Context.extend({
 
 					binding.render = function() {
 						template.attributes.forEach(function(attr) {
-							// if (this._processDecorations(attr, binding, ctx)) {
-							// 	if (willMount) return;
-							// 	toMount.push(binding);
-							// 	willMount = true;
-							// }
-
-							// else {
+							if (!self._processDecorations(attr, binding, ctx)) {
 								this.autorun(function() {
 									this.attr(attr.name, self.renderTemplateAsString(attr.children, ctx));
 								});
-							// }
+							}
 						}, this);	
 					}
 
@@ -348,6 +342,23 @@ module.exports = Context.extend({
 		}
 	},
 
+	renderArguments: function(arg, ctx) {
+		if (ctx == null) ctx = this;
+		var self = this;
+
+		if (_.isArray(arg)) return arg.map(function(a) {
+			return self.renderArguments(a, ctx);
+		}).filter(function(b) { return b != null; });
+
+		switch(arg.type) {
+			case NODE_TYPE.INTERPOLATOR:
+				return ctx.get(arg.value);
+
+			case NODE_TYPE.LITERAL:
+				return arg.value;
+		}
+	},
+
 	// generates a new component from a partial or partial's name
 	renderPartial: function(klass, ctx, options) {
 		if (ctx == null) ctx = this.model;
@@ -371,7 +382,79 @@ module.exports = Context.extend({
 		});
 
 		return component;
-	}
+	},
+
+	_processDecorations: function(attr, binding, ctx) {
+		var decorators = this.findDecorators(attr.name);
+		if (!decorators.length) return false;
+		var self = this;
+
+		this.autorun(function() {
+			var argsValue, stringValue;
+			if (argsValue == null) argsValue = self.renderArguments(attr.arguments, ctx);
+
+			decorators.forEach(function(d) {
+				self.autorun(function(comp) {
+					var args = [ {
+						node: binding.node,
+						target: binding,
+						context: ctx,
+						template: attr,
+						comp: comp
+					} ].concat(argsValue);
+
+					d.apply(self, args);
+				});
+			});
+		});
+
+		// var temple = this;
+		// var parseArgs = false, parseString = false;
+
+		// // init decorators
+		// var processed = decorators.map(function(fn) {
+		// 	return Temple.Deps.nonreactive(function() {
+		// 		return fn.call(temple, binding.node, attr, binding);
+		// 	});
+		// }).filter(function(d) {
+		// 	return typeof d === "object";
+		// });
+		
+		// // return early if there are no decorations
+		// if (!processed.length) return;
+
+		// // start update computation
+		// this.autorun(function(comp) {
+		// 	var argsValue, stringValue;
+
+		// 	processed.forEach(function(d) {
+		// 		if (!_.isFunction(d.update)) return;
+
+		// 		var args = [];
+
+		// 		if (d.parse === "string") {
+		// 			if (stringValue == null) stringValue = temple.convertStringTemplate(attr.children, ctx);
+		// 			args = [ stringValue ];
+		// 		} else if (d.parse !== false) {
+		// 			if (argsValue == null) argsValue = temple.convertArgumentTemplate(attr.arguments, ctx);
+		// 			args = argsValue.slice(0);
+		// 		}
+				
+		// 		this.autorun(function() {
+		// 			d.update.apply(ctx, args);
+		// 		});
+		// 	}, this);
+		// });
+
+		// // destroy on invalidation
+		// this.once("invalidate", function() {
+		// 	processed.forEach(function(d) {
+		// 		if (typeof d.destroy === "function") d.destroy.call(temple);
+		// 	});
+		// });
+
+		return true;
+	},
 
 }, {
 
