@@ -21,6 +21,7 @@ HTML
 */
 html = nodes:
 	( section
+	/ extraStache
 	/ doubleStache
 	/ tripleStache
 	/ commentNode
@@ -88,6 +89,7 @@ attribute
 
 attrValue = nodes: 
 	( section
+	/ extraStache
 	/ doubleStache
 	/ tripleStache
 	/ textNode )* { return _.compact(nodes); }
@@ -103,7 +105,7 @@ attrArgValue = val:
 	/ ( ws v:number    ws attrArgNotEnd { return v; } )
 	/ ( ws v:null      ws attrArgNotEnd { return v; } )
 	/ ( ws v:undefined ws attrArgNotEnd { return v; } )
-	/ dumb_string ) {
+	/ ( ws v:$[^,]*              { return v.trim(); } ) ) {
 		if (_.isObject(val)) return val;
 		else return { type: NODE_TYPE.LITERAL, value: val };
 	}
@@ -144,25 +146,9 @@ stache
 
 // Mustache double stache
 doubleStache
-	= "{{" ![/#{] m:[!>&]? value:pathQuery "}}" {
-		var type = NODE_TYPE.INTERPOLATOR;
-
-		switch(m) {
-			case "!":
-				type = NODE_TYPE.MCOMMENT;
-				break;
-
-			case ">":
-				type = NODE_TYPE.PARTIAL;
-				break;
-
-			case "&":
-				type = NODE_TYPE.TRIPLE;
-				break;
-		}
-
+	= "{{" ![/#{!>\^] m:"&"? value:pathQuery "}}" {
 		return {
-			type: type,
+			type: m ? NODE_TYPE.TRIPLE : NODE_TYPE.INTERPOLATOR,
 			value: value
 		}
 	}
@@ -173,6 +159,14 @@ tripleStache
 		return {
 			type: NODE_TYPE.TRIPLE,
 			value: value
+		}
+	}
+
+extraStache
+	=  "{{" m:[!>] value:$(escape / [^}])* "}}" {
+		return {
+			type: m === ">" ? NODE_TYPE.PARTIAL : NODE_TYPE.MCOMMENT,
+			value: value.trim()
 		}
 	}
 
@@ -192,7 +186,7 @@ path
 	}
 
 pathPrefix
-	= d:"../"+ { return { type: "parent", distances: d.length }; }
+	= d:"../"+ { return { type: "parent", distance: d.length }; }
 	/ "./" { return { type: "local" }; }
 	/ "." { return { type: "local" }; }
 	/ "/" { return { type: "root" }; }
@@ -218,10 +212,8 @@ string
 	= "\"" v:$(escape / [^"])* "\"" { return v; }
 	/ "'" v:$(escape / [^'])* "'" { return v; }
 
-dumb_string = [^,]* { return text().trim(); }
-
 null = "null" { return null; }
-undefined = ("undefined" / "void" ws [^,]+) { return void 0; }
+undefined = ("undefined" / "void" ws ![,; \t\n\r]+) { return void 0; }
 
 /*
 Utils

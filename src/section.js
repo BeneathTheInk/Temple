@@ -38,9 +38,17 @@ module.exports = Context.extend({
 		// remove existing
 		this.removeRow(key);
 
-		// add new row
+		// create a new row
 		var row = new Context(this.model);
-		row.addData({ $key: key }).addData(data);
+		row.addData({ $key: key });
+		
+		// fix context so it is in front
+		if (Model.isModel(data) && data.parent === this.model) {
+			data.parent = row.model;
+		}
+
+		// add data
+		row.addData(data);
 
 		// set up render and mount it
 		row.render = this._onRow;

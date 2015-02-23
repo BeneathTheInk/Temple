@@ -36,7 +36,13 @@ Model.callProxyMethod = function(proxy, target, method, args, ctx) {
 	return util.result.apply(null, args);
 }
 
-_.extend(Model.prototype, Temple.Events, {
+_.extend(Model.prototype, {
+
+	// sets the data on the model
+	set: function(data) {
+		this.data = data;
+		return this;
+	},
 
 	// an array of models in the current stack, with the root as the first
 	getAllModels: function() {
@@ -86,7 +92,7 @@ _.extend(Model.prototype, Temple.Events, {
 			return val;
 		}
 
-		return paths.reduce(function(result, path, index) {
+		return _.reduce(paths, function(result, path, index) {
 			var model = self,
 				scope = true,
 				val;
@@ -102,10 +108,10 @@ _.extend(Model.prototype, Temple.Events, {
 			if (model == null) return;
 
 			while (_.isUndefined(val) && model != null) {
-				val = path.parts.reduce(function(target, part) {
+				val = _.reduce(path.parts, function(target, part) {
 					target = self._get(target, part.key);
 
-					part.children.forEach(function(k) {
+					_.each(part.children, function(k) {
 						if (_.isObject(k)) k = self.get(k);
 						target = self._get(target, k);
 					});

@@ -22,8 +22,8 @@ module.exports = Temple.extend({
 		return this;
 	},
 
-	set: function(data) {
-		if (!Model.isModel(data)) data = util.reactify(data);
+	set: function(data, reactify) {
+		if (reactify !== false && !Model.isModel(data)) data = util.reactify(data, reactify);
 		if (this.model) this.model.data = data;
 		else this.addData(data);
 		return this;

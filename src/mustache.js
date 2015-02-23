@@ -39,9 +39,12 @@ module.exports = Context.extend({
 	},
 
 	// creates a decorator
-	decorate: function(name, fn) {
+	decorate: function(name, fn, options) {
 		if (typeof name === "object" && fn == null) {
-			_.each(name, function(fn, n) { this.decorate(n, fn); }, this);
+			_.each(name, function(fn, n) {
+				if (_.isArray(fn)) this.decorate(n, fn[0], fn[1]);
+				else this.decorate(n, fn, options);
+			}, this);
 			return this;
 		}
 
@@ -50,7 +53,14 @@ module.exports = Context.extend({
 
 		if (this._decorators == null) this._decorators = {};
 		if (this._decorators[name] == null) this._decorators[name] = [];
-		if (!~this._decorators[name].indexOf(fn)) this._decorators[name].push(fn);
+		var decorators = this._decorators[name];
+
+		if (_.findWhere(decorators, { callback: fn }) == null) {
+			decorators.push({
+				callback: fn,
+				options: options || {}
+			});
+		}
 
 		return this;
 	},
@@ -199,25 +209,26 @@ module.exports = Context.extend({
 
 			case NODE_TYPE.ELEMENT:
 				var part = this.renderPartial(template.name, ctx);
+				var obj;
 
 				if (part != null) {
-					break;
-					// if (part instanceof Context) {
-					// 	template.attributes.forEach(function(attr) {
-					// 		this.autorun(function() {
-					// 			var val = this.convertArgumentTemplate(attr.arguments, ctx);
-					// 			if (val.length === 1) val = val[0];
-					// 			else if (!val.length) val = null;
+					if (part instanceof Context) {
+						part.addData(obj = util.reactify({}));
 
-					// 			var model = part.getModel();
-					// 			if (model == null) return;
-					// 			model.set(attr.name, val);
-					// 		});
-					// 	}, this);
-					// }
+						template.attributes.forEach(function(attr) {
+							self.autorun(function(c) {
+								var val = this.renderTemplateAsArguments(attr.arguments, ctx);
+								if (val.length === 1) val = val[0];
+								else if (!val.length) val = void 0;
 
-					// toMount.push(part);
-					// return part;
+								if (c.firstRun) obj.defineProperty(attr.name, { value: val });
+								else obj[attr.name] = val;
+							});
+						});
+					}
+
+					toMount.push(part);
+					return part;
 				}
 
 				else {
@@ -227,11 +238,11 @@ module.exports = Context.extend({
 
 					binding.render = function() {
 						template.attributes.forEach(function(attr) {
-							if (!self._processDecorations(attr, binding, ctx)) {
-								this.autorun(function() {
-									this.attr(attr.name, self.renderTemplateAsString(attr.children, ctx));
-								});
-							}
+							if (self.renderDecorations(attr, binding, ctx)) return;
+							
+							this.autorun(function() {
+								this.attr(attr.name, self.renderTemplateAsString(attr.children, ctx));
+							});
 						}, this);	
 					}
 
@@ -275,16 +286,18 @@ module.exports = Context.extend({
 				return section;
 
 			case NODE_TYPE.PARTIAL:
-
+				var partial = this.renderPartial(template.value, ctx);
+				if (partial != null) toMount.push(partial);
+				return partial;
 		}
 	},
 
 	renderTemplateAsString: function(template, ctx) {
 		if (ctx == null) ctx = this;
-		var temple = this;
+		var self = this;
 
 		if (_.isArray(template)) return template.map(function(t) {
-			return temple.renderTemplateAsString(t, ctx);
+			return self.renderTemplateAsString(t, ctx);
 		}).filter(function(b) { return b != null; }).join("");
 
 		switch(template.type) {
@@ -301,53 +314,43 @@ module.exports = Context.extend({
 
 			case NODE_TYPE.SECTION:
 			case NODE_TYPE.INVERTED:
-				// var inverted = template.type === NODE_TYPE.INVERTED,
-				// 	path = template.value,
-				// 	model, val, isEmpty, makeRow, strval;
+				var inverted = template.type === NODE_TYPE.INVERTED,
+					path = template.value,
+					model, val, isEmpty, makeRow, strval, proxy, isList;
 
-				// val = ctx.get(path);
-				// model = new Model(val, ctx);
-				// ctx.getAllProxies().reverse().forEach(model.registerProxy, model);
+				val = ctx.get(path);
+				model = new Model(val, ctx);
+				proxy = model.getProxyByValue(val);
+				isList = model.callProxyMethod(proxy, val, "isList");
+				isEmpty = Section.isEmpty(model, proxy);
+				
+				makeRow = function(i) {
+					var row, data;
 
-				// isEmpty = Section.isEmpty(model);
-				// if (model.proxy("isArray")) model.depend("length");
+					if (i == null) {
+						row = model;
+					} else {
+						data = model.callProxyMethod(proxy, val, "get", i);
+						row = new Model(data, new Model({ $key: i }, ctx));
+					}
+					
+					return self.renderTemplateAsString(template.children, row);
+				}
 
-				// makeRow = function(i) {
-				// 	var row, m;
-
-				// 	if (i == null) {
-				// 		m = model;
-				// 		i = 0;
-				// 	} else {
-				// 		m = model.getModel(i);
-				// 	}
-
-				// 	var row = new Context(m, ctx);
-				// 	row.addModel(new Model({ $key: i }));
-
-				// 	var val = temple.convertStringTemplate(template.children, row);
-				// 	row.clean();
-
-				// 	return val;
-				// }
-
-				// if (!(isEmpty ^ inverted)) {
-				// 	strval = _.isArray(val) && !inverted ?
-				// 		model.keys().map(makeRow).join("") :
-				// 		makeRow();
-				// }
-
-				// model.cleanProxyTree();
-				// return strval;
+				if (!(isEmpty ^ inverted)) {
+					return isList && !inverted ?
+						model.callProxyMethod(proxy, val, "keys").map(makeRow).join("") :
+						makeRow();
+				}
 		}
 	},
 
-	renderArguments: function(arg, ctx) {
+	renderTemplateAsArguments: function(arg, ctx) {
 		if (ctx == null) ctx = this;
 		var self = this;
 
 		if (_.isArray(arg)) return arg.map(function(a) {
-			return self.renderArguments(a, ctx);
+			return self.renderTemplateAsArguments(a, ctx);
 		}).filter(function(b) { return b != null; });
 
 		switch(arg.type) {
@@ -384,77 +387,39 @@ module.exports = Context.extend({
 		return component;
 	},
 
-	_processDecorations: function(attr, binding, ctx) {
+	renderDecorations: function(attr, binding, ctx) {
 		var decorators = this.findDecorators(attr.name);
-		if (!decorators.length) return false;
+		if (!decorators.length) return;
 		var self = this;
 
-		this.autorun(function() {
+		return this.autorun(function() {
 			var argsValue, stringValue;
-			if (argsValue == null) argsValue = self.renderArguments(attr.arguments, ctx);
+			if (argsValue == null) argsValue = self.renderTemplateAsArguments(attr.arguments, ctx);
 
 			decorators.forEach(function(d) {
+				var args = [];
+
+				if (d.options && d.options.parse === "string") {
+					if (stringValue == null) stringValue = self.renderTemplateAsString(attr.children, ctx);
+					args = [ stringValue ];
+				} else if (d.options == null || d.options.parse !== false) {
+					if (argsValue == null) argsValue = self.renderTemplateAsArguments(attr.arguments, ctx);
+					args = argsValue.slice(0);
+				}
+
 				self.autorun(function(comp) {
-					var args = [ {
+					d.callback.apply(self, [ {
 						node: binding.node,
 						target: binding,
 						context: ctx,
 						template: attr,
-						comp: comp
-					} ].concat(argsValue);
-
-					d.apply(self, args);
+						comp: comp,
+						options: d.options
+					} ].concat(args));
 				});
 			});
 		});
-
-		// var temple = this;
-		// var parseArgs = false, parseString = false;
-
-		// // init decorators
-		// var processed = decorators.map(function(fn) {
-		// 	return Temple.Deps.nonreactive(function() {
-		// 		return fn.call(temple, binding.node, attr, binding);
-		// 	});
-		// }).filter(function(d) {
-		// 	return typeof d === "object";
-		// });
-		
-		// // return early if there are no decorations
-		// if (!processed.length) return;
-
-		// // start update computation
-		// this.autorun(function(comp) {
-		// 	var argsValue, stringValue;
-
-		// 	processed.forEach(function(d) {
-		// 		if (!_.isFunction(d.update)) return;
-
-		// 		var args = [];
-
-		// 		if (d.parse === "string") {
-		// 			if (stringValue == null) stringValue = temple.convertStringTemplate(attr.children, ctx);
-		// 			args = [ stringValue ];
-		// 		} else if (d.parse !== false) {
-		// 			if (argsValue == null) argsValue = temple.convertArgumentTemplate(attr.arguments, ctx);
-		// 			args = argsValue.slice(0);
-		// 		}
-				
-		// 		this.autorun(function() {
-		// 			d.update.apply(ctx, args);
-		// 		});
-		// 	}, this);
-		// });
-
-		// // destroy on invalidation
-		// this.once("invalidate", function() {
-		// 	processed.forEach(function(d) {
-		// 		if (typeof d.destroy === "function") d.destroy.call(temple);
-		// 	});
-		// });
-
-		return true;
-	},
+	}
 
 }, {
 

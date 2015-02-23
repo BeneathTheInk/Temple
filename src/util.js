@@ -165,7 +165,7 @@ var reactify =
 exports.reactify = function(obj, replacer) {
 	function replace(k, v) {
 		var nval;
-		if (typeof replacer === "function") nval = replacer.call(this, k, v);
+		if (typeof replacer === "function") nval = replacer.apply(this, arguments);
 		if (typeof nval === "undefined" && typeof v !== "undefined") nval = reactify(v);
 		return nval;
 	}
