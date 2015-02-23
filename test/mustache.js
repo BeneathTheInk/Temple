@@ -1,3 +1,5 @@
+var Mustache = require("../");
+var expect = require("./utils/expect");
 var NODE_TYPE = Mustache.NODE_TYPE;
 
 describe("Mustache", function() {

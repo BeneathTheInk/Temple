@@ -1,13 +1,16 @@
+var Mustache = require("../"),
+	expect = require("./utils/expect");
+
 describe("Model", function() {
 	var model;
 
-	beforeEach(function() {
-		model = new Mustache.Model({ foo: "bar" });
-	});
+	// beforeEach(function() {
+	// 	model = new Mustache.Model({ foo: "bar" });
+	// });
 
-	afterEach(function() {
-		model.cleanProxyTree();
-	});
+	// afterEach(function() {
+	// 	model.cleanProxyTree();
+	// });
 
 	describe("Basics", function() {
 		it("sets data on construction", function() {
@@ -15,57 +18,65 @@ describe("Model", function() {
 			expect(model.get()).to.deep.equal({ foo: "bar" });
 		});
 
-		it("returns result of `model.value` on null or empty path", function() {
-			expect(model.get()).to.equal(model.value);
+		it("returns result of `model.data` on null or empty path", function() {
+			var model = new Mustache.Model({ foo: "bar" });
+			expect(model.get()).to.equal(model.data);
 		});
 
-		it("gets & sets shallow path", function() {
-			model.set("foo", { bar: "baz" });
-			expect(model.get("foo")).to.deep.equal({ bar: "baz" });
+		it("gets shallow path", function() {
+			var model = new Mustache.Model({ foo: "bar" });
+			expect(model.get("foo")).to.deep.equal("bar");
 		});
 
-		it("gets & sets deep path", function() {
-			model.set("foo.bar", "baz");
+		it("gets deep path", function() {
+			var model = new Mustache.Model({ foo: { bar: "baz" } });
 			expect(model.get("foo.bar")).to.equal("baz");
 		});
 
-		it("sets value directly on null or empty path", function() {
-			model.set([], "value");
-			expect(model.get()).to.equal("value");
+		it("gets deep path with bracket notation", function() {
+			var model = new Mustache.Model({ foo: { bar: "baz" } });
+			expect(model.get("foo['bar']")).to.equal("baz");
 		});
 
-		it("directly points to values on set", function() {
-			var fn = function(){};
-			model.set("foo", fn);
-			expect(model.value.foo).to.equal(fn);
+		it("gets deep path with dynamic path", function() {
+			var model = new Mustache.Model({ foo: { bar: "baz" }, path: "bar" });
+			expect(model.get("foo[path]")).to.equal("baz");
 		});
 
-		it("unsets", function() {
-			model.unset("foo");
-			expect(model.get("foo")).to.be.undefined;
+		it("gets from parent model", function() {
+			var parent = new Mustache.Model({ foo: "bar" });
+			var model = new Mustache.Model({ hello: "world" }, parent);
+			expect(model.get("foo")).to.equal("bar");
 		});
 
-		it("unset() sets `this.value` to undefined on null or empty path", function() {
-			model.unset();
-			expect(model.value).to.be.undefined;
+		it("getModelAtOffset(0) returns the model", function() {
+			var model = new Mustache.Model({});
+			expect(model.getModelAtOffset(0)).to.equal(model);
 		});
 
-		it("get() accepts array as path", function() {
-			expect(model.get([ "foo" ])).to.equal("bar");
+		it("getModelAtOffset(-1) returns the root model", function() {
+			var root = new Mustache.Model({});
+			var parent = new Mustache.Model({}, root);
+			var model = new Mustache.Model({}, parent);
+			expect(model.getModelAtOffset(-1)).to.equal(root);
 		});
 
-		it("set() accepts array as path", function() {
-			model.set([ "foo", "bar" ], "baz")
-			expect(model.get("foo")).to.deep.equal({ bar: "baz" });
+		it("getModelAtOffset(n) where n > 0 returns the relative ancestor starting at the model", function() {
+			var root = new Mustache.Model({});
+			var parent = new Mustache.Model({}, root);
+			var model = new Mustache.Model({}, parent);
+			expect(model.getModelAtOffset(1)).to.equal(parent);
 		});
 
-		it("set() accepts object for setting many paths at once", function() {
-			model.set({ foo: { bar: "baz" } });
-			expect(model.get("foo")).to.deep.equal({ bar: "baz" });
+		it("getModelAtOffset(n) where n < 0 returns the relative ancestor starting at the root model", function() {
+			var root = new Mustache.Model({});
+			var parent = new Mustache.Model({}, root);
+			var model = new Mustache.Model({}, parent);
+			expect(model.getModelAtOffset(-2)).to.equal(parent);
 		});
 	});
 
-	describe("Proxies", function() {
+	describe.skip("Proxies", function() {
 		it("constructs proxy once on set and match", function() {
 			var obj, seen, Proxy;
 
@@ -122,7 +133,7 @@ describe("Model", function() {
 		});
 	});
 
-	describe("#observe()", function() {
+	describe.skip("#observe()", function() {
 
 		it("successfully adds observer", function() {
 			var fn = function(){};
