@@ -115,8 +115,8 @@ attrArgNotEnd = &([,] / !.)
 // mustache section
 section
 	= start:sectionStart nodes:html end:sectionEnd {
-		if (options.strict && !_.isEqual(start.value.raw, end.raw)) {
-			throw new Error("Section tag mismatch: " + start.value.raw + " !== " + end.raw);
+		if (options.strict && !_.isEqual(start.value.raw, end)) {
+			throw new Error("Section tag mismatch: " + start.value.raw + " !== " + end);
 		}
 
 		start.value = start.value.result;
@@ -133,7 +133,7 @@ sectionStart
 	}
 
 sectionEnd
-	= "{{/" value:pathQueryWithRaw "}}" { return value; }
+	= "{{/" value:(escape / [^}])* "}}" { return value.join(""); }
 
 // Mustache staches without the prefixes
 stache
