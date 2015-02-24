@@ -58,21 +58,21 @@ module.exports = function(grunt) {
 				src: 'dist/temple-mustache.js',
 				dest: 'dist/temple-mustache.js',
 				options: {
-					header: "/*\n * Temple Mustache\n * (c) 2014 Beneath the Ink, Inc.\n * MIT License\n * Version <%= pkg.version %>\n */\n"
+					header: "/*\n * Temple Mustache\n * (c) 2014-2015 Beneath the Ink, Inc.\n * MIT License\n * Version <%= pkg.version %>\n */\n"
 				}
 			},
 			dev: {
 				src: 'dist/temple-mustache.dev.js',
 				dest: 'dist/temple-mustache.dev.js',
 				options: {
-					header: "/*\n * Temple Mustache (with Source Map)\n * (c) 2014 Beneath the Ink, Inc.\n * MIT License\n * Version <%= pkg.version %>\n */\n"
+					header: "/*\n * Temple Mustache (with Source Map)\n * (c) 2014-2015 Beneath the Ink, Inc.\n * MIT License\n * Version <%= pkg.version %>\n */\n"
 				}
 			},
 			test: {
 				src: 'dist/temple-mustache.test.js',
 				dest: 'dist/temple-mustache.test.js',
 				options: {
-					header: "/* Temple Mustache Tests / (c) 2014 Beneath the Ink, Inc. / MIT License / Version <%= pkg.version %> */"
+					header: "/* Temple Mustache Tests / (c) 2014-2015 Beneath the Ink, Inc. / MIT License / Version <%= pkg.version %> */"
 				}
 			}
 		},
