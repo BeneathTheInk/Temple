@@ -1,11 +1,13 @@
+var Mustache = require("../");
+var expect = require("./utils/expect");
+
 describe("#autorun() & #depend()", function() {
 	this.timeout(500);
 	this.slow(200);
 	var tpl, comp;
 
 	beforeEach(function() {
-		tpl = new Mustache();
-		tpl.set("foo", "bar");
+		tpl = new Mustache({ foo: "bar" }, { reactify: true });
 	});
 
 	afterEach(function() {
@@ -41,7 +43,7 @@ describe("#autorun() & #depend()", function() {
 		});
 
 		setTimeout(function() {
-			tpl.set("foo", { bar: "baz" });
+			tpl.get().foo = { bar: "baz" };
 		}, 10);
 	});
 });

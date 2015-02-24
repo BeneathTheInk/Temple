@@ -4,11 +4,12 @@ var Temple = require("templejs"),
 	parse = require("./m+xml").parse;
 
 var Model =
-module.exports = function Model(data, parent) {
-	this.data = data;
+module.exports = function Model(data, parent, options) {
+	options = options || {};
 	this.proxies = [];
 	this._proxy_dep = new Temple.Dependency();
 	if (Model.isModel(parent)) this.parent = parent;
+	this.set(data, options.reactify);
 }
 
 Model.isModel = function(o) {
@@ -39,7 +40,8 @@ Model.callProxyMethod = function(proxy, target, method, args, ctx) {
 _.extend(Model.prototype, {
 
 	// sets the data on the model
-	set: function(data) {
+	set: function(data, reactify) {
+		if (reactify) data = util.reactify(data, reactify);
 		this.data = data;
 		return this;
 	},

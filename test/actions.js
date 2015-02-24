@@ -1,3 +1,6 @@
+var Mustache = require("../");
+var expect = require("./utils/expect");
+
 describe("Actions", function() {
 	var tpl, doc;
 
@@ -17,8 +20,8 @@ describe("Actions", function() {
 		expect(doc.childNodes.length).to.equal(0);
 	});
 
-	function render(template, scope) {
-		tpl = new Mustache(template, scope);
+	function render(template, data) {
+		tpl = Mustache.render(template, data);
 		tpl.use("actions");
 		tpl.paint(doc);
 		return tpl;
@@ -104,7 +107,7 @@ describe("Actions", function() {
 	});
 
 	it("bubbles actions to parent components, even when child doesn't have the plugin", function() {
-		tpl = new Mustache("{{> child }}");
+		tpl = new Mustache(null, { template: "{{> child }}" });
 		tpl.use("actions");
 		tpl.setPartial("child", "<a on-click=\"alert\">Alert</a>");
 		tpl.paint(doc);
@@ -118,7 +121,7 @@ describe("Actions", function() {
 	});
 
 	it("doesn't bubble actions to parent component if stopPropagation is called", function() {
-		tpl = new Mustache("{{> child }}");
+		tpl = new Mustache(null, { template: "{{> child }}" });
 		tpl.use("actions");
 		
 		var seen = 0;

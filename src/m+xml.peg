@@ -75,7 +75,7 @@ elementEnd
 
 // Element Attribute
 attribute
-	= key:key value:("=" ws string ws)? {
+	= key:key value:("=" ws strict_string ws)? {
 		value = value != null ? value[2] : "";
 		
 		return {
@@ -105,7 +105,7 @@ attrArgValue = val:
 	/ ( ws v:number    ws attrArgNotEnd { return v; } )
 	/ ( ws v:null      ws attrArgNotEnd { return v; } )
 	/ ( ws v:undefined ws attrArgNotEnd { return v; } )
-	/ ( ws v:$[^,]*              { return v.trim(); } ) ) {
+	/ (    v:$[^,]*                     { return v.trim(); } ) ) {
 		if (_.isObject(val)) return val;
 		else return { type: NODE_TYPE.LITERAL, value: val };
 	}
@@ -163,10 +163,10 @@ tripleStache
 	}
 
 extraStache
-	=  "{{" m:[!>] value:$(escape / [^}])* "}}" {
+	=  "{{" m:[!>] value:(escape / [^}])* "}}" {
 		return {
 			type: m === ">" ? NODE_TYPE.PARTIAL : NODE_TYPE.MCOMMENT,
-			value: value.trim()
+			value: value.join("").trim()
 		}
 	}
 
@@ -209,8 +209,12 @@ number = "-"? [0-9]+ ("." [0-9]+)? { return parseFloat(text(), 10); }
 integer = [0-9]+ { return parseInt(text(), 10); }
 
 string
-	= "\"" v:$(escape / [^"])* "\"" { return v; }
-	/ "'" v:$(escape / [^'])* "'" { return v; }
+	= "\"" v:(escape / [^"])* "\"" { return v.join(""); }
+	/ "'" v:(escape / [^'])* "'" { return v.join(""); }
+
+strict_string
+	= "\"" v:$[^"]* "\"" { return v; }
+	/ "'" v:$[^']* "'" { return v; }
 
 null = "null" { return null; }
 undefined = ("undefined" / "void" ws ![,; \t\n\r]+) { return void 0; }

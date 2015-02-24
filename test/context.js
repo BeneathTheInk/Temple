@@ -1,3 +1,6 @@
+var Mustache = require("../");
+var expect = require("./utils/expect");
+
 describe("Context", function() {
 	var ctx;
 
@@ -6,7 +9,7 @@ describe("Context", function() {
 	});
 
 	afterEach(function() {
-		ctx.clean();
+		// ctx.clean();
 	});
 
 });

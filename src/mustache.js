@@ -24,7 +24,7 @@ module.exports = Context.extend({
 		// add partials
 		this.setPartial(_.extend({}, options.partials, _.result(this, "partials")));
 
-		Context.call(this, data);
+		Context.call(this, data, options);
 	},
 
 	// parses and sets the root template
@@ -55,7 +55,7 @@ module.exports = Context.extend({
 		if (this._decorators[name] == null) this._decorators[name] = [];
 		var decorators = this._decorators[name];
 
-		if (_.findWhere(decorators, { callback: fn }) == null) {
+		if (!_.findWhere(decorators, { callback: fn })) {
 			decorators.push({
 				callback: fn,
 				options: options || {}
@@ -67,17 +67,20 @@ module.exports = Context.extend({
 
 	// finds all decorators, locally and in parent
 	findDecorators: function(name) {
-		var d = [],
+		var decorators = [],
 			c = this;
 
 		while (c != null) {
-			if (c._decorators != null && _.isArray(c._decorators[name]))
-				d = d.concat(c._decorators[name]);
+			if (c._decorators != null && _.isArray(c._decorators[name])) {
+				c._decorators[name].forEach(function(d) {
+					if (!_.findWhere(decorators, { callback: d.callback })) decorators.push(d);
+				});
+			}
 
 			c = c.parent;
 		}
 
-		return _.unique(d);
+		return decorators;
 	},
 
 	// removes a decorator
@@ -97,13 +100,17 @@ module.exports = Context.extend({
 
 		else if (name == null) {
 			_.each(this._decorators, function(d, n) {
-				this._decorators[n] = _.without(d, fn);
+				this._decorators[n] = _.filter(d, function(_d) {
+					return _d.callback !== fn;
+				});
 			}, this);
 		}
 
 		else {
 			var d = this._decorators[name];
-			this._decorators[name] = _.without(d, fn);
+			this._decorators[name] = _.filter(d, function(_d) {
+				return _d.callback !== fn;
+			});
 		}
 
 		return this;
@@ -195,7 +202,7 @@ module.exports = Context.extend({
 	},
 
 	renderTemplate: function(template, ctx, toMount) {
-		if (ctx == null) ctx = this.model;
+		if (ctx == null) ctx = this;
 		if (toMount == null) toMount = [];
 		var self = this;
 
@@ -271,14 +278,13 @@ module.exports = Context.extend({
 
 			case NODE_TYPE.INVERTED:
 			case NODE_TYPE.SECTION:
-				var section = new Section(ctx)
+				var section = new Section(ctx.model)
 				.invert(template.type === NODE_TYPE.INVERTED)
 				.setPath(template.value)
 				.onRow(function(key) {
 					var toMount, bindings;
-					bindings = self.renderTemplate(template.children, this.model, toMount = []);
+					bindings = self.renderTemplate(template.children, this, toMount = []);
 					this.once("render:after", function() { _.invoke(toMount.reverse(), "mount"); });
-					
 					return bindings;
 				});
 
@@ -314,12 +320,11 @@ module.exports = Context.extend({
 
 			case NODE_TYPE.SECTION:
 			case NODE_TYPE.INVERTED:
-				var inverted = template.type === NODE_TYPE.INVERTED,
-					path = template.value,
-					model, val, isEmpty, makeRow, strval, proxy, isList;
+				var inverted, model, val, isEmpty, makeRow, proxy, isList;
 
-				val = ctx.get(path);
-				model = new Model(val, ctx);
+				inverted = template.type === NODE_TYPE.INVERTED;
+				val = ctx.get(template.value);
+				model = new Model(val, ctx.model);
 				proxy = model.getProxyByValue(val);
 				isList = model.callProxyMethod(proxy, val, "isList");
 				isEmpty = Section.isEmpty(model, proxy);
@@ -328,12 +333,13 @@ module.exports = Context.extend({
 					var row, data;
 
 					if (i == null) {
-						row = model;
+						data = model;
 					} else {
 						data = model.callProxyMethod(proxy, val, "get", i);
-						row = new Model(data, new Model({ $key: i }, ctx));
+						data = new Model(data, new Model({ $key: i }, ctx.model));
 					}
-					
+
+					var row = new Context(model);
 					return self.renderTemplateAsString(template.children, row);
 				}
 
@@ -364,25 +370,32 @@ module.exports = Context.extend({
 
 	// generates a new component from a partial or partial's name
 	renderPartial: function(klass, ctx, options) {
-		if (ctx == null) ctx = this.model;
-		var comps = this._components;
+		if (ctx == null) ctx = this;
+		var comps = this._components,
+			name;
 
-		if (typeof klass === "string") klass = this.findPartial(klass);
+		if (typeof klass === "string") {
+			name = klass;
+			klass = this.findPartial(klass);
+		}
+
 		if (!util.isSubClass(Temple, klass)) return null;
 
 		// create it non-reactively
 		var component = Temple.Deps.nonreactive(function() {
-			return util.isSubClass(Context, klass) ? new klass(ctx, options) : new klass();
+			return util.isSubClass(Context, klass) ? new klass(ctx.model, options) : new klass();
 		});
 
 		// add it to the list
-		if (comps[name] == null) comps[name] = [];
-		comps[name].push(component);
+		if (name) {
+			if (comps[name] == null) comps[name] = [];
+			comps[name].push(component);
 
-		// clean up when the partial is "stopped"
-		component.once("stop", function() {
-			comps[name] = _.without(comps[name], this);
-		});
+			// auto remove when the partial is "stopped"
+			component.once("stop", function() {
+				comps[name] = _.without(comps[name], component);
+			});
+		}
 
 		return component;
 	},
@@ -390,7 +403,9 @@ module.exports = Context.extend({
 	renderDecorations: function(attr, binding, ctx) {
 		var decorators = this.findDecorators(attr.name);
 		if (!decorators.length) return;
+
 		var self = this;
+		if (ctx == null) ctx = this;
 
 		return this.autorun(function() {
 			var argsValue, stringValue;
@@ -428,9 +443,7 @@ module.exports = Context.extend({
 			template: template
 		});
 
-		var tpl = new Mustache(null, options);
-		tpl.set(data);
-		return tpl;
+		return new Mustache(data, options);
 	}
 
 });

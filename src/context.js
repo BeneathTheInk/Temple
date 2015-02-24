@@ -7,25 +7,19 @@ var Temple = require("templejs"),
 var Context =
 module.exports = Temple.extend({
 
-	constructor: function(data) {
-		if (!_.isUndefined(data)) this.addData(data);
+	constructor: function(data, options) {
 		Temple.call(this);
+		if (!_.isUndefined(data)) this.addData(data, options);
 	},
 
 	use: function(p) {
 		return Plugins.loadPlugin(this, p, _.toArray(arguments).slice(1));
 	},
 
-	addData: function(data) {
-		if (!Model.isModel(data)) data = new Model(data, this.model);
+	// adds data to the current stack
+	addData: function(data, options) {
+		if (!Model.isModel(data)) data = new Model(data, this.model, options);
 		this.model = data;
-		return this;
-	},
-
-	set: function(data, reactify) {
-		if (reactify !== false && !Model.isModel(data)) data = util.reactify(data, reactify);
-		if (this.model) this.model.data = data;
-		else this.addData(data);
 		return this;
 	},
 
@@ -54,7 +48,7 @@ module.exports = Temple.extend({
 });
 
 // methods to proxy to model which don't return this
-[ "get", "getProxy", "getModelAtOffset", "getRootModel" ]
+[ "set", "get", "getProxy", "getModelAtOffset", "getRootModel" ]
 .forEach(function(method) {
 	Context.prototype[method] = function() {
 		return this.model[method].apply(this.model, arguments);

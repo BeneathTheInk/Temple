@@ -22,9 +22,16 @@ describe("Mustache", function() {
 	});
 
 	function render(template, data) {
-		tpl = new Mustache(template, data);
+		tpl = Mustache.render(template, data, { reactify: true });
 		tpl.paint(doc);
 		return getNodes();
+	}
+
+	function renderWait(fn, done) {
+		setTimeout(function() {
+			try { fn(); done(); }
+			catch(e) { done(e); }
+		}, 150);
 	}
 
 	function getNodes() {
@@ -75,13 +82,13 @@ describe("Mustache", function() {
 				version: Mustache.VERSION,
 				children: [{
 					type: NODE_TYPE.INTERPOLATOR,
-					value: "hello"
+					value: [{ parts: [{ children: [], key: "hello" }], type: "all" }]
 				},{
 					type: NODE_TYPE.TRIPLE,
-					value: "world"
+					value: [{ parts: [{ children: [], key: "world" }], type: "all" }]
 				},{
 					type: NODE_TYPE.TRIPLE,
-					value: "unescaped"
+					value: [{ parts: [{ children: [], key: "unescaped" }], type: "all" }]
 				}]
 			});
 		});
@@ -94,14 +101,14 @@ describe("Mustache", function() {
 				version: Mustache.VERSION,
 				children: [{
 					type: NODE_TYPE.SECTION,
-					value: "good",
+					value: [{ parts: [{ children: [], key: "good" }], type: "all" }],
 					children: [{
 						type: NODE_TYPE.TEXT,
 						value: "Hello"
 					}]
 				},{
 					type: NODE_TYPE.INVERTED,
-					value: "bad",
+					value: [{ parts: [{ children: [], key: "bad" }], type: "all" }],
 					children: [{
 						type: NODE_TYPE.TEXT,
 						value: "World"
@@ -153,7 +160,7 @@ describe("Mustache", function() {
 					attributes: [],
 					children: [{
 						type: NODE_TYPE.INTERPOLATOR,
-						value: "var"
+						value: [{ parts: [{ children: [], key: "var" }], type: "all" }]
 					}]
 				}]
 			});
@@ -176,7 +183,7 @@ describe("Mustache", function() {
 
 		it("removes section when value is changed to false", function(done) {
 			render("{{#section}}Hello World{{/section}}", { section: true });
-			tpl.set("section", false);
+			tpl.get().section = false;
 
 			renderWait(function() {
 				var nodes = getNodes();
@@ -187,7 +194,7 @@ describe("Mustache", function() {
 
 		it("updates section when value is changed to truthy", function(done) {
 			render("{{#section}}Hello World{{/section}}", { section: false });
-			tpl.set("section", true);
+			tpl.get().section = true;
 
 			renderWait(function() {
 				var nodes = getNodes();
@@ -212,7 +219,7 @@ describe("Mustache", function() {
 		});
 
 		it("renders arrays", function() {
-			var nodes = render("{{#list}}{{ this }}{{/list}}", { list: [ 0, 1, 2 ] });
+			var nodes = render("{{#list}}{{ . }}{{/list}}", { list: [ 0, 1, 2 ] });
 			expect(nodes).to.have.length(4);
 			expect(nodes[0]).to.be.textNode.with.nodeValue("0");
 			expect(nodes[1]).to.be.textNode.with.nodeValue("1");
@@ -228,8 +235,8 @@ describe("Mustache", function() {
 		});
 
 		it("updates single item in array when value is changed", function(done) {
-			render("{{#list}}{{ this }}{{/list}}", { list: [ 0, 1, 2 ] });
-			tpl.set("list.1", "Hello World");
+			render("{{#list}}{{ . }}{{/list}}", { list: [ 0, 1, 2 ] });
+			tpl.get("list")[1] = "Hello World";
 
 			renderWait(function() {
 				var nodes = getNodes();
@@ -240,7 +247,7 @@ describe("Mustache", function() {
 
 		it("updates single item in array when deep value is changed", function(done) {
 			var nodes = render("{{# list }}{{ foo }}{{/ list }}", { list: [ 0, { foo: "bar" }, 2 ] });
-			tpl.set("list.1.foo", "Hello World");
+			tpl.get("list.1").foo = "Hello World";
 
 			renderWait(function() {
 				var nodes = getNodes();
@@ -250,7 +257,7 @@ describe("Mustache", function() {
 		});
 
 		it("updates empty list when an item is added to it", function(done) {
-			render("{{# list }}{{ this }}{{/ list }}", { list: [] });
+			render("{{# list }}{{ . }}{{/ list }}", { list: [] });
 			tpl.get("list").push("Hello World");
 
 			renderWait(function() {
@@ -261,7 +268,7 @@ describe("Mustache", function() {
 		});
 
 		it("removes section when list becomes empty", function(done) {
-			render("{{#list}}{{ this }}{{/list}}", { list: [ 0 ] });
+			render("{{#list}}{{ . }}{{/list}}", { list: [ 0 ] });
 			tpl.get("list").shift();
 
 			renderWait(function() {
@@ -309,9 +316,9 @@ describe("Mustache", function() {
 			} ]
 		].forEach(function(op) {
 			it("updates for array " + op[0] + " operation", function(done) {
-				var list = [ 0, 1, 2 ];
-				render("{{#list}}{{ this }}{{/list}}", { list: list });
+				render("{{#list}}{{ . }}{{/list}}", { list: [0,1,2] });
 
+				var list = tpl.get("list");
 				list[op[0]].apply(list, op[1]);
 
 				renderWait(function() {
@@ -353,7 +360,7 @@ describe("Mustache", function() {
 
 		it("removes inverted section when value is changed to true", function(done) {
 			render("{{^section}}Hello World{{/section}}", { section: false });
-			tpl.set("section", true);
+			tpl.get().section = true;
 
 			renderWait(function() {
 				var nodes = getNodes();
@@ -364,7 +371,7 @@ describe("Mustache", function() {
 
 		it("updates inverted section when value is changed to false", function(done) {
 			render("{{^section}}Hello World{{/section}}", { section: true });
-			tpl.set("section", false);
+			tpl.get().section = false;
 
 			renderWait(function() {
 				var nodes = getNodes();
@@ -449,7 +456,7 @@ describe("Mustache", function() {
 
 		it("updates attribute when value changes", function(done) {
 			var nodes = render("<div x-attr='{{ val }}'></div>", { val: "Hello World" });
-			tpl.set("val", "foo");
+			tpl.get().val = "foo";
 
 			renderWait(function() {
 				expect(nodes[0].getAttribute("x-attr")).to.equal("foo");
@@ -458,8 +465,8 @@ describe("Mustache", function() {
 	});
 
 	describe("Decorators", function() {
-		function render(template, scope) {
-			tpl = new Mustache(template, scope);
+		function render(template, data) {
+			tpl = Mustache.render(template, data, { reactify: true });
 			return getNodes();
 		}
 
@@ -467,171 +474,123 @@ describe("Mustache", function() {
 			render("<div custom='A fancy attribute'></div>");
 			var seen = 0;
 
-			tpl.decorate("custom", function(el) {
+			tpl.decorate("custom", function(d) {
 				expect(this).to.equal(tpl);
-				expect(el).to.be.an.element.with.tagName("div");
+				expect(d.node).to.be.an.element.with.tagName("div");
 				seen++;
-
-				return {
-					update: function(val) {
-						expect(this).to.equal(tpl);
-						expect(val).to.equal('A fancy attribute');
-						seen++;
-					},
-					destroy: function() {
-						expect(this).to.equal(tpl);
-						seen++;
-					}
-				}
-			});
-
-			tpl.paint(doc).detach();
-			expect(seen).to.equal(3);
-		});
-
-		it("calls update() when data changes", function(done) {
-			render("<div custom='{{ val }}'></div>", { val: "Hello World" });
-			var seen = 0;
-
-			tpl.decorate("custom", function(el, t) {
-				return { update: function(o) {
-					if (seen === 0) expect(o).to.equal("Hello World");
-					if (seen === 1) expect(o).to.equal("Foo Bar");
-					seen++;
-				} }
 			});
 
 			tpl.paint(doc);
-			tpl.set("val", "Foo Bar");
+			expect(seen).to.equal(1);
+		});
+
+		it("calls decorator again when data changes", function(done) {
+			render("<div custom='{{ val }}'></div>", { val: "Hello World" });
+			var seen = 0;
+
+			tpl.decorate("custom", function(d, o) {
+				if (seen === 0) expect(o).to.equal("Hello World");
+				if (seen === 1) expect(o).to.equal("Foo Bar");
+				seen++;
+			});
+
+			tpl.paint(doc);
+			tpl.get().val = "Foo Bar";
 
 			renderWait(function() {
 				expect(seen).to.equal(2);
 			}, done);
 		});
 
-		it("calls destroy() when element is removed", function() {
-			render("<div custom='{{ val }}'></div>", { val: "Hello World" });
-			var seen = false;
-
-			tpl.decorate("custom", function() {
-				return { destroy: function() {
-					seen = true;
-				} }
-			});
-
-			tpl.paint(doc).detach();
-			expect(seen).to.be.ok;
-		});
-
 		it("parses boolean argument", function() {
 			render("<span custom='true'></span>", { val: "World" });
-			var seen = false;
+			var seen = 0;
 
-			tpl.decorate("custom", function() {
-				return {
-					parse: "text",
-					update: function(val) {
-						expect(val).to.equal(true);
-						seen = true;
-					}
-				}
+			tpl.decorate("custom", function(d, val) {
+				expect(val).to.equal(true);
+				seen++;
 			});
 
 			tpl.paint(doc);
-			expect(seen).to.be.ok;
+			expect(seen).to.equal(1);
 		});
 
 		it("parses numeric argument", function() {
 			render("<span custom='1234.56'></span>", { val: "World" });
-			var seen = false;
+			var seen = 0;
 
-			tpl.decorate("custom", function() {
-				return {
-					parse: "text",
-					update: function(val) {
-						expect(val).to.equal(1234.56);
-						seen = true;
-					}
-				}
+			tpl.decorate("custom", function(d, val) {
+				expect(val).to.equal(1234.56);
+				seen++;
 			});
 
 			tpl.paint(doc);
-			expect(seen).to.be.ok;
+			expect(seen).to.equal(1);
 		});
 
 		it("parses string argument", function() {
-			render("<span custom='\"Hello \\\\\"World\\\\\"\"'></span>", { val: "World" });
-			var seen = false;
+			render("<span custom='\"Hello \\\"World\\\"\"'></span>", { val: "World" });
+			var seen = 0;
 
-			tpl.decorate("custom", function() {
-				return {
-					parse: "text",
-					update: function(val) {
-						expect(val).to.equal('Hello "World"');
-						seen = true;
-					}
-				}
+			tpl.decorate("custom", function(d, val) {
+				expect(val).to.equal('Hello "World"');
+				seen++;
 			});
 
 			tpl.paint(doc);
-			expect(seen).to.be.ok;
+			expect(seen).to.equal(1);
 		});
 
 		it("parses several arguments", function() {
 			render("<span custom='\"Hello\", {{ val }}, true'></span>", { val: "World" });
-			var seen = false;
+			var seen = 0;
 
-			tpl.decorate("custom", function() {
-				return {
-					parse: "text",
-					update: function(a1, a2, a3) {
-						expect(a1).to.equal("Hello");
-						expect(a2).to.equal("World");
-						expect(a3).to.equal(true);
-						seen = true;
-					}
-				}
+			tpl.decorate("custom", function(d, a1, a2, a3) {
+				expect(a1).to.equal("Hello");
+				expect(a2).to.equal("World");
+				expect(a3).to.equal(true);
+				seen++;
 			});
 
 			tpl.paint(doc);
-			expect(seen).to.be.ok;
+			expect(seen).to.equal(1);
 		});
 
 		it("calls decorator nested in section", function() {
 			render("{{#section}}<div custom='{{ val }}'></div>{{/section}}", { val: "Hello World", section: true });
-			var seen = false;
+			var seen = 0;
 
 			tpl.decorate("custom", function() {
-				seen = true;
+				seen++;
 			});
 
 			tpl.paint(doc);
-			expect(seen).to.be.ok;
+			expect(seen).to.equal(1);
 		});
 
 		it("calls decorator nested in element", function() {
 			render("<div><span custom='{{ val }}'></span></div>", { val: "Hello World" });
-			var seen = false;
+			var seen = 0;
 
-			tpl.decorate("custom", function(el) {
-				expect(el).to.be.an.element.with.tagName("span");
-				seen = true;
+			tpl.decorate("custom", function(d) {
+				expect(d.node).to.be.an.element.with.tagName("span");
+				seen++;
 			});
 
 			tpl.paint(doc);
-			expect(seen).to.be.ok;
+			expect(seen).to.equal(1);
 		});
 
 		it("stops decorating", function() {
 			render("<span custom='{{ val }}'></span>", { val: "Hello World" });
-			var seen = false,
-				decorator = function(el) { seen = true; };
+			var seen = 0,
+				decorator = function() { seen++; };
 
 			tpl.decorate("custom", decorator);
 			tpl.stopDecorating("custom", decorator);
 
 			tpl.paint(doc);
-			expect(seen).to.not.be.ok;
+			expect(seen).to.equal(0);
 		});
 	});
 
@@ -665,7 +624,7 @@ describe("Mustache", function() {
 
 		it("updates when value changes", function(done) {
 			var nodes = render("{{ val }}", { val: "Hello World" });
-			tpl.set("val", "FooBar");
+			tpl.get().val = "FooBar";
 
 			renderWait(function() {
 				expect(nodes).to.have.length(2);
@@ -697,7 +656,7 @@ describe("Mustache", function() {
 
 		it("updates when value changes", function(done) {
 			render("{{{ val }}}", { val: "<span>" });
-			tpl.set("val", "<div></div>Hello World");
+			tpl.get().val = "<div></div>Hello World";
 
 			renderWait(function() {
 				var nodes = getNodes();
@@ -723,32 +682,32 @@ describe("Mustache", function() {
 
 	describe("Partials", function() {
 		it("sets a string partial", function() {
-			tpl = new Mustache("{{> partial }}");
+			tpl = Mustache.render("{{> partial }}");
 			tpl.setPartial("partial", "<h1>{{ value }}</h1>");
 			expect(tpl.findPartial("partial")).to.be.ok;
 		});
 
 		it("sets a parsed template partial", function() {
-			tpl = new Mustache("{{> partial }}");
+			tpl = Mustache.render("{{> partial }}");
 			tpl.setPartial("partial", Mustache.parse("<h1>{{ value }}</h1>"));
 			expect(tpl.findPartial("partial")).to.be.ok;
 		});
 
 		it("sets a subclass of temple partial", function() {
-			tpl = new Mustache("{{> partial }}");
+			tpl = Mustache.render("{{> partial }}");
 			tpl.setPartial("partial", Mustache.extend({ template: "<h1>{{ value }}</h1>" }));
 			expect(tpl.findPartial("partial")).to.be.ok;
 		});
 
 		it("unsets a partial on null", function() {
-			tpl = new Mustache("{{> partial }}");
+			tpl = Mustache.render("{{> partial }}");
 			tpl.setPartial("partial", "<h1>{{ value }}</h1>");
 			tpl.setPartial("partial", null);
 			expect(tpl.findPartial("partial")).to.not.be.ok;
 		});
 
 		it("renders partial into component", function() {
-			tpl = new Mustache("{{> partial }}", { value: "Hello World" });
+			tpl = Mustache.render("{{> partial }}", { value: "Hello World" });
 			tpl.setPartial("partial", "<h1>{{ value }}</h1>");
 			tpl.mount().paint(doc);
 
@@ -759,7 +718,7 @@ describe("Mustache", function() {
 		});
 
 		it("find component by partial name", function() {
-			tpl = new Mustache("{{> partial }}", { value: "Hello World" });
+			tpl = Mustache.render("{{> partial }}", { value: "Hello World" });
 			tpl.setPartial("partial", "<h1>{{ value }}</h1>");
 			tpl.mount().paint(doc);
 
@@ -769,7 +728,7 @@ describe("Mustache", function() {
 		});
 
 		it("renders partial in element", function() {
-			tpl = new Mustache("<h1>{{> partial }}</h1>", { value: "Hello World" });
+			tpl = Mustache.render("<h1>{{> partial }}</h1>", { value: "Hello World" });
 			tpl.setPartial("partial", "{{ value }}");
 			tpl.mount().paint(doc);
 
@@ -780,7 +739,7 @@ describe("Mustache", function() {
 		});
 
 		it("renders partial in section", function() {
-			tpl = new Mustache("{{#section}}{{> partial }}{{/section}}", { value: "Hello World", section: true });
+			tpl = Mustache.render("{{#section}}{{> partial }}{{/section}}", { value: "Hello World", section: true });
 			tpl.setPartial("partial", "<h1>{{ value }}</h1>");
 			tpl.paint(doc);
 
@@ -791,7 +750,7 @@ describe("Mustache", function() {
 		});
 
 		it("renders nothing if partial doesn't exist", function() {
-			tpl = new Mustache("{{> partial }}");
+			tpl = Mustache.render("{{> partial }}");
 			tpl.paint(doc);
 
 			var nodes = getNodes();
@@ -820,7 +779,7 @@ describe("Mustache", function() {
 		it("finds element after change in section", function(done) {
 			render("<div>{{#section}}<span></span>{{/section}}</div>", { section: false });
 			expect(tpl.find("span")).to.not.exist;
-			tpl.set("section", true);
+			tpl.get().section = true;
 
 			renderWait(function() {
 				expect(tpl.find("span")).to.be.an.element.with.tagName("span");
@@ -851,7 +810,7 @@ describe("Mustache", function() {
 		it("finds all elements after change in section", function(done) {
 			render("<div>{{#section}}<span><span></span></span>{{/section}}</div>", { section: false });
 			expect(tpl.findAll("span")).to.have.length(0);
-			tpl.set("section", true);
+			tpl.get().section = true;
 
 			renderWait(function() {
 				var nodes = tpl.findAll("span");
@@ -862,6 +821,7 @@ describe("Mustache", function() {
 
 	});
 
+	/*
 	describe.skip('Mustache Language Tests', function () {
 		var spec = window.MustacheTestContent;
 
@@ -926,5 +886,6 @@ describe("Mustache", function() {
 			it("knows how to render '" + testName.split("_").join(" ") + "'", tester);
 		});
 	});
+	*/
 
 });

@@ -54,7 +54,7 @@ eventNames.forEach(function(event) {
 		node.addEventListener(event, listener);
 
 		decor.comp.onInvalidate(function() {
-			if (decor.comp.stopped) node.removeEventListener(event, listener);
+			node.removeEventListener(event, listener);
 		});
 	}
 });

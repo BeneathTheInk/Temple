@@ -32,10 +32,3 @@ chai.Assertion.addMethod('nodeValue', function(expected_value) {
 chai.Assertion.addMethod('tagName', function(expected_value) {
 	this.has.property("tagName", expected_value.toUpperCase());
 });
-
-function renderWait(fn, done) {
-	setTimeout(function() {
-		try { fn(); done(); }
-		catch(e) { done(e); }
-	}, 150);
-}
