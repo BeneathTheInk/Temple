@@ -9,7 +9,7 @@ module.exports = function Model(data, parent, options) {
 	this.proxies = [];
 	this._proxy_dep = new Temple.Dependency();
 	if (Model.isModel(parent)) this.parent = parent;
-	this.set(data, options.reactify);
+	this.set(data, options.track);
 }
 
 Model.isModel = function(o) {
@@ -40,8 +40,8 @@ Model.callProxyMethod = function(proxy, target, method, args, ctx) {
 _.extend(Model.prototype, {
 
 	// sets the data on the model
-	set: function(data, reactify) {
-		if (reactify) data = util.reactify(data, reactify);
+	set: function(data, track) {
+		if (track) data = util.track(data, track);
 		this.data = data;
 		return this;
 	},

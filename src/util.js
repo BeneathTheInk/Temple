@@ -161,22 +161,22 @@ exports.summariseSpliceOperation = function ( array, args ) {
 	};
 }
 
-var reactify =
-exports.reactify = function(obj, replacer) {
+var track =
+exports.track = function(obj, replacer) {
 	function replace(k, v) {
 		var nval;
 		if (typeof replacer === "function") nval = replacer.apply(this, arguments);
-		if (typeof nval === "undefined" && typeof v !== "undefined") nval = reactify(v);
+		if (typeof nval === "undefined" && typeof v !== "undefined") nval = track(v);
 		return nval;
 	}
 
-	if (_.isArray(obj)) return reactifyArray(obj, replace)
-	if (isPlainObject(obj)) return reactifyObject(obj, replace);
+	if (_.isArray(obj)) return trackArray(obj, replace)
+	if (isPlainObject(obj)) return trackObject(obj, replace);
 	return obj;
 }
 
-var reactifyObject =
-exports.reactifyObject = function(props, replacer) {
+var trackObject =
+exports.trackObject = function(props, replacer) {
 	if (props.__reactive) return props;
 
 	var values = {};
@@ -257,8 +257,8 @@ exports.reactifyObject = function(props, replacer) {
 	return robj;
 }
 
-var reactifyArray =
-exports.reactifyArray = function(arr, replacer) {
+var trackArray =
+exports.trackArray = function(arr, replacer) {
 	if (!_.isArray(arr)) throw new Error("Expecting array.");
 	if (arr.__reactive) return arr;
 	

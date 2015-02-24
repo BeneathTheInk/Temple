@@ -220,7 +220,7 @@ module.exports = Context.extend({
 
 				if (part != null) {
 					if (part instanceof Context) {
-						part.addData(obj = util.reactify({}));
+						part.addData(obj = util.track({}));
 
 						template.attributes.forEach(function(attr) {
 							self.autorun(function(c) {
