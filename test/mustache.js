@@ -22,7 +22,7 @@ describe("Mustache", function() {
 	});
 
 	function render(template, data) {
-		tpl = Mustache.render(template, data, { reactify: true });
+		tpl = Mustache.render(template, data, { track: true });
 		tpl.paint(doc);
 		return getNodes();
 	}
@@ -466,7 +466,7 @@ describe("Mustache", function() {
 
 	describe("Decorators", function() {
 		function render(template, data) {
-			tpl = Mustache.render(template, data, { reactify: true });
+			tpl = Mustache.render(template, data, { track: true });
 			return getNodes();
 		}
 

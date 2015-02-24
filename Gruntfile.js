@@ -114,6 +114,6 @@ module.exports = function(grunt) {
 	grunt.registerTask('test', [ 'clean', 'precompile', 'build-test' ]);
 	grunt.registerTask('dist', [ 'clean', 'precompile', 'build-dist' ]);
 
-	grunt.registerTask('default', [ 'dist' ]);
+	grunt.registerTask('default', [ 'clean', 'precompile', 'build-dist', 'build-dev' ]);
 
 }

@@ -7,7 +7,7 @@ describe("#autorun() & #depend()", function() {
 	var tpl, comp;
 
 	beforeEach(function() {
-		tpl = new Mustache({ foo: "bar" }, { reactify: true });
+		tpl = new Mustache({ foo: "bar" }, { track: true });
 	});
 
 	afterEach(function() {
