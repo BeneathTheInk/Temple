@@ -181,6 +181,7 @@ exports.trackObject = function(props, replacer) {
 
 	var values = {};
 	var deps = {};
+	var mainDep = new Temple.Dependency();
 
 	function replace(ctx, name, value) {
 		if (typeof value === "undefined") return;
@@ -202,6 +203,7 @@ exports.trackObject = function(props, replacer) {
 		if (dep == null) dep = deps[name] = new Temple.Dependency();
 		if (old !== values[name]) dep.changed();
 
+		mainDep.changed();
 		return values[name];
 	}
 
@@ -232,6 +234,7 @@ exports.trackObject = function(props, replacer) {
 		},
 
 		toJSON: function() {
+			mainDep.depend();
 			return _.clone(values);
 		}
 

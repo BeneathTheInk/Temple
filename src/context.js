@@ -65,8 +65,9 @@ module.exports = Temple.extend({
 });
 
 // methods to proxy to model which don't return this
-[ "set", "get", "getProxyByValue", "getModelAtOffset", "getRootModel", "findModel", "getContainerValue" ]
-.forEach(function(method) {
+[ "set", "get", "getLocal", "getProxyByValue", "getModelAtOffset",
+  "getRootModel", "findModel", "getContainerValue", "getAllModels"
+].forEach(function(method) {
 	Context.prototype[method] = function() {
 		return this.model[method].apply(this.model, arguments);
 	}

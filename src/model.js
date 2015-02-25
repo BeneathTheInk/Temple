@@ -162,6 +162,7 @@ _.extend(Model.prototype, {
 				model = self.getRootModel();
 			} else if (path.type === "parent") {
 				model = self.getModelAtOffset(path.distance);
+				scope = false;
 			} else if (path.type === "all") {
 				scope = false;
 			}

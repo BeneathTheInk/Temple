@@ -38,18 +38,14 @@ module.exports = Context.extend({
 		// remove existing
 		this.removeRow(key);
 
-		// create a new row
-		var row = new Context(this.model);
-		row.addData({ $key: key });
-		
-		// fix context so it is in front
-		if (Model.isModel(data) && data.parent === this.model) {
-			data.parent = row.model;
+		// convert data to model
+		if (!Model.isModel(data)) {
+			data = new Model(data, this.model);
 		}
 
-		// add data
-		row.addData(data);
-
+		// create a new row
+		var row = new Context(data);
+		
 		// set up render and mount it
 		row.render = this._onRow;
 		this.rows[key] = row;
@@ -123,7 +119,9 @@ module.exports = Context.extend({
 					// add added rows
 					_.difference(nkeys, keys).forEach(function(key) {
 						self.autorun(function(c) {
-							this.addRow(key, model.callProxyMethod(proxy, val, "get", key));
+							var rval = model.callProxyMethod(proxy, val, "get", key);
+							var rmodel = new Model(rval, new Model({ $key: key }, this.model));
+							this.addRow(key, rmodel);
 							if (!c.firstRun) rowSort.invalidate();
 						});
 					});

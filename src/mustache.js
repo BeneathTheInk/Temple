@@ -224,7 +224,7 @@ module.exports = Context.extend({
 
 						template.attributes.forEach(function(attr) {
 							self.autorun(function(c) {
-								var val = this.renderTemplateAsArguments(attr.arguments, ctx);
+								var val = this.renderArguments(attr.arguments, ctx);
 								if (val.length === 1) val = val[0];
 								else if (!val.length) val = void 0;
 
@@ -351,12 +351,12 @@ module.exports = Context.extend({
 		}
 	},
 
-	renderTemplateAsArguments: function(arg, ctx) {
+	renderArguments: function(arg, ctx) {
 		if (ctx == null) ctx = this;
 		var self = this;
 
 		if (_.isArray(arg)) return arg.map(function(a) {
-			return self.renderTemplateAsArguments(a, ctx);
+			return self.renderArguments(a, ctx);
 		}).filter(function(b) { return b != null; });
 
 		switch(arg.type) {
@@ -409,7 +409,7 @@ module.exports = Context.extend({
 
 		return this.autorun(function() {
 			var argsValue, stringValue;
-			if (argsValue == null) argsValue = self.renderTemplateAsArguments(attr.arguments, ctx);
+			if (argsValue == null) argsValue = self.renderArguments(attr.arguments, ctx);
 
 			decorators.forEach(function(d) {
 				var args = [];
@@ -418,7 +418,7 @@ module.exports = Context.extend({
 					if (stringValue == null) stringValue = self.renderTemplateAsString(attr.children, ctx);
 					args = [ stringValue ];
 				} else if (d.options == null || d.options.parse !== false) {
-					if (argsValue == null) argsValue = self.renderTemplateAsArguments(attr.arguments, ctx);
+					if (argsValue == null) argsValue = self.renderArguments(attr.arguments, ctx);
 					args = argsValue.slice(0);
 				}
 
