@@ -1,125 +1,111 @@
 var _ = require("underscore"),
-	Mustache = require("../");
+	Temple = require("templejs");
 
-var NODE_TYPE = Mustache.NODE_TYPE;
-var nodeTypes = [ NODE_TYPE.INTERPOLATOR, NODE_TYPE.TRIPLE, NODE_TYPE.TEXT ];
+var value_types = [ "radio", "option" ];
 
 module.exports = function(options) {
 	options = options || {};
 
-	this.decorate("bind-to", function(el, attr) {
-		var type = getType(el),
-			args = attr.arguments;
+	// add methods
+	this.addFormBinding = addFormBinding;
+	this.getFormBinding = getFormBinding;
+	this.removeFormBinding = removeFormBinding;
 
-		if (type == null || !args.length || !~nodeTypes.indexOf(args[0].type)) {
+	// add main binding decorator
+	this.decorate("bind-to", function bindTo(d, id, lazy) {
+		var fbind = this.getFormBinding(id);
+		if (fbind == null) return;
+
+		var el = d.node,
+			type = getType(el),
+			self = this,
+			onChange, lazy;
+
+		// detect changes to the input's value
+		if (typeof fbind.change === "function") {
+			onChange = function(e) {
+				fbind.change.call(self, getNodeValue(el, type), e);
+			};
+
+			el.addEventListener("change", onChange);
+			if (!(options.lazy || lazy)) el.addEventListener("keyup", onChange);
+
+			d.comp.onInvalidate(function() {
+				el.removeEventListener("change", onChange);
+				el.removeEventListener("keyup", onChange);
+			});
+		}
+
+		// reactively set the value on the input
+		this.autorun(function() {
+			setNodeValue(el, fbind.get.call(self), type);
+		});
+	});
+
+	// add value decorator for radios and options
+	this.decorate("value", function valueOf(d, strval) {
+		var el = d.node,
+			type = getType(el),
+			self = this;
+		
+		if (!_.contains(value_types, type)) {
+			el.value = strval;
 			return;
 		}
 
-		var path = args[0].value,
-			lazy, model;
+		var args = this.renderArguments(d.template.arguments);
+		el.$bound_value = args.length <= 1 ? args[0] : args;
+		el.value = strval;
+	}, { parse: "string" });
 
-		lazy = options.lazy || (args[1] && args[1].type === NODE_TYPE.LITERAL && args[1].value)
-		el.addEventListener("change", onChange);
-		if (!lazy) el.addEventListener("keyup", onChange);
+	// add initial form bindings
+	var initialBinds = _.result(this, "twoway");
+	if (_.isObject(initialBinds)) this.addFormBinding(initialBinds);
+}
 
-		function onChange(e) {
-			var val;
+function addFormBinding(id, getter, onChange) {
+	if (_.isObject(id)) {
+		_.each(id, function(v, k) {
+			addFormBinding.call(this, k, v);
+		}, this);
+		return this;
+	}
 
-			switch (type) {
-				case "number":
-					val = this.valueAsNumber;
-					break;
-				case "text":
-					val = this.value;
-					break;
+	if (typeof id !== "string") throw new Error("Expecting a string for the form binding ID.");
+	if (this._formBindings == null) this._formBindings = {};
+	if (this._formBindings[id] != null) throw new Error("A form binding with id '" + id + "' already exists.");
 
-				case "checkbox":
-					val = this.checked;
-					break;
+	if (_.isObject(getter) && onChange == null) {
+		onChange = getter.change;
+		getter = getter.get;
+	}
 
-				case "date":
-					val = this.valueAsDate;
-					break;
+	if (typeof getter !== "function") throw new Error("Expecting a function or object for the form binding getter.");
+	if (typeof onChange !== "function") onChange = null;
 
-				case "select":
-					var opt = this.querySelector("option:checked");
-					if (opt == null) return;
-					val = opt.$bound_value;
-					break;
+	this._formBindings[id] = {
+		get: getter,
+		change: onChange
+	};
 
-				case "file":
-					val = !this.multiple ? this.files[0] : _.toArray(this.files);
-					break;
+	return this;
+}
 
-				case "radio":
-					val = this.$bound_value;
-					break;
-			}
+function getFormBinding(id) {
+	if (typeof id !== "string") return;
+	var c = this, bindings;
 
-			model.set([], val);
-		}
+	while (c != null) {
+		bindings = c._formBindings;
+		if (bindings != null && bindings[id] != null) return bindings[id];
+		c = c.parent;
+	}
+}
 
-		return {
-			update: function() {
-				model = this.findModel(path);
-				var val = model.get();
-
-				switch (type) {
-					case "number":
-						if (document.activeElement === el) return;
-						if (_.isNumber(val)) el.valueAsNumber = val;
-						else el.value = val;
-						break;
-
-					case "text":
-						if (document.activeElement === el) return;
-						el.value = val == null ? "" : val.toString();
-						break;
-
-					case "checkbox":
-						el.checked = !!val;
-						break;
-
-					case "date":
-						if (document.activeElement === el) return;
-						if (_.isDate(val)) el.valueAsDate = val;
-						else el.value = val;
-						break;
-
-					case "select":
-						_.toArray(el.querySelectorAll("option")).forEach(function(opt) {
-							opt.selected = opt.$bound_value === val;
-						});
-						break;
-
-					case "radio":
-						el.checked = el.$bound_value === val;
-						break;
-
-				}
-			},
-			destroy: function() {
-				el.removeEventListener("change", onChange);
-				if (!lazy) el.removeEventListener("keyup", onChange);
-			}
-		}
-	});
-
-	this.decorate("value", function(el, attr) {
-		var type = getType(el), self = this;
-		
-		if (!_.contains([ "radio", "option" ], type)) {
-			return {
-				parse: "string",
-				update: function(val) { el.value = val; }
-			}
-		}
-
-		return { update: function(val) {
-			el.$bound_value = val;
-			el.value = self.convertStringTemplate(attr.children, this);
-		} }
-	});
+function removeFormBinding(id) {
+	var exists = this._formBindings[id] != null;
+	delete this._formBindings[id];
+	return exists;
 }
 
 var type_map = {
@@ -147,5 +133,80 @@ function getType(el) {
 
 		case "textarea":
 			return "text";
+	}
+}
+
+function getNodeValue(node, type) {
+	if (type == null) type = getType(node);
+	var val;
+
+	switch (type) {
+		case "number":
+			val = node.valueAsNumber;
+			break;
+		case "text":
+			val = node.value;
+			break;
+
+		case "checkbox":
+			val = node.checked;
+			break;
+
+		case "date":
+			val = node.valueAsDate;
+			break;
+
+		case "select":
+			var opt = node.querySelector("option:checked");
+			if (opt == null) return;
+			val = opt.$bound_value;
+			break;
+
+		case "file":
+			val = !node.multiple ? node.files[0] : _.toArray(node.files);
+			break;
+
+		case "radio":
+			val = node.$bound_value;
+			break;
+	}
+
+	return val;
+}
+
+function setNodeValue(el, val, type) {
+	if (type == null) type = getType(el);
+
+	switch (type) {
+		case "number":
+			if (document.activeElement === el) return;
+			if (_.isNumber(val)) el.valueAsNumber = val;
+			else el.value = val;
+			break;
+
+		case "text":
+			if (document.activeElement === el) return;
+			el.value = val == null ? "" : val.toString();
+			break;
+
+		case "checkbox":
+			el.checked = !!val;
+			break;
+
+		case "date":
+			if (document.activeElement === el) return;
+			if (_.isDate(val)) el.valueAsDate = val;
+			else el.value = val;
+			break;
+
+		case "select":
+			_.toArray(el.querySelectorAll("option")).forEach(function(opt) {
+				opt.selected = opt.$bound_value === val;
+			});
+			break;
+
+		case "radio":
+			el.checked = el.$bound_value === val;
+			break;
 	}
 }
