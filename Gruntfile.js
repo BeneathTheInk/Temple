@@ -18,7 +18,7 @@ module.exports = function(grunt) {
 			main: {
 				options: {
 					optimize: "speed",
-					allowedStartRules: [ "start", "attrValue", "attrArguments", "pathQuery" ]
+					allowedStartRules: [ "start", "attrValue", "attrArguments", "pathQuery", "path" ]
 				},
 				files: [{
 					expand: true,

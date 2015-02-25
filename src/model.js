@@ -81,6 +81,63 @@ _.extend(Model.prototype, {
 		return model;
 	},
 
+	// returns the first model which passes the function
+	findModel: function(fn) {
+		var index = 0,
+			model = this;
+
+		while (model != null) {
+			if (fn.call(this, model, index++)) return model;
+			model = model.parent;
+		}
+	},
+
+	// returns containing object's value 
+	getContainerValue: function(path) {
+		if (typeof path === "string") path = parse(path, { startRule: "path" });
+		if (_.isUndefined(path)) return this.get();
+		if (!_.isObject(path)) throw new Error("Expecting string or object for path.");
+
+		// get the last key
+		var key = _.last(path.parts);
+		if (key == null) return this.get();
+
+		if (!key.children.length) {
+			key = key.key;
+			path.parts.pop();
+		} else {
+			key = this.get(key.children.pop());
+		}
+
+		// find the first model with the key
+		var value;
+		this.findModel(function(m) {
+			value = m.getLocal(path);
+			if (_.isUndefined(value)) return false;
+			var proxy = this.getProxyByValue(value);
+			return !_.isUndefined(proxy.get(value, key));
+		});
+
+		return value;
+	},
+
+	getLocal: function(path) {
+		if (typeof path === "string") path = parse(path, { startRule: "path" });
+		if (!_.isObject(path)) throw new Error("Expecting string or object for path.");
+		var self = this;
+
+		return _.reduce(path.parts, function(target, part) {
+			target = self._get(target, part.key);
+
+			_.each(part.children, function(k) {
+				if (_.isObject(k)) k = self.get(k);
+				target = self._get(target, k);
+			});
+
+			return target;
+		}, this.data);
+	},
+
 	// retrieves value with path query
 	get: function(paths) {
 		var self = this;
@@ -89,7 +146,9 @@ _.extend(Model.prototype, {
 		if (!_.isArray(paths)) paths = paths != null ? [ paths ] : [];
 		
 		if (!paths.length) {
-			var val = this.data;
+			var model = this.findModel(function(m) { return !_.isUndefined(m.data); });
+			if (model == null) return;
+			var val = model.data;
 			if (_.isFunction(val)) val = val.call(this, null);
 			return val;
 		}
@@ -110,17 +169,7 @@ _.extend(Model.prototype, {
 			if (model == null) return;
 
 			while (_.isUndefined(val) && model != null) {
-				val = _.reduce(path.parts, function(target, part) {
-					target = self._get(target, part.key);
-
-					_.each(part.children, function(k) {
-						if (_.isObject(k)) k = self.get(k);
-						target = self._get(target, k);
-					});
-
-					return target;
-				}, model.data);
-
+				val = model.getLocal(path);
 				model = model.parent;
 				if (scope) break;
 			}
@@ -149,12 +198,30 @@ _.extend(Model.prototype, {
 		return Model.callProxyMethod(proxy, target, method, Array.prototype.slice.call(arguments, 3), this);
 	},
 
+	getAllProxies: function() {
+		var proxies = [],
+			model = this;
+
+		while (model != null) {
+			proxies.push.apply(proxies, model.proxies);
+			model = model.parent;
+		}
+
+		return proxies;
+	},
+
 	registerProxy: function(proxy) {
 		if (typeof proxy !== "object" || proxy == null) throw new Error("Expecting object for proxy.");
 		if (typeof proxy.match !== "function") throw new Error("Layer missing required match method.");
 		if (typeof proxy.get !== "function") throw new Error("Layer missing required get method.");
-		this.proxies.unshift(proxy);
-		this._proxy_dep.changed();
+		
+		// ensures it isn't already in the context before adding it
+		// this is to prevent infinite loops, but maybe could be improved
+		if (!_.contains(this.getAllProxies(), proxy)) {
+			this.proxies.unshift(proxy);
+			this._proxy_dep.changed();
+		}
+		
 		return this;
 	},
 

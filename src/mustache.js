@@ -228,7 +228,7 @@ module.exports = Context.extend({
 								if (val.length === 1) val = val[0];
 								else if (!val.length) val = void 0;
 
-								if (c.firstRun) obj.defineProperty(attr.name, { value: val });
+								if (c.firstRun) obj.defineProperty(attr.name, val);
 								else obj[attr.name] = val;
 							});
 						});

@@ -209,15 +209,15 @@ exports.trackObject = function(props, replacer) {
 
 	_.extend(_proto, {
 
-		defineProperty: function(name, options) {
+		defineProperty: function(name, value, options) {
 			Object.defineProperty(this, name, {
-				configurable: options && options.configurable,
-				enumerable: options && options.enumerable,
+				configurable: options == null || options.configurable !== false,
+				enumerable: options == null || options.enumerable !== false,
 				get: getter.bind(this, name),
 				set: setter.bind(this, name)
 			});
 
-			this[name] = options != null ? options.value : void 0;
+			this[name] = value;
 			return this;
 		},
 
@@ -247,11 +247,7 @@ exports.trackObject = function(props, replacer) {
 	var robj = Object.create(_proto);
 
 	_.each(props, function(value, key) {
-		robj.defineProperty(key, {
-			configurable: true,
-			enumerable: true,
-			value: value
-		});
+		robj.defineProperty(key, value);
 	});
 
 	return robj;

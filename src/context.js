@@ -8,8 +8,8 @@ var Context =
 module.exports = Temple.extend({
 
 	constructor: function(data, options) {
-		Temple.call(this);
 		if (!_.isUndefined(data)) this.addData(data, options);
+		Temple.call(this);
 	},
 
 	use: function(p) {
@@ -48,7 +48,7 @@ module.exports = Temple.extend({
 });
 
 // methods to proxy to model which don't return this
-[ "set", "get", "getProxy", "getModelAtOffset", "getRootModel" ]
+[ "set", "get", "getProxyByValue", "getModelAtOffset", "getRootModel", "findModel", "getContainerValue" ]
 .forEach(function(method) {
 	Context.prototype[method] = function() {
 		return this.model[method].apply(this.model, arguments);
