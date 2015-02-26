@@ -1,6 +1,6 @@
 {
 	"name": "temple-mustache",
-	"version": "2.0.0",
+	"version": "2.0.1",
 	"description": "A Mustache view framework built on Temple.",
 	"author": "Beneath the Ink <info@beneaththeink.com>",
 	"publishConfig": {
