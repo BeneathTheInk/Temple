@@ -4,7 +4,7 @@ var _ = require("underscore"),
 	NODE_TYPE = require("./types");
 
 module.exports = _.defaults({
-	VERSION: "2.0.0-alpha",
+	VERSION: "2.0.0",
 	NODE_TYPE: NODE_TYPE,
 	Temple: Temple,
 
