@@ -10,6 +10,10 @@ module.exports = _.defaults({
 
 	parse: parse,
 
+	parsePath: function(s, opts) {
+		return parse(s, _.extend({}, opts, { startRule: "path" }));
+	},
+
 	parsePathQuery: function(s, opts) {
 		return parse(s, _.extend({}, opts, { startRule: "pathQuery" }));
 	},

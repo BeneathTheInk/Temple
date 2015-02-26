@@ -178,12 +178,12 @@ pathQuery = l:path r:("|" pathQuery)? { return r != null && r[1] != null ? [l].c
 pathQueryWithRaw = m:pathQuery { return { raw: text(), result: m } }
 
 path
-	= ws p:pathPrefix ws { p.parts = []; return p; }
-	/ ws p:pathPrefix? c:pathCore ws {
+	= ws p:pathPrefix? c:pathCore ws {
 		if (p == null) p = { type: "all" };
 		p.parts = c;
 		return p;
 	}
+	/ ws p:pathPrefix ws { p.parts = []; return p; }
 
 pathPrefix
 	= d:"../"+ { return { type: "parent", distance: d.length }; }

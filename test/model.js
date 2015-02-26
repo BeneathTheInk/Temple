@@ -43,6 +43,16 @@ describe("Model", function() {
 			expect(model.get("foo[path]")).to.equal("baz");
 		});
 
+		it("gets local value", function() {
+			var model = new Mustache.Model({ foo: "bar" });
+			expect(model.get(".")).to.deep.equal({ foo: "bar" });
+		});
+
+		it("gets deep local value", function() {
+			var model = new Mustache.Model({ foo: "bar" });
+			expect(model.get(".foo")).to.deep.equal("bar");
+		});
+
 		it("gets from parent model", function() {
 			var parent = new Mustache.Model({ foo: "bar" });
 			var model = new Mustache.Model({ hello: "world" }, parent);

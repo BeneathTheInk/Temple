@@ -24,7 +24,7 @@ module.exports = function(options) {
 		// detect changes to the input's value
 		if (typeof fbind.change === "function") {
 			onChange = function(e) {
-				fbind.change.call(self, getNodeValue(el, type), e);
+				fbind.change.call(self, getNodeValue(el, type), d.context, e);
 			};
 
 			el.addEventListener("change", onChange);
@@ -37,9 +37,13 @@ module.exports = function(options) {
 		}
 
 		// reactively set the value on the input
-		this.autorun(function() {
-			setNodeValue(el, fbind.get.call(self), type);
+		var c = this.autorun(function() {
+			setNodeValue(el, fbind.get.call(self, d.context), type);
 		});
+
+		// setNodeValue relies on the children elements
+		// those won't be in the DOM till at least the next tick
+		c.invalidate();
 	});
 
 	// add value decorator for radios and options
@@ -53,7 +57,7 @@ module.exports = function(options) {
 			return;
 		}
 
-		var args = this.renderArguments(d.template.arguments);
+		var args = this.renderArguments(d.template.arguments, d.context);
 		el.$bound_value = args.length <= 1 ? args[0] : args;
 		el.value = strval;
 	}, { parse: "string" });
@@ -158,8 +162,7 @@ function getNodeValue(node, type) {
 
 		case "select":
 			var opt = node.querySelector("option:checked");
-			if (opt == null) return;
-			val = opt.$bound_value;
+			if (opt != null) val = opt.$bound_value;
 			break;
 
 		case "file":

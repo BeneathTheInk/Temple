@@ -92,35 +92,7 @@ _.extend(Model.prototype, {
 		}
 	},
 
-	// returns containing object's value 
-	getContainerValue: function(path) {
-		if (typeof path === "string") path = parse(path, { startRule: "path" });
-		if (_.isUndefined(path)) return this.get();
-		if (!_.isObject(path)) throw new Error("Expecting string or object for path.");
-
-		// get the last key
-		var key = _.last(path.parts);
-		if (key == null) return this.get();
-
-		if (!key.children.length) {
-			key = key.key;
-			path.parts.pop();
-		} else {
-			key = this.get(key.children.pop());
-		}
-
-		// find the first model with the key
-		var value;
-		this.findModel(function(m) {
-			value = m.getLocal(path);
-			if (_.isUndefined(value)) return false;
-			var proxy = this.getProxyByValue(value);
-			return !_.isUndefined(proxy.get(value, key));
-		});
-
-		return value;
-	},
-
+	// returns the value at path, but only looks in the data on this model
 	getLocal: function(path) {
 		if (typeof path === "string") path = parse(path, { startRule: "path" });
 		if (!_.isObject(path)) throw new Error("Expecting string or object for path.");
