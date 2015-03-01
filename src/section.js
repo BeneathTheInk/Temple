@@ -8,6 +8,7 @@ var Section =
 module.exports = Context.extend({
 	constructor: function() {
 		this.rows = {};
+		this._row_deps = {};
 		Context.apply(this, arguments);
 	},
 
@@ -110,23 +111,30 @@ module.exports = Context.extend({
 				this.autorun(function(comp) {
 					var nkeys = model.callProxyMethod(proxy, val, "keys");
 
-					// remove removed rows
-					_.difference(keys, nkeys).forEach(self.removeRow, self);
-
 					// trick Trackr so autoruns aren't controlled by this one
 					Temple.Deps.currentComputation = comp._parent;
 
+					// remove removed rows
+					_.difference(keys, nkeys).forEach(function(key) {
+						if (this._row_deps[key]) {
+							this._row_deps[key].stop();
+							delete this._row_deps[key];
+						}
+
+						this.removeRow(key);
+					}, this);
+
 					// add added rows
 					_.difference(nkeys, keys).forEach(function(key) {
-						self.autorun(function(c) {
+						this._row_deps[key] = this.autorun(function(c) {
 							var rval = model.callProxyMethod(proxy, val, "get", key);
 							var rmodel = new Model(rval, new Model({ $key: key }, this.model));
 							this.addRow(key, rmodel);
 							if (!c.firstRun) rowSort.invalidate();
 						});
-					});
+					}, this);
 						
-					// pretend like nothing happended
+					// pretend like nothing happened
 					Temple.Deps.currentComputation = comp;
 
 					// the new set of keys
@@ -153,6 +161,7 @@ module.exports = Context.extend({
 
 		// auto clean
 		this.once("invalidate", function() {
+			this._row_deps = {};
 			this.removeAllRows();
 		});
 	}
