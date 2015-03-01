@@ -11,7 +11,7 @@ var Mustache = module.exports = _.defaults({
 	Temple: Temple,
 
 	// merge utilities with Temple
-	util: _.extend({}, Temple.util, require("./util")),
+	util: _.extend(require("./util"), Temple.util),
 
 	// all the parsers, declared here for easier access
 	parse: parse,
@@ -47,8 +47,10 @@ if (!process.browser) return;
 // load the real mustache for the browser
 Mustache = module.exports = _.extend(require("./mustache"), module.exports);
 
+// load the plugin API
+_.extend(Mustache, require("./plugins"));
+
 // and attach the rest of the parts for easy access
 Mustache.Model = require("./model");
 Mustache.Context = require("./context");
 Mustache.Section = require("./section");
-_.extend(Mustache, require("./plugins"));

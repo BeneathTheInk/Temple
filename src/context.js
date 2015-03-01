@@ -21,7 +21,9 @@ module.exports = Temple.extend({
 		// add to the stack before the real data
 		this.addData(state);
 		this.stateModel = state;
-		this.state = this.model.data;
+		Temple.util.defineComputedProperty(this, "state", function() {
+			return this.stateModel.data;
+		});
 
 		// set the passed in data
 		if (data != null) this.addData(data, options);
