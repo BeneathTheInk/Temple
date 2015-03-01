@@ -4,6 +4,7 @@ var _ = require("underscore"),
 	path = require("path"),
 	grunt = require("grunt");
 
+var pkg = require("../../package.json");
 var argv = require('minimist')(process.argv.slice(2), {
 	string: [ "port" ]
 });
@@ -42,7 +43,7 @@ var server = http.createServer(function(req, res) {
 		}
 
 		if (argv["bundle-path"]) {
-			var html = tpl({ bundle: argv["bundle-path"] });
+			var html = tpl(_.extend({}, pkg, argv, { bundle: argv["bundle-path"] }));
 			res.setHeader("Content-Type", "html");
 			res.setHeader("Content-Length", html.length);
 			res.end(html, "utf-8");
@@ -54,9 +55,9 @@ var server = http.createServer(function(req, res) {
 	});
 });
 
-var options = { debug: argv.debug };
+var gruntOptions = { debug: argv.debug };
 
-grunt.tasks([ argv["build-task"] ], options, function(err) {
+grunt.tasks([ argv["build-task"] ], gruntOptions, function(err) {
 	if (err) {
 		console.error(err.stack || err.toString());
 		return process.exit(1);
@@ -65,7 +66,7 @@ grunt.tasks([ argv["build-task"] ], options, function(err) {
 	server.listen(argv.port, function() {
 		grunt.log.ok("Test server listening on port " + argv.port + ".");
 
-		if (argv["watch-task"]) grunt.tasks([ argv["watch-task"] ], options, function(err) {
+		if (argv["watch-task"]) grunt.tasks([ argv["watch-task"] ], gruntOptions, function(err) {
 			if (err) {
 				console.error(err.stack || err.toString());
 				return process.exit(1);
