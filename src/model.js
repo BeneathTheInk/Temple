@@ -1,15 +1,15 @@
 var Temple = require("templejs"),
 	_ = require("underscore"),
 	util = require("./util"),
-	parse = require("./m+xml").parse;
+	parse = require("./m+xml").parse,
+	$track = require("./track").track;
 
 var Model =
 module.exports = function Model(data, parent, options) {
-	options = options || {};
 	this.proxies = [];
-	this._proxy_dep = new Temple.Dependency();
+	this._dep = new Temple.Dependency();
 	if (Model.isModel(parent)) this.parent = parent;
-	this.set(data, options.track);
+	this.set(data, options && options.track);
 }
 
 Model.isModel = function(o) {
@@ -41,8 +41,9 @@ _.extend(Model.prototype, {
 
 	// sets the data on the model
 	set: function(data, track) {
-		if (track) data = util.track(data, track);
+		if (track) data = $track(data, track);
 		this.data = data;
+		this._dep.changed();
 		return this;
 	},
 
@@ -97,6 +98,7 @@ _.extend(Model.prototype, {
 		if (typeof path === "string") path = parse(path, { startRule: "path" });
 		if (!_.isObject(path)) throw new Error("Expecting string or object for path.");
 		var self = this;
+		this._dep.depend();
 
 		return _.reduce(path.parts, function(target, part) {
 			target = self._get(target, part.key);
@@ -187,29 +189,24 @@ _.extend(Model.prototype, {
 		if (typeof proxy !== "object" || proxy == null) throw new Error("Expecting object for proxy.");
 		if (typeof proxy.match !== "function") throw new Error("Layer missing required match method.");
 		if (typeof proxy.get !== "function") throw new Error("Layer missing required get method.");
-		
-		// ensures it isn't already in the context before adding it
-		// this is to prevent infinite loops, but maybe could be improved
-		if (!_.contains(this.getAllProxies(), proxy)) {
-			this.proxies.unshift(proxy);
-			this._proxy_dep.changed();
-		}
-		
+		this.proxies.unshift(proxy);
 		return this;
 	},
 
 	getProxyByValue: function(target) {
-		this._proxy_dep.depend();
 		var proxy;
 		
+		// look locally first
 		proxy = _.find(this.proxies, function(p) {
 			return p.match(target);
 		});
 
+		// then recursively check the parents
 		if (proxy == null && this.parent != null) {
 			proxy = this.parent.getProxyByValue(target);
 		}
 
+		// otherwise look through the defaults
 		if (proxy == null) {
 			proxy = _.find(Model._defaultProxies, function(p) {
 				return p.match(target);

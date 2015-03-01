@@ -1,27 +1,29 @@
 var _ = require("underscore"),
 	Temple = require("templejs"),
 	parse = require("./m+xml").parse,
-	NODE_TYPE = require("./types");
+	NODE_TYPE = require("./types"),
+	track = require("./track");
 
-module.exports = _.defaults({
+// properties that Node.js and the browser can handle
+var Mustache = module.exports = _.defaults({
 	VERSION: "2.0.1",
 	NODE_TYPE: NODE_TYPE,
 	Temple: Temple,
 
-	parse: parse,
+	// merge utilities with Temple
+	util: _.extend({}, Temple.util, require("./util")),
 
+	// all the parsers, declared here for easier access
+	parse: parse,
 	parsePath: function(s, opts) {
 		return parse(s, _.extend({}, opts, { startRule: "path" }));
 	},
-
 	parsePathQuery: function(s, opts) {
 		return parse(s, _.extend({}, opts, { startRule: "pathQuery" }));
 	},
-
-	parseAttribute: function(s, opts) {
+	parseAttributeValue: function(s, opts) {
 		return parse(s, _.extend({}, opts, { startRule: "attrValue" }));
 	},
-
 	parseArguments: function(s, opts) {
 		return parse(s, _.extend({}, opts, { startRule: "attrArguments" }));
 	},
@@ -33,17 +35,19 @@ module.exports = _.defaults({
 			children: [ {
 				type: NODE_TYPE.HTML,
 				value: str
-			} ]
+			} ],
+			version: Mustache.VERSION
 		};
 	}
-}, Temple);
+}, track, Temple);
 
 // no need for node js to hurt itself on any hard edges
 if (!process.browser) return;
 
-var Mustache = module.exports = _.extend(require("./mustache"), module.exports);
+// load the real mustache for the browser
+Mustache = module.exports = _.extend(require("./mustache"), module.exports);
 
-_.extend(Mustache.util, require("./util"));
+// and attach the rest of the parts for easy access
 Mustache.Model = require("./model");
 Mustache.Context = require("./context");
 Mustache.Section = require("./section");

@@ -8,19 +8,20 @@ var Context =
 module.exports = Temple.extend({
 
 	constructor: function(data, options) {
-		// first we set the initial view state
-		var state = _.result(this, "defaults");
-		var stateOptions = (options && options.state) || { track: true };
-		if (state != null) {
-			// shove state between contexts
-			if (Model.isModel(data)) {
-				state = data.parent = new Model(state, data.parent, stateOptions);
-			}
-
-			// add to the stack before the real data
-			this.addData(state, stateOptions);
-			this.state = this.model.data;
+		// first we create the initial view state
+		var state = _.result(this, "initialState") || _.result(this, "defaults") || {};
+		if (!Model.isModel(state)) state = new Model(state, null, options && options.state);
+		
+		// shove state between contexts
+		if (Model.isModel(data)) {
+			state.parent = data.parent;
+			data.parent = state;
 		}
+
+		// add to the stack before the real data
+		this.addData(state);
+		this.stateModel = state;
+		this.state = this.model.data;
 
 		// set the passed in data
 		if (data != null) this.addData(data, options);
