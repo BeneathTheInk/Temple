@@ -41,7 +41,7 @@ _.extend(Model.prototype, {
 
 	// sets the data on the model
 	set: function(data, track) {
-		if (track) data = $track(data, track);
+		if (track !== false) data = $track(data, track);
 		this.data = data;
 		this._dep.changed();
 		return this;

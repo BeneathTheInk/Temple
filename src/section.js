@@ -130,7 +130,7 @@ module.exports = Context.extend({
 							var rval = model.callProxyMethod(proxy, val, "get", key);
 							var rmodel = new Model(rval, new Model({ $key: key }, this.model));
 							this.addRow(key, rmodel);
-							if (!c.firstRun) rowSort.invalidate();
+							if (!comp.firstRun) rowSort.invalidate();
 						});
 					}, this);
 						

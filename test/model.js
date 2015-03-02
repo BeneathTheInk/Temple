@@ -14,7 +14,7 @@ describe("Model", function() {
 
 	describe("Basics", function() {
 		it("sets data on construction", function() {
-			var model = new Mustache.Model({ foo: "bar" });
+			var model = new Mustache.Model({ foo: "bar" }, null, { track: false });
 			expect(model.get()).to.deep.equal({ foo: "bar" });
 		});
 
@@ -44,7 +44,7 @@ describe("Model", function() {
 		});
 
 		it("gets local value", function() {
-			var model = new Mustache.Model({ foo: "bar" });
+			var model = new Mustache.Model({ foo: "bar" }, null, { track: false });
 			expect(model.get(".")).to.deep.equal({ foo: "bar" });
 		});
 
