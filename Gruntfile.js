@@ -56,8 +56,13 @@ module.exports = function(grunt) {
 			}
 		},
 		watch: {
+			dev: {
+				files: [ "src/**/*.js" ],
+				tasks: [ 'dev' ],
+				options: { spawn: false }
+			},
 			test: {
-				files: [ "src/**/*.js", "test/**/*.js" ],
+				files: [ "src/**/*.js", "test/*.js" ],
 				tasks: [ 'test' ],
 				options: { spawn: false }
 			}
@@ -78,6 +83,6 @@ module.exports = function(grunt) {
 	grunt.registerTask('test', [ 'clean', 'build-test' ]);
 	grunt.registerTask('dist', [ 'clean', 'build-dist' ]);
 
-	grunt.registerTask('default', [ 'dist' ]);
+	grunt.registerTask('default', [ 'clean', 'build-dist', 'build-dev' ]);
 
 }
