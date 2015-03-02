@@ -6,7 +6,7 @@ var _ = require("underscore"),
 
 // properties that Node.js and the browser can handle
 var Mustache = module.exports = _.defaults({
-	VERSION: "2.0.2",
+	VERSION: "2.0.3",
 	NODE_TYPE: NODE_TYPE,
 	Temple: Temple,
 
