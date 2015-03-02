@@ -57,12 +57,12 @@ module.exports = function(grunt) {
 		},
 		watch: {
 			dev: {
-				files: [ "src/**/*.js" ],
+				files: [ "lib/**/*.js" ],
 				tasks: [ 'dev' ],
 				options: { spawn: false }
 			},
 			test: {
-				files: [ "src/**/*.js", "test/*.js" ],
+				files: [ "lib/**/*.js", "test/*.js" ],
 				tasks: [ 'test' ],
 				options: { spawn: false }
 			}
