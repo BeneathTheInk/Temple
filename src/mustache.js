@@ -241,17 +241,14 @@ module.exports = Context.extend({
 				else {
 					var binding = new Temple.Element(template.name);
 					this.renderTemplate(template.children, ctx, toMount).forEach(binding.appendChild, binding);
-					toMount.push(binding);
-
-					binding.render = function() {
-						template.attributes.forEach(function(attr) {
-							if (self.renderDecorations(attr, binding, ctx)) return;
-							
-							this.autorun(function() {
-								this.attr(attr.name, self.renderTemplateAsString(attr.children, ctx));
-							});
-						}, this);	
-					}
+					
+					template.attributes.forEach(function(attr) {
+						if (self.renderDecorations(attr, binding, ctx)) return;
+						
+						this.autorun(function() {
+							binding.attr(attr.name, self.renderTemplateAsString(attr.children, ctx));
+						});
+					}, this);
 
 					return binding;
 				}
@@ -268,11 +265,10 @@ module.exports = Context.extend({
 			case NODE_TYPE.INTERPOLATOR:
 			case NODE_TYPE.TRIPLE:
 				var node = new Temple[template.type === NODE_TYPE.TRIPLE ? "HTML" : "Text"];
-				toMount.push(node);
 
-				node.render = function() {
-					this.setValue(ctx.get(template.value));
-				}
+				this.autorun(function() {
+					node.setValue(ctx.get(template.value));
+				});
 
 				return node;
 
