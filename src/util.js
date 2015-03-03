@@ -39,6 +39,101 @@ exports.decodeEntities = (function() {
 	}
 })();
 
+// the subclassing function found in Backbone
+var subclass =
+exports.subclass = function(protoProps, staticProps) {
+	var parent = this;
+	var child;
+
+	// The constructor function for the new subclass is either defined by you
+	// (the "constructor" property in your `extend` definition), or defaulted
+	// by us to simply call the parent's constructor.
+	if (protoProps && has(protoProps, 'constructor')) {
+		child = protoProps.constructor;
+	} else {
+		child = function(){ return parent.apply(this, arguments); };
+	}
+
+	// Add static properties to the constructor function, if supplied.
+	extend(child, parent, staticProps);
+
+	// Set the prototype chain to inherit from `parent`, without calling
+	// `parent`'s constructor function.
+	var Surrogate = function(){ this.constructor = child; };
+	Surrogate.prototype = parent.prototype;
+	child.prototype = new Surrogate;
+
+	// Add prototype properties (instance properties) to the subclass,
+	// if supplied.
+	if (protoProps) extend(child.prototype, protoProps);
+
+	// Set a convenience property in case the parent's prototype is needed
+	// later.
+	child.__super__ = parent.prototype;
+
+	return child;
+}
+
+var matchesSelector = typeof Element !== "undefined" ?
+	Element.prototype.matches ||
+	Element.prototype.webkitMatchesSelector ||
+	Element.prototype.mozMatchesSelector ||
+	Element.prototype.msMatchesSelector :
+	function() { return false; };
+
+exports.matchesSelector = function(elem, selector) {
+	return matchesSelector.call(elem, selector)
+}
+
+var matches = exports.matches = function(node, selector) {
+	if (_.isArray(selector)) return selector.some(function(s) {
+		return matches(node, s);
+	});
+
+	if (selector instanceof window.Node) {
+		return node === selector;
+	}
+	
+	if (typeof selector === "function") {
+		return !!selector(node);
+	}
+	
+	if (node.nodeType === window.Node.ELEMENT_NODE) {
+		return matchesSelector.call(node, selector);
+	}
+
+	return false;
+}
+
+exports.closest = function(elem, selector) {
+	while (elem != null) {
+		if (elem.nodeType === 1 && matches(elem, selector)) return elem;
+		elem = elem.parentNode;
+	}
+
+	return null;
+}
+
+var defineComputedProperty =
+exports.defineComputedProperty = function(obj, prop, value) {
+	if (typeof value !== "function")
+		throw new Error("Expecting function for computed property value.");
+
+	Object.defineProperty(obj, prop, {
+		configurable: true,
+		enumerable: true,
+		get: function() {
+			return value.call(obj);
+		}
+	});
+}
+
+exports.defineComputedProperties = function(obj, props) {
+	Object.keys(props).forEach(function(key) {
+		defineComputedProperty(obj, key, props[key]);
+	});
+}
+
 // array write operations
 var mutatorMethods = [ 'pop', 'push', 'reverse', 'shift', 'sort', 'splice', 'unshift' ];
 

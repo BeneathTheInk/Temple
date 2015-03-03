@@ -6,7 +6,7 @@ var _ = require("underscore"),
 
 // properties that Node.js and the browser can handle
 var Mustache = module.exports = _.defaults({
-	VERSION: "2.0.3",
+	VERSION: "2.1.0-alpha",
 	NODE_TYPE: NODE_TYPE,
 	Temple: Temple,
 
@@ -52,5 +52,6 @@ _.extend(Mustache, require("./plugins"));
 
 // and attach the rest of the parts for easy access
 Mustache.Model = require("./model");
-Mustache.Context = require("./context");
-Mustache.Section = require("./section");
+Mustache.DOMRange = require("./domrange");
+Mustache.View = require("./view");
+// Mustache.Section = require("./section");
