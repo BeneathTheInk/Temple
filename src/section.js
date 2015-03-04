@@ -1,15 +1,15 @@
 var _ = require("underscore"),
-	Temple = require("templejs"),
+	Trackr = require("trackr"),
 	util = require("./util"),
 	Model = require("./model"),
-	Context = require("./context");
+	View = require("./view");
 
 var Section =
-module.exports = Context.extend({
+module.exports = View.extend({
 	constructor: function() {
 		this.rows = {};
 		this._row_deps = {};
-		Context.apply(this, arguments);
+		View.apply(this, arguments);
 	},
 
 	invert: function(val) {
@@ -45,13 +45,12 @@ module.exports = Context.extend({
 		}
 
 		// create a new row
-		var row = new Context(data);
+		var row = new View(data);
 		
 		// set up render and mount it
 		row.render = this._onRow;
 		this.rows[key] = row;
-		this.appendChild(row);
-		row.mount(key);
+		this.addMember(row);
 
 		return row;
 	},
@@ -68,8 +67,7 @@ module.exports = Context.extend({
 		if (this.rows[key] == null) return this;
 
 		var row = this.rows[key];
-		row.stop();
-		this.removeChild(row);
+		this.removeMember(row);
 		delete this.rows[key];
 
 		return this;
@@ -97,7 +95,7 @@ module.exports = Context.extend({
 			return model.callProxyMethod(proxy, val, "isEmpty");
 		}
 
-		Temple.Deps.nonreactive(function() {
+		Trackr.nonreactive(function() {
 			isEmpty = !val || (isList && !getEmptiness())
 		});
 
@@ -112,7 +110,7 @@ module.exports = Context.extend({
 					var nkeys = model.callProxyMethod(proxy, val, "keys");
 
 					// trick Trackr so autoruns aren't controlled by this one
-					Temple.Deps.currentComputation = comp._parent;
+					Trackr.currentComputation = comp._parent;
 
 					// remove removed rows
 					_.difference(keys, nkeys).forEach(function(key) {
@@ -126,32 +124,40 @@ module.exports = Context.extend({
 
 					// add added rows
 					_.difference(nkeys, keys).forEach(function(key) {
+						var row, rmodel;
+
+						row = this.getRow(key);
+						rmodel = row != null ? row.model :
+							new Model(null, new Model({ $key: key }, this.model));
+
 						this._row_deps[key] = this.autorun(function(c) {
-							var rval = model.callProxyMethod(proxy, val, "get", key);
-							var rmodel = new Model(rval, new Model({ $key: key }, this.model));
-							this.addRow(key, rmodel);
-							if (!comp.firstRun) rowSort.invalidate();
+							rmodel.set(model.callProxyMethod(proxy, val, "get", key));
+							// if (rowSort != null) rowSort.invalidate();
 						});
+
+						// add the row after we set the data
+						if (row == null) this.addRow(key, rmodel);
 					}, this);
 						
 					// pretend like nothing happened
-					Temple.Deps.currentComputation = comp;
+					Trackr.currentComputation = comp;
 
 					// the new set of keys
 					keys = nkeys;
 				});
 
 				// a reactive context that continuously sorts rows
-				rowSort = this.autorun(function() {
-					var before = null, i, row;
+				// rowSort = this.autorun(function() {
+					// console.log(keys);
+					// var before = null, i, row;
 
-					for (i = keys.length - 1; i >= 0; i--) {
-						row = this.getRow(keys[i]);
-						if (row == null) continue;
-						this.insertBefore(row, before);
-						before = row;
-					}
-				});
+					// for (i = keys.length - 1; i >= 0; i--) {
+					// 	row = this.getRow(keys[i]);
+					// 	if (row == null) continue;
+					// 	this.insertBefore(row, before);
+					// 	before = row;
+					// }
+				// });
 			} else {
 				this.addRow(0, model);
 			}

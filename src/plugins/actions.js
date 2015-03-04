@@ -34,7 +34,7 @@ eventNames.forEach(function(event) {
 			// create a new action object
 			var action = new Action(key);
 			action.original = e;
-			action.node = node;
+			action.target = action.node = node;
 			action.context = decor.context;
 
 			// find the first parent with the fire method
@@ -49,7 +49,7 @@ eventNames.forEach(function(event) {
 			fireOn.fireAction.apply(fireOn, [ action ].concat(args));
 		}
 
-		node = decor.node;
+		node = decor.target;
 		args = _.toArray(arguments).slice(2);
 		node.addEventListener(event, listener);
 

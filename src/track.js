@@ -1,5 +1,5 @@
 var _ = require("underscore");
-var Temple = require("templejs");
+var Trackr = require("trackr");
 var util = require("./util");
 
 var track =
@@ -22,11 +22,11 @@ exports.trackObject = function(props, replacer) {
 
 	var values = {};
 	var deps = {};
-	var mainDep = new Temple.Dependency();
+	var mainDep = new Trackr.Dependency();
 
 	function replace(ctx, name, value) {
 		if (typeof value === "undefined") return;
-		return Temple.nonreactive(function() {
+		return Trackr.nonreactive(function() {
 			return typeof replacer === "function" ? replacer.call(ctx, name, value) : value;
 		});
 	}
@@ -41,7 +41,7 @@ exports.trackObject = function(props, replacer) {
 		values[name] = replace(this, name, value);
 
 		var dep = deps[name];
-		if (dep == null) dep = deps[name] = new Temple.Dependency();
+		if (dep == null) dep = deps[name] = new Trackr.Dependency();
 		if (old !== values[name]) dep.changed();
 
 		mainDep.changed();
@@ -102,13 +102,13 @@ exports.trackArray = function(arr, replacer) {
 	if (!_.isArray(arr)) throw new Error("Expecting array.");
 	if (arr.__reactive) return arr;
 	
-	var deps = { length: new Temple.Dependency() };
+	var deps = { length: new Trackr.Dependency() };
 	var values = {};
 	var narr = util.patchArray([]);
 
 	function replace(ctx, name, value) {
 		if (typeof value === "undefined") return;
-		return Temple.nonreactive(function() {
+		return Trackr.nonreactive(function() {
 			return typeof replacer === "function" ? replacer.call(ctx, name, value) : value;
 		});
 	}
@@ -123,7 +123,7 @@ exports.trackArray = function(arr, replacer) {
 		values[name] = replace(this, name, value);
 
 		var dep = deps[name];
-		if (dep == null) dep = deps[name] = new Temple.Dependency();
+		if (dep == null) dep = deps[name] = new Trackr.Dependency();
 		if (old !== values[name]) dep.changed();
 
 		return values[name];

@@ -3,42 +3,41 @@ var _ = require("underscore"),
 	Events = require("./events"),
 	util = require("./util"),
 	Model = require("./model"),
-	Plugins = require("./plugins");
+	Plugins = require("./plugins"),
+	DOMRange = require("./domrange");
 
-function View(data, options) {
-	// first we create the initial view state
-	var state = _.result(this, "initialState") || _.result(this, "defaults") || {};
-	if (!Model.isModel(state)) state = new Model(state, null, options && options.state);
-	
-	// shove state between contexts
-	if (Model.isModel(data)) {
-		state.parent = data.parent;
-		data.parent = state;
-	}
+var View =
+module.exports = DOMRange.extend({
 
-	// add to the stack before the real data
-	this.addData(state);
-	this.stateModel = state;
-	util.defineComputedProperty(this, "state", function() {
-		return this.stateModel.data;
-	});
+	constructor: function(data, options) {
+		// first we create the initial view state
+		var state = _.result(this, "initialState") || _.result(this, "defaults") || {};
+		if (!Model.isModel(state)) state = new Model(state, null, options && options.state);
+		
+		// shove state between contexts
+		if (Model.isModel(data)) {
+			state.parent = data.parent;
+			data.parent = state;
+		}
 
-	// quick access to the top model data
-	util.defineComputedProperty(this, "data", function() {
-		return this.model.data;
-	});
+		// add to the stack before the real data
+		this.addData(state);
+		this.stateModel = state;
+		util.defineComputedProperty(this, "state", function() {
+			return this.stateModel.data;
+		});
 
-	// set the passed in data
-	if (data != null) this.addData(data, options);
+		// quick access to the top model data
+		util.defineComputedProperty(this, "data", function() {
+			return this.model.data;
+		});
 
-	// create a new dom range just for this view
-	this.range = new DOMRange();
-}
+		// set the passed in data
+		if (data != null) this.addData(data, options);
 
-module.exports = View;
-View.extend = util.subclass;
-
-_.extend(View.prototype, Events, {
+		// initiate like a normal dom range
+		DOMRange.call(this);
+	},
 
 	use: function(p) {
 		return Plugins.loadPlugin(this, p, _.toArray(arguments).slice(1));
@@ -52,16 +51,16 @@ _.extend(View.prototype, Events, {
 	},
 
 	// auto mount on paint
-	paint: function(parent, before) {
-		this.range.paint(parent, before);
-		if (!this.isMounted()) this.mount();
+	paint: function(p, n, _isMove, _isReplace) {
+		DOMRange.prototype.paint.apply(this, arguments);
+		if (!(_isMove || _isReplace || this.isMounted())) this.mount();
 		return this;
 	},
 
 	// auto stop on detach
-	detach: function() {
-		this.stop();
-		this.range.detach();
+	detach: function(_isReplace) {
+		if (!_isReplace) this.stop();
+		DOMRange.prototype.detach.apply(this, arguments);
 		return this;
 	},
 

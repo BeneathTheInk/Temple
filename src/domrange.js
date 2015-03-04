@@ -1,5 +1,6 @@
 var _ = require("underscore"),
-	Events = require("./events");
+	Events = require("./events"),
+	util = require("./util");
 
 function isArrayLike(a) {
 	return a != null && typeof a.length === "number";
@@ -32,6 +33,7 @@ function DOMRange(nodeAndRangeArray) {
 };
 
 module.exports = DOMRange;
+DOMRange.extend = util.subclass;
 
 // finds the DOMRange the element is a part of
 DOMRange.forElement = function (elem) {
@@ -40,7 +42,7 @@ DOMRange.forElement = function (elem) {
 	var range = null;
 	
 	while (elem && !range) {
-		range = (elem.$blaze_range || null);
+		range = (elem.$domrange || null);
 		elem = elem.parentNode;
 	}
 
@@ -50,11 +52,19 @@ DOMRange.forElement = function (elem) {
 DOMRange.destroy = function (m, _skipNodes) {
 	if (m instanceof DOMRange) {
 		m.trigger("destroy", _skipNodes);
+		m.destroyMembers(_skipNodes);
 	}
 
-	else if (!_skipNodes && m.nodeType === 1 && m.$blaze_range) {
-		Blaze._destroyNode(m);
-		m.$blaze_range = null;
+	else if (!_skipNodes && m.nodeType === 1 && m.$domrange) {
+		// var elems = [];
+		// // Array.prototype.slice.call doesn't work when given a NodeList in
+		// // IE8 ("JScript object expected").
+		// var nodeList = elem.getElementsByTagName('*');
+		// for (var i = 0; i < nodeList.length; i++) {
+		//   elems.push(nodeList[i]);
+		// }
+		// elems.push(elem);
+		m.$domrange = null;
 	}
 };
 
@@ -66,6 +76,10 @@ _.extend(DOMRange.prototype, Events, {
 	// If _isMove is true, move this attached range to a different
 	// location under the same parentElement.
 	paint: function(parentElement, nextNode, _isMove, _isReplace) {
+		if (typeof parentElement === "string") parentElement = document.querySelector(parentElement);
+		if (typeof nextNode === "string") nextNode = parent.querySelector(nextNode);
+		if (parentElement == null) throw new Error("Expecting a valid DOM element to paint in.");
+
 		if ((_isMove || _isReplace) && !(this.parentElement === parentElement && this.attached)) {
 			throw new Error("Can only move or replace an attached DOMRange, and only under the same parent element");
 		}
@@ -87,10 +101,12 @@ _.extend(DOMRange.prototype, Events, {
 
 		// trigger events only on fresh attachments
 		if (!(_isMove || _isReplace)) this.trigger("paint", parentElement);
+
+		return this;
 	},
 
 	detach: function(_isReplace) {
-		if (!this.attached) throw new Error("Must be attached");
+		if (!this.attached) return this;
 
 		var oldParentElement = this.parentElement;
 		var members = this.members;
@@ -107,7 +123,7 @@ _.extend(DOMRange.prototype, Events, {
 		if (!_isReplace) {
 			this.attached = false;
 			this.parentElement = null;
-			this.trigger("detach", parentElement);
+			this.trigger("detach", oldParentElement);
 		}
 	},
 
@@ -159,6 +175,8 @@ _.extend(DOMRange.prototype, Events, {
 				this.paint(parentElement, nextNode, false, true /*_isReplace*/);
 			}
 		}
+
+		return this;
 	},
 
 	addMember: function(newMember, atIndex, _isMove) {
@@ -197,11 +215,20 @@ _.extend(DOMRange.prototype, Events, {
 			members.splice(atIndex, 0, newMember);
 			insertIntoDOM(newMember, this.parentElement, nextNode, _isMove);
 		}
+
+		return this;
 	},
 
 	removeMember: function(atIndex, _isMove) {
 		var members = this.members;
-		if (!(atIndex >= 0 && atIndex < members.length)) {
+		
+		// also accepts the member to remove
+		if (typeof atIndex !== "number" || isNaN(atIndex)) {
+			atIndex = this.indexOf(atIndex);
+		}
+
+		// validate the index
+		if (atIndex < 0 || atIndex >= members.length) {
 			throw new Error("Bad index in range.removeMember: " + atIndex);
 		}
 
@@ -219,13 +246,34 @@ _.extend(DOMRange.prototype, Events, {
 				if (this.attached) removeFromDOM(oldMember);
 			}
 		}
+
+		return this;
 	},
 
 	moveMember: function(oldIndex, newIndex) {
 		var member = this.members[oldIndex];
 		this.removeMember(oldIndex, true /*_isMove*/);
 		this.addMember(member, newIndex, true /*_isMove*/);
+		return this;
 	},
+
+	indexOf: function(member) {
+		return this.members.indexOf(member);
+	},
+
+	contains: function(member) {
+		return this.indexOf(member) > -1;
+	},
+
+	_memberIn: function(m) {
+		if (m instanceof DOMRange) {
+			m.parentRange = this;
+		} else if (m.nodeType === 1) { // DOM Element
+			m.$domrange = this;
+		}
+	},
+
+	_memberOut: DOMRange.destroy,
 
 	// Tear down, but don't remove, the members.  Used when chunks
 	// of DOM are being torn down or replaced.
@@ -234,20 +282,12 @@ _.extend(DOMRange.prototype, Events, {
 		for (var i = 0; i < members.length; i++) {
 			this._memberOut(members[i], _skipNodes);
 		}
+		return this;
 	},
-
-	_memberIn: function(m) {
-		if (m instanceof DOMRange) {
-			m.parentRange = this;
-		} else if (m.nodeType === 1) { // DOM Element
-			m.$blaze_range = this;
-		}
-	},
-
-	_memberOut: DOMRange.destroy,
 
 	destroy: function(_skipNodes) {
 		DOMRange.destroy(this, _skipNodes);
+		return this;
 	},
 
 	containsElement: function(elem) {
@@ -268,7 +308,7 @@ _.extend(DOMRange.prototype, Events, {
 		// walk up to its ancestor that is.
 		while (elem.parentNode !== this.parentElement) elem = elem.parentNode;
 
-		var range = elem.$blaze_range;
+		var range = elem.$domrange;
 		while (range && range !== this) {
 			range = range.parentRange;
 		}
@@ -300,8 +340,40 @@ _.extend(DOMRange.prototype, Events, {
 		return range === this;
 	},
 
-	findAll: function (selector) {
-		
+	findAll: function(selector) {
+		var matches = [],
+			el;
+
+		for (var i in this.members) {
+			el = this.members[i];
+			if (el instanceof DOMRange) {
+				matches.push.apply(matches, el.findAll(selector));
+			} else if (typeof el.querySelectorAll === "function") {
+				if (el.nodeType === 1 && util.matchesSelector(el, selector)) matches.push(el);
+				matches.push.apply(matches, el.querySelectorAll(selector));
+			}
+		}
+
+		return matches
+	},
+
+	find: function(selector) {
+		var el, res;
+
+		for (var i in this.members) {
+			el = this.members[i];
+			if (el instanceof DOMRange) {
+				res = el.find(selector);
+			} else if (el.nodeType === 1 && util.matchesSelector(el, selector)) {
+				res = el;
+			} else if (typeof el.querySelector === "function") {
+				res = el.querySelector(selector);
+			}
+
+			if (res != null) return res;
+		}
+
+		return null;
 	}
 
 });

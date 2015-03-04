@@ -39,6 +39,21 @@ exports.decodeEntities = (function() {
 	}
 })();
 
+// convert html into DOM nodes
+exports.parseHTML = (function() {
+	if (typeof document === "undefined") return;
+
+	// this prevents any overhead from creating the object each time
+	var element = document.createElement('div');
+
+	return function parseHTML(html) {
+		element.innerHTML = html != null ? html.toString() : "";
+		var nodes = _.toArray(element.childNodes);
+		for (var i in nodes) element.removeChild(nodes[i]);
+		return nodes;
+	}
+})();
+
 // the subclassing function found in Backbone
 var subclass =
 exports.subclass = function(protoProps, staticProps) {
@@ -48,14 +63,14 @@ exports.subclass = function(protoProps, staticProps) {
 	// The constructor function for the new subclass is either defined by you
 	// (the "constructor" property in your `extend` definition), or defaulted
 	// by us to simply call the parent's constructor.
-	if (protoProps && has(protoProps, 'constructor')) {
+	if (protoProps && _.has(protoProps, 'constructor')) {
 		child = protoProps.constructor;
 	} else {
 		child = function(){ return parent.apply(this, arguments); };
 	}
 
 	// Add static properties to the constructor function, if supplied.
-	extend(child, parent, staticProps);
+	_.extend(child, parent, staticProps);
 
 	// Set the prototype chain to inherit from `parent`, without calling
 	// `parent`'s constructor function.
@@ -65,7 +80,7 @@ exports.subclass = function(protoProps, staticProps) {
 
 	// Add prototype properties (instance properties) to the subclass,
 	// if supplied.
-	if (protoProps) extend(child.prototype, protoProps);
+	if (protoProps) _.extend(child.prototype, protoProps);
 
 	// Set a convenience property in case the parent's prototype is needed
 	// later.

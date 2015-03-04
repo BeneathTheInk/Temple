@@ -22,7 +22,7 @@ describe("Mustache", function() {
 	});
 
 	function render(template, data) {
-		tpl = Mustache.render(template, data, { track: true });
+		tpl = Mustache.render(template, data);
 		tpl.paint(doc);
 		return getNodes();
 	}
@@ -171,14 +171,14 @@ describe("Mustache", function() {
 	describe("Sections", function() {
 		it("renders section when value is true", function() {
 			var nodes = render("{{#section}}Hello World{{/section}}", { section: true });
-			expect(nodes).to.have.length(2);
+			expect(nodes).to.have.length(1);
 			expect(nodes[0]).to.be.textNode.with.nodeValue("Hello World");
 		});
 
 		it("doesn't render section when value is false", function() {
 			var nodes = render("{{#section}}Hello World{{/section}}", { section: false });
 			expect(nodes).to.have.length(1);
-			expect(nodes[0]).to.be.comment;
+			expect(nodes[0]).to.be.textNode;
 		});
 
 		it("removes section when value is changed to false", function(done) {
@@ -188,7 +188,7 @@ describe("Mustache", function() {
 			renderWait(function() {
 				var nodes = getNodes();
 				expect(nodes).to.have.length(1);
-				expect(nodes[0]).to.be.comment;
+				expect(nodes[0]).to.be.textNode;
 			}, done);
 		});
 
@@ -198,14 +198,14 @@ describe("Mustache", function() {
 
 			renderWait(function() {
 				var nodes = getNodes();
-				expect(nodes).to.have.length(2);
+				expect(nodes).to.have.length(1);
 				expect(nodes[0]).to.be.textNode.with.nodeValue("Hello World");
 			}, done);
 		});
 
 		it("renders section in element", function() {
 			var nodes = render("<div>{{#section}}Hello World{{/section}}</div>", { section: true });
-			expect(nodes).to.have.length(2);
+			expect(nodes).to.have.length(1);
 			expect(nodes[0]).to.be.element;
 			expect(nodes[0].childNodes).to.have.length(1);
 			expect(nodes[0].firstChild).to.be.textNode.with.nodeValue("Hello World");
@@ -213,14 +213,13 @@ describe("Mustache", function() {
 
 		it("renders section in section", function() {
 			var nodes = render("{{#s1}}{{#s2}}Hello World{{/s2}}{{/s1}}", { s1: true, s2: true });
-			expect(nodes).to.have.length(2);
+			expect(nodes).to.have.length(1);
 			expect(nodes[0]).to.be.textNode.with.nodeValue("Hello World");
-			expect(nodes[1]).to.be.comment;
 		});
 
 		it("renders arrays", function() {
 			var nodes = render("{{#list}}{{ . }}{{/list}}", { list: [ 0, 1, 2 ] });
-			expect(nodes).to.have.length(4);
+			expect(nodes).to.have.length(3);
 			expect(nodes[0]).to.be.textNode.with.nodeValue("0");
 			expect(nodes[1]).to.be.textNode.with.nodeValue("1");
 			expect(nodes[2]).to.be.textNode.with.nodeValue("2");
@@ -228,7 +227,7 @@ describe("Mustache", function() {
 
 		it("sections have access to key value", function() {
 			var nodes = render("{{#list}}{{ $key }}{{/list}}", { list: [ "a", "b", "c" ] });
-			expect(nodes).to.have.length(4);
+			expect(nodes).to.have.length(3);
 			expect(nodes[0]).to.be.textNode.with.nodeValue("0");
 			expect(nodes[1]).to.be.textNode.with.nodeValue("1");
 			expect(nodes[2]).to.be.textNode.with.nodeValue("2");
@@ -240,7 +239,7 @@ describe("Mustache", function() {
 
 			renderWait(function() {
 				var nodes = getNodes();
-				expect(nodes).to.have.length(4);
+				expect(nodes).to.have.length(3);
 				expect(nodes[1]).to.be.textNode.with.nodeValue("Hello World");
 			}, done);
 		});
@@ -251,7 +250,7 @@ describe("Mustache", function() {
 
 			renderWait(function() {
 				var nodes = getNodes();
-				expect(nodes).to.have.length(4);
+				expect(nodes).to.have.length(3);
 				expect(nodes[1]).to.be.textNode.with.nodeValue("Hello World");
 			}, done);
 		});
@@ -262,7 +261,7 @@ describe("Mustache", function() {
 
 			renderWait(function() {
 				var nodes = getNodes();
-				expect(nodes).to.have.length(2);
+				expect(nodes).to.have.length(1);
 				expect(nodes[0]).to.be.textNode.with.nodeValue("Hello World");
 			}, done);
 		});
@@ -274,42 +273,43 @@ describe("Mustache", function() {
 			renderWait(function() {
 				var nodes = getNodes();
 				expect(nodes).to.have.length(1);
+				expect(nodes[0]).to.be.textNode;
 			}, done);
 		});
 
 		// array operations
 		[	[ "splice", [ 1, 1, 3 ], function(nodes) {
-				expect(nodes).to.have.length(4);
+				expect(nodes).to.have.length(3);
 				expect(nodes[0]).to.be.textNode.with.nodeValue("0");
 				expect(nodes[1]).to.be.textNode.with.nodeValue("3");
 				expect(nodes[2]).to.be.textNode.with.nodeValue("2");
 			} ],
 			[ "push", [ 3 ], function(nodes) {
-				expect(nodes).to.have.length(5);
+				expect(nodes).to.have.length(4);
 				expect(nodes[3]).to.be.textNode.with.nodeValue("3");
 			} ],
 			[ "pop", [], function(nodes) {
-				expect(nodes).to.have.length(3);
+				expect(nodes).to.have.length(2);
 				expect(nodes[0]).to.be.textNode.with.nodeValue("0");
 				expect(nodes[1]).to.be.textNode.with.nodeValue("1");
 			} ],
 			[ "unshift", [ 3 ], function(nodes) {
-				expect(nodes).to.have.length(5);
+				expect(nodes).to.have.length(4);
 				expect(nodes[0]).to.be.textNode.with.nodeValue("3");
 				expect(nodes[1]).to.be.textNode.with.nodeValue("0");
 			} ],
 			[ "shift", [], function(nodes) {
-				expect(nodes).to.have.length(3);
+				expect(nodes).to.have.length(2);
 				expect(nodes[0]).to.be.textNode.with.nodeValue("1");
 			} ],
 			[ "sort", [ function(a, b) { return b - a; } ], function(nodes) {
-				expect(nodes).to.have.length(4);
+				expect(nodes).to.have.length(3);
 				expect(nodes[0]).to.be.textNode.with.nodeValue("2");
 				expect(nodes[1]).to.be.textNode.with.nodeValue("1");
 				expect(nodes[2]).to.be.textNode.with.nodeValue("0");
 			} ],
 			[ "reverse", [], function(nodes) {
-				expect(nodes).to.have.length(4);
+				expect(nodes).to.have.length(3);
 				expect(nodes[0]).to.be.textNode.with.nodeValue("2");
 				expect(nodes[1]).to.be.textNode.with.nodeValue("1");
 				expect(nodes[2]).to.be.textNode.with.nodeValue("0");
@@ -333,7 +333,7 @@ describe("Mustache", function() {
 
 			renderWait(function() {
 				var nodes = getNodes();
-				expect(nodes).to.have.length(2);
+				expect(nodes).to.have.length(1);
 				expect(nodes[0]).to.be.textNode.with.nodeValue("Hello World");
 			}, done);
 		});
@@ -342,20 +342,20 @@ describe("Mustache", function() {
 	describe("Inverted Sections", function(argument) {
 		it("renders inverted section when value is false", function() {
 			var nodes = render("{{^ section }}Hello World{{/ section }}", { section: false });
-			expect(nodes).to.have.length(2);
+			expect(nodes).to.have.length(1);
 			expect(nodes[0]).to.be.textNode.with.nodeValue("Hello World");
 		});
 
 		it("renders inverted section when value is empty array", function() {
 			var nodes = render("{{^section}}Hello World{{/section}}", { section: [] });
-			expect(nodes).to.have.length(2);
+			expect(nodes).to.have.length(1);
 			expect(nodes[0]).to.be.textNode.with.nodeValue("Hello World");
 		});
 
 		it("doesn't render inverted section when value is true", function() {
 			var nodes = render("{{^section}}Hello World{{/section}}", { section: true });
 			expect(nodes).to.have.length(1);
-			expect(nodes[0]).to.be.comment;
+			expect(nodes[0]).to.be.textNode;
 		});
 
 		it("removes inverted section when value is changed to true", function(done) {
@@ -365,7 +365,7 @@ describe("Mustache", function() {
 			renderWait(function() {
 				var nodes = getNodes();
 				expect(nodes).to.have.length(1);
-				expect(nodes[0]).to.be.comment;
+				expect(nodes[0]).to.be.textNode;
 			}, done);
 		});
 
@@ -375,7 +375,7 @@ describe("Mustache", function() {
 
 			renderWait(function() {
 				var nodes = getNodes();
-				expect(nodes).to.have.length(2);
+				expect(nodes).to.have.length(1);
 				expect(nodes[0]).to.be.textNode.with.nodeValue("Hello World");
 			}, done);
 		});
@@ -386,14 +386,14 @@ describe("Mustache", function() {
 
 			renderWait(function() {
 				var nodes = getNodes();
-				expect(nodes).to.have.length(2);
+				expect(nodes).to.have.length(1);
 				expect(nodes[0]).to.be.textNode.with.nodeValue("Hello World");
 			}, done);
 		});
 
 		it("renders inverted section in element", function() {
 			var nodes = render("<div>{{^section}}Hello World{{/section}}</div>", { section: false });
-			expect(nodes).to.have.length(2);
+			expect(nodes).to.have.length(1);
 			expect(nodes[0]).to.be.element;
 			expect(nodes[0].childNodes).to.have.length(1);
 			expect(nodes[0].firstChild).to.be.textNode.with.nodeValue("Hello World");
@@ -401,22 +401,22 @@ describe("Mustache", function() {
 
 		it("renders inverted section in section", function() {
 			var nodes = render("{{#s1}}{{^s2}}Hello World{{/s2}}{{/s1}}", { s1: true, s2: false });
-			expect(nodes).to.have.length(2);
+			expect(nodes).to.have.length(1);
 			expect(nodes[0]).to.be.textNode.with.nodeValue("Hello World");
-			expect(nodes[1]).to.be.comment;
+			// expect(nodes[1]).to.be.comment;
 		});
 	});
 
 	describe("Elements", function() {
 		it("renders element", function() {
 			var nodes = render("<div></div>");
-			expect(nodes).to.have.length(2);
+			expect(nodes).to.have.length(1);
 			expect(nodes[0]).to.be.an.element.with.tagName("div");
 		});
 
 		it("renders element in element", function() {
 			var nodes = render("<div><span></span></div>");
-			expect(nodes).to.have.length(2);
+			expect(nodes).to.have.length(1);
 			expect(nodes[0]).to.be.an.element.with.tagName("div");
 			expect(nodes[0].childNodes).have.length(1);
 			expect(nodes[0].childNodes[0]).to.be.an.element.with.tagName("span");
@@ -424,7 +424,7 @@ describe("Mustache", function() {
 
 		it("renders element in section", function() {
 			var nodes = render("{{#section}}<div></div>{{/section}}", { section: true });
-			expect(nodes).to.have.length(2);
+			expect(nodes).to.have.length(1);
 			expect(nodes[0]).to.be.an.element.with.tagName("div");
 		});
 	});
@@ -432,25 +432,25 @@ describe("Mustache", function() {
 	describe("Element Attributes", function() {
 		it("renders basic text attribute", function() {
 			var nodes = render("<div x-attr='Hello World'></div>");
-			expect(nodes).to.have.length(2);
+			expect(nodes).to.have.length(1);
 			expect(nodes[0].getAttribute("x-attr")).to.equal("Hello World");
 		});
 
 		it("renders interpolator attribute", function() {
 			var nodes = render("<div x-attr='{{ val }}'></div>", { val: "Foo & \"Bar\" <span>" });
-			expect(nodes).to.have.length(2);
+			expect(nodes).to.have.length(1);
 			expect(nodes[0].getAttribute("x-attr")).to.equal("Foo & \"Bar\" <span>");
 		});
 
 		it("renders triple interpolator attribute", function() {
 			var nodes = render("<div x-attr='{{{ val }}}'></div>", { val: "Foo & \"Bar\" <span>" });
-			expect(nodes).to.have.length(2);
+			expect(nodes).to.have.length(1);
 			expect(nodes[0].getAttribute("x-attr")).to.equal("Foo & \"Bar\" <span>");
 		});
 
 		it("renders section attribute", function() {
 			var nodes = render("<div x-attr='{{#section}}Hello World{{/section}}'></div>", { section: true });
-			expect(nodes).to.have.length(2);
+			expect(nodes).to.have.length(1);
 			expect(nodes[0].getAttribute("x-attr")).to.equal("Hello World");
 		});
 
@@ -476,7 +476,7 @@ describe("Mustache", function() {
 
 			tpl.decorate("custom", function(d) {
 				expect(this).to.equal(tpl);
-				expect(d.node).to.be.an.element.with.tagName("div");
+				expect(d.target).to.be.an.element.with.tagName("div");
 				seen++;
 			});
 
@@ -573,7 +573,7 @@ describe("Mustache", function() {
 			var seen = 0;
 
 			tpl.decorate("custom", function(d) {
-				expect(d.node).to.be.an.element.with.tagName("span");
+				expect(d.target).to.be.an.element.with.tagName("span");
 				seen++;
 			});
 
@@ -597,20 +597,20 @@ describe("Mustache", function() {
 	describe("Text Nodes", function() {
 		it("renders text node", function() {
 			var nodes = render("Hello World");
-			expect(nodes).to.have.length(2);
+			expect(nodes).to.have.length(1);
 			expect(nodes[0]).to.be.a.textNode.with.nodeValue("Hello World");
 		});
 
 		it("renders text node in element", function() {
 			var nodes = render("<div>Hello World</div>");
-			expect(nodes).to.have.length(2);
+			expect(nodes).to.have.length(1);
 			expect(nodes[0].childNodes).to.have.length(1);
 			expect(nodes[0].childNodes[0]).to.be.a.textNode.with.nodeValue("Hello World");
 		});
 
 		it("renders text node in section", function() {
 			var nodes = render("{{#section}}Hello World{{/section}}", { section: true });
-			expect(nodes).to.have.length(2);
+			expect(nodes).to.have.length(1);
 			expect(nodes[0]).to.be.a.textNode.with.nodeValue("Hello World");
 		});
 	});
@@ -618,7 +618,7 @@ describe("Mustache", function() {
 	describe("Interpolators", function() {
 		it("renders interpolator", function() {
 			var nodes = render("{{ val }}", { val: "Hello World" });
-			expect(nodes).to.have.length(2);
+			expect(nodes).to.have.length(1);
 			expect(nodes[0]).to.be.a.textNode.with.nodeValue("Hello World");
 		});
 
@@ -627,21 +627,21 @@ describe("Mustache", function() {
 			tpl.get().val = "FooBar";
 
 			renderWait(function() {
-				expect(nodes).to.have.length(2);
+				expect(nodes).to.have.length(1);
 				expect(nodes[0]).to.be.a.textNode.with.nodeValue("FooBar");
 			}, done);
 		});
 
 		it("renders interpolator in element", function() {
 			var nodes = render("<div>{{ val }}</div>", { val: "Hello World" });
-			expect(nodes).to.have.length(2);
+			expect(nodes).to.have.length(1);
 			expect(nodes[0].childNodes).to.have.length(1);
 			expect(nodes[0].childNodes[0]).to.be.a.textNode.with.nodeValue("Hello World");
 		});
 
 		it("renders interpolator in section", function() {
 			var nodes = render("{{#section}}{{ val }}{{/section}}", { section: true, val: "Hello World" });
-			expect(nodes).to.have.length(2);
+			expect(nodes).to.have.length(1);
 			expect(nodes[0]).to.be.a.textNode.with.nodeValue("Hello World");
 		});
 	});
@@ -649,9 +649,9 @@ describe("Mustache", function() {
 	describe("Triple Interpolators", function() {
 		it("renders triple interpolator", function() {
 			var nodes = render("{{{ val }}}", { val: "<span>" });
-			expect(nodes).to.have.length(2);
+			expect(nodes).to.have.length(1);
 			expect(nodes[0]).to.be.an.element.with.tagName("span");
-			expect(nodes[1]).to.be.a.comment;
+			// expect(nodes[1]).to.be.a.comment;
 		});
 
 		it("updates when value changes", function(done) {
@@ -660,7 +660,7 @@ describe("Mustache", function() {
 
 			renderWait(function() {
 				var nodes = getNodes();
-				expect(nodes).to.have.length(3);
+				expect(nodes).to.have.length(2);
 				expect(nodes[0]).to.be.a.element.with.tagName("div");
 				expect(nodes[1]).to.be.a.textNode.with.nodeValue("Hello World");
 			}, done);
@@ -668,14 +668,14 @@ describe("Mustache", function() {
 
 		it("renders triple interpolator in element", function() {
 			var nodes = render("<div>{{{ val }}}</div>", { val: "<span>" });
-			expect(nodes).to.have.length(2);
+			expect(nodes).to.have.length(1);
 			expect(nodes[0].childNodes).to.have.length(1);
 			expect(nodes[0].childNodes[0]).to.be.an.element.with.tagName("span");
 		});
 
 		it("renders triple interpolator in section", function() {
 			var nodes = render("{{#section}}{{{ val }}}{{/section}}", { section: true, val: "<span>" });
-			expect(nodes).to.have.length(2);
+			expect(nodes).to.have.length(1);
 			expect(nodes[0]).to.be.an.element.with.tagName("span");
 		});
 	});
@@ -712,7 +712,7 @@ describe("Mustache", function() {
 			tpl.mount().paint(doc);
 
 			var nodes = getNodes();
-			expect(nodes).to.have.length(2);
+			expect(nodes).to.have.length(1);
 			expect(nodes[0]).to.be.element.with.tagName("h1");
 			expect(nodes[0].firstChild).to.be.textNode.with.nodeValue("Hello World");
 		});
@@ -733,7 +733,7 @@ describe("Mustache", function() {
 			tpl.mount().paint(doc);
 
 			var nodes = getNodes();
-			expect(nodes).to.have.length(2);
+			expect(nodes).to.have.length(1);
 			expect(nodes[0]).to.be.element.with.tagName("h1");
 			expect(nodes[0].firstChild).to.be.textNode.with.nodeValue("Hello World");
 		});
@@ -744,7 +744,7 @@ describe("Mustache", function() {
 			tpl.paint(doc);
 
 			var nodes = getNodes();
-			expect(nodes).to.have.length(2);
+			expect(nodes).to.have.length(1);
 			expect(nodes[0]).to.be.element.with.tagName("h1");
 			expect(nodes[0].firstChild).to.be.textNode.with.nodeValue("Hello World");
 		});
@@ -755,7 +755,7 @@ describe("Mustache", function() {
 
 			var nodes = getNodes();
 			expect(nodes).to.have.length(1);
-			expect(nodes[0]).to.be.comment;
+			expect(nodes[0]).to.be.textNode;
 		});
 	});
 

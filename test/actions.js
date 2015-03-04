@@ -97,7 +97,7 @@ describe("Actions", function() {
 			expect(e).to.be.instanceof(Mustache.Action);
 			expect(e.original).to.be.instanceof(Event);
 			expect(e.node).to.be.instanceof(Element);
-			expect(e.context).to.be.instanceof(Mustache.Context);
+			expect(e.context).to.be.instanceof(Mustache.View);
 			seen = true;
 		});
 
@@ -113,7 +113,7 @@ describe("Actions", function() {
 		tpl.paint(doc);
 
 		var seen = false;
-		tpl.addAction("alert", function(a) { seen = true; })
+		tpl.addAction("alert", function(a) { seen = true; });
 
 		tpl.find("a").click();
 

@@ -1,11 +1,11 @@
 var Mustache = require("../");
 var expect = require("./utils/expect");
 
-describe("Context", function() {
+describe("View", function() {
 	var ctx;
 
 	beforeEach(function() {
-		ctx = new Mustache.Context({ foo: "bar" });
+		ctx = new Mustache.View({ foo: "bar" });
 	});
 
 	afterEach(function() {

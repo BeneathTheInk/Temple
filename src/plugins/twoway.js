@@ -1,5 +1,4 @@
-var _ = require("underscore"),
-	Temple = require("templejs");
+var _ = require("underscore");
 
 var value_types = [ "radio", "option" ];
 

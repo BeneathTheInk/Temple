@@ -1,14 +1,16 @@
-var Temple = require("templejs"),
-	NODE_TYPE = require("./types"),
+var Trackr = require("trackr"),
 	_ = require("underscore"),
+	NODE_TYPE = require("./types"),
 	parse = require("./m+xml").parse,
 	util = require("./util"),
-	Context = require("./context"),
+	View = require("./view"),
 	Model = require("./model"),
-	Section = require("./section");
+	Section = require("./section"),
+	$track = require("./track").track,
+	DOMRange = require("./domrange");
 
 var Mustache =
-module.exports = Context.extend({
+module.exports = View.extend({
 	constructor: function(data, options) {
 		options = options || {};
 		this._partials = {};
@@ -24,7 +26,8 @@ module.exports = Context.extend({
 		// add partials
 		this.setPartial(_.extend({}, options.partials, _.result(this, "partials")));
 
-		Context.call(this, data, options);
+		// initiate like a normal view
+		View.call(this, data, options);
 	},
 
 	// parses and sets the root template
@@ -70,14 +73,17 @@ module.exports = Context.extend({
 		var decorators = [],
 			c = this;
 
+
 		while (c != null) {
 			if (c._decorators != null && _.isArray(c._decorators[name])) {
 				c._decorators[name].forEach(function(d) {
-					if (!_.findWhere(decorators, { callback: d.callback })) decorators.push(d);
+					if (!_.findWhere(decorators, { callback: d.callback })) {
+						decorators.push(_.extend({ context: c }, d));
+					}
 				});
 			}
 
-			c = c.parent;
+			c = c.parentRange;
 		}
 
 		return decorators;
@@ -128,8 +134,8 @@ module.exports = Context.extend({
 
 		if (_.isString(partial)) partial = parse(partial);
 		if (_.isObject(partial) && partial.type === NODE_TYPE.ROOT) partial = Mustache.extend({ template: partial });
-		if (partial != null && !util.isSubClass(Temple, partial))
-			throw new Error("Expecting string template, parsed template, Temple subclass or function for partial.");
+		if (partial != null && !util.isSubClass(View, partial))
+			throw new Error("Expecting string template, parsed template, View subclass or function for partial.");
 
 		if (partial == null) {
 			delete this._partials[name];
@@ -150,7 +156,7 @@ module.exports = Context.extend({
 
 		while (c != null) {
 			if (c._partials != null && c._partials[name] != null) return c._partials[name];
-			c = c.parent;
+			c = c.parentRange;
 		}
 	},
 
@@ -190,112 +196,113 @@ module.exports = Context.extend({
 		if (this._template == null)
 			throw new Error("Expected a template to be set before rendering.");
 
-		var toMount, bindings;
-		bindings = this.renderTemplate(this._template, null, toMount = []);
-		
-		this.once("render:after", function() {
-			// we invoke them in reverse to ensure the DOM nodes are in the correct order
-			_.invoke(toMount.reverse(), "mount");
-		});
-
-		return bindings;
+		this.setMembers(this.renderTemplate(this._template));
 	},
 
-	renderTemplate: function(template, ctx, toMount) {
+	renderTemplate: function(template, ctx) {
 		if (ctx == null) ctx = this;
-		if (toMount == null) toMount = [];
 		var self = this;
 
 		if (_.isArray(template)) return template.map(function(t) {
-			return this.renderTemplate(t, ctx, toMount);
+			return this.renderTemplate(t, ctx);
 		}, this).filter(function(b) { return b != null; });
 
 		switch(template.type) {
 			case NODE_TYPE.ROOT:
-				return this.renderTemplate(template.children, ctx, toMount);
+				return this.renderTemplate(template.children, ctx);
 
 			case NODE_TYPE.ELEMENT:
 				var part = this.renderPartial(template.name, ctx);
 				var obj;
 
 				if (part != null) {
-					if (part instanceof Context) {
-						part.addData(obj = util.track({}));
+					part.addData(obj = $track({}));
 
-						template.attributes.forEach(function(attr) {
-							self.autorun(function(c) {
-								var val = this.renderArguments(attr.arguments, ctx);
-								if (val.length === 1) val = val[0];
-								else if (!val.length) val = void 0;
+					template.attributes.forEach(function(attr) {
+						self.autorun(function(c) {
+							var val = this.renderArguments(attr.arguments, ctx);
+							if (val.length === 1) val = val[0];
+							else if (!val.length) val = void 0;
 
-								if (c.firstRun) obj.defineProperty(attr.name, val);
-								else obj[attr.name] = val;
-							});
+							if (c.firstRun) obj.defineProperty(attr.name, val);
+							else obj[attr.name] = val;
 						});
-					}
+					});
 
-					toMount.push(part);
 					return part;
 				}
 
 				else {
-					var binding = new Temple.Element(template.name);
-					this.renderTemplate(template.children, ctx, toMount).forEach(binding.appendChild, binding);
+					var el = document.createElement(template.name);
 					
 					template.attributes.forEach(function(attr) {
-						if (self.renderDecorations(attr, binding, ctx)) return;
+						if (this.renderDecorations(attr, el, ctx)) return;
 						
 						this.autorun(function() {
-							binding.attr(attr.name, self.renderTemplateAsString(attr.children, ctx));
+							el.setAttribute(attr.name, this.renderTemplateAsString(attr.children, ctx));
 						});
 					}, this);
 
-					return binding;
+					var children = this.renderTemplate(template.children, ctx),
+						child, i;
+
+					for (i in children) {
+						child = children[i];
+						if (child instanceof DOMRange) {
+							child.paint(el);
+						} else {
+							el.appendChild(child);
+						}
+					}
+					
+					return el;
 				}
 
 			case NODE_TYPE.TEXT:
-				return new Temple.Text(util.decodeEntities(template.value));
+				return document.createTextNode(util.decodeEntities(template.value));
 
 			case NODE_TYPE.HTML:
-				return new Temple.HTML(template.value);
+				return new DOMRange(util.parseHTML(template.value));
 
 			case NODE_TYPE.XCOMMENT:
-				return new Temple.Comment(template.value);
+				return document.createComment(template.value);
 
 			case NODE_TYPE.INTERPOLATOR:
-			case NODE_TYPE.TRIPLE:
-				var node = new Temple[template.type === NODE_TYPE.TRIPLE ? "HTML" : "Text"];
-
+				var node = document.createTextNode("");
+				
 				this.autorun(function() {
-					node.setValue(ctx.get(template.value));
+					var val = ctx.get(template.value);
+					node.nodeValue = typeof val === "string" ? val : val != null ? val.toString() : "";
 				});
 
 				return node;
 
-			case NODE_TYPE.INVERTED:
-			case NODE_TYPE.SECTION:
-				var section = new Section(ctx.model)
-				.invert(template.type === NODE_TYPE.INVERTED)
-				.setPath(template.value)
-				.onRow(function(key) {
-					var toMount, bindings;
-					bindings = self.renderTemplate(template.children, this, toMount = []);
-					this.once("render:after", function() { _.invoke(toMount.reverse(), "mount"); });
-					return bindings;
+			case NODE_TYPE.TRIPLE:
+				var range = new DOMRange();
+				
+				this.autorun(function() {
+					range.setMembers(util.parseHTML(ctx.get(template.value)));
 				});
 
-				toMount.push(section);
-				return section;
+				return range;
+
+			case NODE_TYPE.INVERTED:
+			case NODE_TYPE.SECTION:
+				return new Section(ctx.model)
+				.invert(template.type === NODE_TYPE.INVERTED)
+				.setPath(template.value)
+				.onRow(function() {
+					this.setMembers(self.renderTemplate(template.children, this));
+				});
 
 			case NODE_TYPE.PARTIAL:
-				var partial = this.renderPartial(template.value, ctx);
-				if (partial != null) toMount.push(partial);
-				return partial;
+				return this.renderPartial(template.value, ctx);
 		}
 	},
 
 	renderTemplateAsString: function(template, ctx) {
 		if (ctx == null) ctx = this;
+		if (ctx instanceof View) ctx = ctx.model;
 		var self = this;
 
 		if (_.isArray(template)) return template.map(function(t) {
@@ -320,7 +327,7 @@ module.exports = Context.extend({
 
 				inverted = template.type === NODE_TYPE.INVERTED;
 				val = ctx.get(template.value);
-				model = new Model(val, ctx.model);
+				model = new Model(val, ctx);
 				proxy = model.getProxyByValue(val);
 				isList = model.callProxyMethod(proxy, val, "isList");
 				isEmpty = Section.isEmpty(model, proxy);
@@ -332,11 +339,11 @@ module.exports = Context.extend({
 						data = model;
 					} else {
 						data = model.callProxyMethod(proxy, val, "get", i);
-						data = new Model(data, new Model({ $key: i }, ctx.model));
+						data = new Model(data, new Model({ $key: i }, ctx));
 					}
 
-					var row = new Context(model);
-					return self.renderTemplateAsString(template.children, row);
+					// var row = new View(model);
+					return self.renderTemplateAsString(template.children, data);
 				}
 
 				if (!(isEmpty ^ inverted)) {
@@ -375,11 +382,11 @@ module.exports = Context.extend({
 			klass = this.findPartial(klass);
 		}
 
-		if (!util.isSubClass(Temple, klass)) return null;
+		if (!util.isSubClass(View, klass)) return null;
 
 		// create it non-reactively
-		var component = Temple.Deps.nonreactive(function() {
-			return util.isSubClass(Context, klass) ? new klass(ctx.model, options) : new klass();
+		var component = Trackr.nonreactive(function() {
+			return new klass(ctx.model, options);
 		});
 
 		// add it to the list
@@ -396,7 +403,7 @@ module.exports = Context.extend({
 		return component;
 	},
 
-	renderDecorations: function(attr, binding, ctx) {
+	renderDecorations: function(attr, el, ctx) {
 		var decorators = this.findDecorators(attr.name);
 		if (!decorators.length) return;
 
@@ -419,9 +426,8 @@ module.exports = Context.extend({
 				}
 
 				self.autorun(function(comp) {
-					d.callback.apply(self, [ {
-						node: binding.node,
-						target: binding,
+					d.callback.apply(d.context || self, [ {
+						target: el,
 						context: ctx,
 						template: attr,
 						comp: comp,

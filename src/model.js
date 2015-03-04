@@ -1,4 +1,4 @@
-var Temple = require("templejs"),
+var Trackr = require("trackr"),
 	_ = require("underscore"),
 	util = require("./util"),
 	parse = require("./m+xml").parse,
@@ -7,7 +7,7 @@ var Temple = require("templejs"),
 var Model =
 module.exports = function Model(data, parent, options) {
 	this.proxies = [];
-	this._dep = new Temple.Dependency();
+	this._dep = new Trackr.Dependency();
 	if (Model.isModel(parent)) this.parent = parent;
 	this.set(data, options && options.track);
 }
@@ -16,7 +16,7 @@ Model.isModel = function(o) {
 	return o instanceof Model;
 }
 
-Model.extend = Temple.util.subclass;
+Model.extend = util.subclass;
 
 Model._defaultProxies = [ {
 	isList:  true,
@@ -96,7 +96,9 @@ _.extend(Model.prototype, {
 	// returns the value at path, but only looks in the data on this model
 	getLocal: function(path) {
 		if (typeof path === "string") path = parse(path, { startRule: "path" });
+		if (path == null) path = { parts: [] };
 		if (!_.isObject(path)) throw new Error("Expecting string or object for path.");
+		
 		var self = this;
 		this._dep.depend();
 
