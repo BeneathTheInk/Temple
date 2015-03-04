@@ -1,11 +1,11 @@
-var Mustache = require("../"),
+var Temple = require("../"),
 	expect = require("./utils/expect");
 
 describe("Model", function() {
 	var model;
 
 	// beforeEach(function() {
-	// 	model = new Mustache.Model({ foo: "bar" });
+	// 	model = new Temple.Model({ foo: "bar" });
 	// });
 
 	// afterEach(function() {
@@ -14,81 +14,81 @@ describe("Model", function() {
 
 	describe("Basics", function() {
 		it("sets data on construction", function() {
-			var model = new Mustache.Model({ foo: "bar" }, null, { track: false });
+			var model = new Temple.Model({ foo: "bar" }, null, { track: false });
 			expect(model.get()).to.deep.equal({ foo: "bar" });
 		});
 
 		it("returns result of `model.data` on null or empty path", function() {
-			var model = new Mustache.Model({ foo: "bar" });
+			var model = new Temple.Model({ foo: "bar" });
 			expect(model.get()).to.equal(model.data);
 		});
 
 		it("gets shallow path", function() {
-			var model = new Mustache.Model({ foo: "bar" });
+			var model = new Temple.Model({ foo: "bar" });
 			expect(model.get("foo")).to.deep.equal("bar");
 		});
 
 		it("gets deep path", function() {
-			var model = new Mustache.Model({ foo: { bar: "baz" } });
+			var model = new Temple.Model({ foo: { bar: "baz" } });
 			expect(model.get("foo.bar")).to.equal("baz");
 		});
 
 		it("gets deep path with bracket notation", function() {
-			var model = new Mustache.Model({ foo: { bar: "baz" } });
+			var model = new Temple.Model({ foo: { bar: "baz" } });
 			expect(model.get("foo['bar']")).to.equal("baz");
 		});
 
 		it("gets deep path with dynamic path", function() {
-			var model = new Mustache.Model({ foo: { bar: "baz" }, path: "bar" });
+			var model = new Temple.Model({ foo: { bar: "baz" }, path: "bar" });
 			expect(model.get("foo[path]")).to.equal("baz");
 		});
 
 		it("gets local value", function() {
-			var model = new Mustache.Model({ foo: "bar" }, null, { track: false });
+			var model = new Temple.Model({ foo: "bar" }, null, { track: false });
 			expect(model.get(".")).to.deep.equal({ foo: "bar" });
 		});
 
 		it("gets deep local value", function() {
-			var model = new Mustache.Model({ foo: "bar" });
+			var model = new Temple.Model({ foo: "bar" });
 			expect(model.get(".foo")).to.deep.equal("bar");
 		});
 
 		it("gets from parent model", function() {
-			var parent = new Mustache.Model({ foo: "bar" });
-			var model = new Mustache.Model({ hello: "world" }, parent);
+			var parent = new Temple.Model({ foo: "bar" });
+			var model = new Temple.Model({ hello: "world" }, parent);
 			expect(model.get("foo")).to.equal("bar");
 		});
 
 		it("getModelAtOffset(0) returns the model", function() {
-			var model = new Mustache.Model({});
+			var model = new Temple.Model({});
 			expect(model.getModelAtOffset(0)).to.equal(model);
 		});
 
 		it("getModelAtOffset(-1) returns the root model", function() {
-			var root = new Mustache.Model({});
-			var parent = new Mustache.Model({}, root);
-			var model = new Mustache.Model({}, parent);
+			var root = new Temple.Model({});
+			var parent = new Temple.Model({}, root);
+			var model = new Temple.Model({}, parent);
 			expect(model.getModelAtOffset(-1)).to.equal(root);
 		});
 
 		it("getModelAtOffset(n) where n > 0 returns the relative ancestor starting at the model", function() {
-			var root = new Mustache.Model({});
-			var parent = new Mustache.Model({}, root);
-			var model = new Mustache.Model({}, parent);
+			var root = new Temple.Model({});
+			var parent = new Temple.Model({}, root);
+			var model = new Temple.Model({}, parent);
 			expect(model.getModelAtOffset(1)).to.equal(parent);
 		});
 
 		it("getModelAtOffset(n) where n < 0 returns the relative ancestor starting at the root model", function() {
-			var root = new Mustache.Model({});
-			var parent = new Mustache.Model({}, root);
-			var model = new Mustache.Model({}, parent);
+			var root = new Temple.Model({});
+			var parent = new Temple.Model({}, root);
+			var model = new Temple.Model({}, parent);
 			expect(model.getModelAtOffset(-2)).to.equal(parent);
 		});
 	});
 
 	describe("Proxies", function() {
 		it("always calls proxy match function", function() {
-			var model = new Mustache.Model({ foo: "bar" });
+			var model = new Temple.Model({ foo: "bar" });
 			var runCount = 0;
 			
 			model.registerProxy({
@@ -107,7 +107,7 @@ describe("Model", function() {
 		});
 
 		it("calls get method on a match", function() {
-			var model = new Mustache.Model({ foo: "bar" });
+			var model = new Temple.Model({ foo: "bar" });
 			var runCount = 0;
 			
 			model.registerProxy({

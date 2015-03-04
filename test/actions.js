@@ -1,4 +1,4 @@
-var Mustache = require("../");
+var Temple = require("../");
 var expect = require("./utils/expect");
 
 describe("Actions", function() {
@@ -21,7 +21,7 @@ describe("Actions", function() {
 	});
 
 	function render(template, data) {
-		tpl = Mustache.render(template, data);
+		tpl = Temple.render(template, data);
 		tpl.use("actions");
 		tpl.paint(doc);
 		return tpl;
@@ -94,11 +94,11 @@ describe("Actions", function() {
 
 		tpl.addAction("alert", function(e) {
 			expect(this).to.equal(tpl);
-			expect(e).to.be.instanceof(Mustache.Action);
+			expect(e).to.be.instanceof(Temple.Action);
 			expect(e.original).to.be.instanceof(Event);
 			expect(e.target).to.be.instanceof(Element);
-			expect(e.model).to.be.instanceof(Mustache.Model);
-			expect(e.view).to.be.instanceof(Mustache.View);
+			expect(e.model).to.be.instanceof(Temple.Model);
+			expect(e.view).to.be.instanceof(Temple.View);
 			seen = true;
 		});
 
@@ -108,7 +108,7 @@ describe("Actions", function() {
 	});
 
 	it("bubbles actions to parent components, even when child doesn't have the plugin", function() {
-		tpl = new Mustache(null, { template: "{{> child }}" });
+		tpl = new Temple(null, { template: "{{> child }}" });
 		tpl.use("actions");
 		tpl.setPartial("child", "<a on-click=\"alert\">Alert</a>");
 		tpl.paint(doc);
@@ -122,12 +122,12 @@ describe("Actions", function() {
 	});
 
 	it("doesn't bubble actions to parent component if stopPropagation is called", function() {
-		tpl = new Mustache(null, { template: "{{> child }}" });
+		tpl = new Temple(null, { template: "{{> child }}" });
 		tpl.use("actions");
 		
 		var seen = 0;
 
-		tpl.setPartial("child", Mustache.extend({
+		tpl.setPartial("child", Temple.extend({
 			initialize: function() {
 				this.use("actions");
 

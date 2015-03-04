@@ -1,6 +1,6 @@
-var Mustache = require("../");
+var Temple = require("../");
 var expect = require("./utils/expect");
-var NODE_TYPE = Mustache.NODE_TYPE;
+var NODE_TYPE = Temple.NODE_TYPE;
 
 describe("Mustache", function() {
 	var tpl, doc;
@@ -22,7 +22,7 @@ describe("Mustache", function() {
 	});
 
 	function render(template, data) {
-		tpl = Mustache.render(template, data);
+		tpl = Temple.render(template, data);
 		tpl.paint(doc);
 		return getNodes();
 	}
@@ -45,11 +45,11 @@ describe("Mustache", function() {
 	describe("#parse()", function() {
 
 		it("parses basic html", function() {
-			var template = Mustache.parse("<div class=\"container\">Hello World</div>");
+			var template = Temple.parse("<div class=\"container\">Hello World</div>");
 
 			expect(template).to.deep.equal({
 				type: NODE_TYPE.ROOT,
-				version: Mustache.VERSION,
+				version: Temple.VERSION,
 				children: [{
 					type: NODE_TYPE.ELEMENT,
 					name: "div",
@@ -75,11 +75,11 @@ describe("Mustache", function() {
 		});
 
 		it("parses mustache variables", function() {
-			var template = Mustache.parse("{{ hello }}{{{ world }}}{{& unescaped }}");
+			var template = Temple.parse("{{ hello }}{{{ world }}}{{& unescaped }}");
 
 			expect(template).to.deep.equal({
 				type: NODE_TYPE.ROOT,
-				version: Mustache.VERSION,
+				version: Temple.VERSION,
 				children: [{
 					type: NODE_TYPE.INTERPOLATOR,
 					value: [{ parts: [{ children: [], key: "hello" }], type: "all" }]
@@ -94,11 +94,11 @@ describe("Mustache", function() {
 		});
 
 		it("parses mustache sections", function() {
-			var template = Mustache.parse("{{#good}}Hello{{/good}}{{^bad}}World{{/bad}}");
+			var template = Temple.parse("{{#good}}Hello{{/good}}{{^bad}}World{{/bad}}");
 
 			expect(template).to.deep.equal({
 				type: NODE_TYPE.ROOT,
-				version: Mustache.VERSION,
+				version: Temple.VERSION,
 				children: [{
 					type: NODE_TYPE.SECTION,
 					value: [{ parts: [{ children: [], key: "good" }], type: "all" }],
@@ -118,11 +118,11 @@ describe("Mustache", function() {
 		});
 
 		it("parses mustache partials", function() {
-			var template = Mustache.parse("{{>partial}}");
+			var template = Temple.parse("{{>partial}}");
 
 			expect(template).to.deep.equal({
 				type: NODE_TYPE.ROOT,
-				version: Mustache.VERSION,
+				version: Temple.VERSION,
 				children: [{
 					type: NODE_TYPE.PARTIAL,
 					value: "partial"
@@ -131,11 +131,11 @@ describe("Mustache", function() {
 		});
 
 		it("parses comments", function() {
-			var template = Mustache.parse("<!-- comment --><div></div>");
+			var template = Temple.parse("<!-- comment --><div></div>");
 
 			expect(template).to.deep.equal({
 				type: NODE_TYPE.ROOT,
-				version: Mustache.VERSION,
+				version: Temple.VERSION,
 				children: [{
 					type: NODE_TYPE.XCOMMENT,
 					value: "comment"
@@ -149,11 +149,11 @@ describe("Mustache", function() {
 		});
 
 		it("parses deeply", function() {
-			var template = Mustache.parse("<div>{{ var }}</div>");
+			var template = Temple.parse("<div>{{ var }}</div>");
 
 			expect(template).to.deep.equal({
 				type: NODE_TYPE.ROOT,
-				version: Mustache.VERSION,
+				version: Temple.VERSION,
 				children: [{
 					type: NODE_TYPE.ELEMENT,
 					name: "div",
@@ -466,7 +466,7 @@ describe("Mustache", function() {
 
 	describe("Decorators", function() {
 		function render(template, data) {
-			tpl = Mustache.render(template, data, { track: true });
+			tpl = Temple.render(template, data, { track: true });
 			return getNodes();
 		}
 
@@ -682,32 +682,32 @@ describe("Mustache", function() {
 
 	describe("Partials", function() {
 		it("sets a string partial", function() {
-			tpl = Mustache.render("{{> partial }}");
+			tpl = Temple.render("{{> partial }}");
 			tpl.setPartial("partial", "<h1>{{ value }}</h1>");
 			expect(tpl.findPartial("partial")).to.be.ok;
 		});
 
 		it("sets a parsed template partial", function() {
-			tpl = Mustache.render("{{> partial }}");
-			tpl.setPartial("partial", Mustache.parse("<h1>{{ value }}</h1>"));
+			tpl = Temple.render("{{> partial }}");
+			tpl.setPartial("partial", Temple.parse("<h1>{{ value }}</h1>"));
 			expect(tpl.findPartial("partial")).to.be.ok;
 		});
 
 		it("sets a subclass of temple partial", function() {
-			tpl = Mustache.render("{{> partial }}");
-			tpl.setPartial("partial", Mustache.extend({ template: "<h1>{{ value }}</h1>" }));
+			tpl = Temple.render("{{> partial }}");
+			tpl.setPartial("partial", Temple.extend({ template: "<h1>{{ value }}</h1>" }));
 			expect(tpl.findPartial("partial")).to.be.ok;
 		});
 
 		it("unsets a partial on null", function() {
-			tpl = Mustache.render("{{> partial }}");
+			tpl = Temple.render("{{> partial }}");
 			tpl.setPartial("partial", "<h1>{{ value }}</h1>");
 			tpl.setPartial("partial", null);
 			expect(tpl.findPartial("partial")).to.not.be.ok;
 		});
 
 		it("renders partial into component", function() {
-			tpl = Mustache.render("{{> partial }}", { value: "Hello World" });
+			tpl = Temple.render("{{> partial }}", { value: "Hello World" });
 			tpl.setPartial("partial", "<h1>{{ value }}</h1>");
 			tpl.mount().paint(doc);
 
@@ -718,17 +718,17 @@ describe("Mustache", function() {
 		});
 
 		it("find component by partial name", function() {
-			tpl = Mustache.render("{{> partial }}", { value: "Hello World" });
+			tpl = Temple.render("{{> partial }}", { value: "Hello World" });
 			tpl.setPartial("partial", "<h1>{{ value }}</h1>");
 			tpl.mount().paint(doc);
 
 			var comps = tpl.getComponents("partial");
 			expect(comps).to.have.length(1);
-			expect(comps[0]).to.be.instanceof(Mustache);
+			expect(comps[0]).to.be.instanceof(Temple);
 		});
 
 		it("renders partial in element", function() {
-			tpl = Mustache.render("<h1>{{> partial }}</h1>", { value: "Hello World" });
+			tpl = Temple.render("<h1>{{> partial }}</h1>", { value: "Hello World" });
 			tpl.setPartial("partial", "{{ value }}");
 			tpl.mount().paint(doc);
 
@@ -739,7 +739,7 @@ describe("Mustache", function() {
 		});
 
 		it("renders partial in section", function() {
-			tpl = Mustache.render("{{#section}}{{> partial }}{{/section}}", { value: "Hello World", section: true });
+			tpl = Temple.render("{{#section}}{{> partial }}{{/section}}", { value: "Hello World", section: true });
 			tpl.setPartial("partial", "<h1>{{ value }}</h1>");
 			tpl.paint(doc);
 
@@ -750,7 +750,7 @@ describe("Mustache", function() {
 		});
 
 		it("renders nothing if partial doesn't exist", function() {
-			tpl = Mustache.render("{{> partial }}");
+			tpl = Temple.render("{{> partial }}");
 			tpl.paint(doc);
 
 			var nodes = getNodes();
@@ -867,9 +867,9 @@ describe("Mustache", function() {
 
 				if (test.partial) {
 					throw new Error("Oops! partial!");
-					// output = Mustache.render(test.template, test.view, { partial: test.partial });
+					// output = Temple.render(test.template, test.view, { partial: test.partial });
 				} else {
-					tpl = new Mustache(test.template, test.view);
+					tpl = new Temple(test.template, test.view);
 				}
 
 				expect(trimComments(tpl.toHTML()) + "\n").to.equal(test.expect);

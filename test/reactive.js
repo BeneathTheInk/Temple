@@ -1,4 +1,4 @@
-var Mustache = require("../");
+var Temple = require("../");
 var expect = require("./utils/expect");
 
 describe("#autorun() & #depend()", function() {
@@ -7,7 +7,7 @@ describe("#autorun() & #depend()", function() {
 	var tpl, comp;
 
 	beforeEach(function() {
-		tpl = new Mustache({ foo: "bar" }, { track: true });
+		tpl = new Temple({ foo: "bar" });
 	});
 
 	afterEach(function() {

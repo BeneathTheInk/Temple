@@ -1,3 +1,8 @@
+//////////////////////////////////////////////////
+// This is a heavily modified version of Meteor's DOMRange //
+// Last merge: https://github.com/meteor/meteor/blob/405009a2c3dcd3c1fe780adb2867d38a6a42fff1/packages/blaze/domrange.js //
+//////////////////////////////////////////////////
+
 var _ = require("underscore"),
 	Events = require("./events"),
 	util = require("./util");

@@ -33,21 +33,21 @@ module.exports = function(grunt) {
 		browserify: {
 			dist: {
 				src: "lib/index.js",
-				dest: "dist/temple-mustache.js",
+				dest: "dist/temple.js",
 				options: {
-					browserifyOptions: { standalone: "Mustache" }
+					browserifyOptions: { standalone: "Temple" }
 				}
 			},
 			dev: {
 				src: "lib/index.js",
-				dest: "dist/temple-mustache.dev.js",
+				dest: "dist/temple.dev.js",
 				options: {
-					browserifyOptions: { debug: true, standalone: "Mustache" }
+					browserifyOptions: { debug: true, standalone: "Temple" }
 				}
 			},
 			test: {
 				src: "test/*.js",
-				dest: "dist/temple-mustache.test.js",
+				dest: "dist/temple.test.js",
 				options: {
 					browserifyOptions: { debug: true }
 				}
@@ -55,31 +55,31 @@ module.exports = function(grunt) {
 		},
 		wrap2000: {
 			dist: {
-				src: 'dist/temple-mustache.js',
-				dest: 'dist/temple-mustache.js',
+				src: 'dist/temple.js',
+				dest: 'dist/temple.js',
 				options: {
-					header: "/*\n * Temple Mustache\n * (c) 2014-2015 Beneath the Ink, Inc.\n * MIT License\n * Version <%= pkg.version %>\n */\n"
+					header: "/*\n * Temple\n * (c) 2014-2015 Beneath the Ink, Inc.\n * Copyright (C) 2011--2015 Meteor Development Group\n * MIT License\n * Version <%= pkg.version %>\n */\n"
 				}
 			},
 			dev: {
-				src: 'dist/temple-mustache.dev.js',
-				dest: 'dist/temple-mustache.dev.js',
+				src: 'dist/temple.dev.js',
+				dest: 'dist/temple.dev.js',
 				options: {
-					header: "/*\n * Temple Mustache (with Source Map)\n * (c) 2014-2015 Beneath the Ink, Inc.\n * MIT License\n * Version <%= pkg.version %>\n */\n"
+					header: "/*\n * Temple (with Source Map)\n * (c) 2014-2015 Beneath the Ink, Inc.\n * Copyright (C) 2011--2015 Meteor Development Group\n * MIT License\n * Version <%= pkg.version %>\n */\n"
 				}
 			},
 			test: {
-				src: 'dist/temple-mustache.test.js',
-				dest: 'dist/temple-mustache.test.js',
+				src: 'dist/temple.test.js',
+				dest: 'dist/temple.test.js',
 				options: {
-					header: "/* Temple Mustache Tests / (c) 2014-2015 Beneath the Ink, Inc. / MIT License / Version <%= pkg.version %> */"
+					header: "/*\n * Temple Tests\n * (c) 2014-2015 Beneath the Ink, Inc.\n * Copyright (C) 2011--2015 Meteor Development Group\n * MIT License\n * Version <%= pkg.version %>\n */\n"
 				}
 			}
 		},
 		uglify: {
 			dist: {
-				src: "dist/temple-mustache.js",
-				dest: "dist/temple-mustache.min.js"
+				src: "dist/temple.js",
+				dest: "dist/temple.min.js"
 			}
 		},
 		watch: {

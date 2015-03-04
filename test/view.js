@@ -1,11 +1,11 @@
-var Mustache = require("../");
+var Temple = require("../");
 var expect = require("./utils/expect");
 
 describe("View", function() {
 	var ctx;
 
 	beforeEach(function() {
-		ctx = new Mustache.View({ foo: "bar" });
+		ctx = new Temple.View({ foo: "bar" });
 	});
 
 	afterEach(function() {
