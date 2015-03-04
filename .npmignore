@@ -1,6 +1,0 @@
-.git*
-dist/
-test/
-Gruntfile.js
-bower.json
-component.json
