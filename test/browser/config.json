@@ -2,5 +2,5 @@
 	"port": 8000,
 	"build-task": "test",
 	"watch-task": "watch:test",
-	"bundle-path": "/dist/temple-mustache.test.js"
+	"bundle-path": "/dist/temple.test.js"
 }

@@ -58,13 +58,12 @@ var tpl = Temple.render("<a href='#' on-click='alert'>Click Me</a>")
 You can even turn your views into reusable components.
 
 ```javascript
-// a reusable template with default data
+// a reusable View class
 var Hello = Temple.extend({
-    template: "Hello {{ name }}",
-    initialState: { name: "World" }
+    template: "Hello {{ name }}"
 });
 
-// render a new template that uses it as a partial
+// render a new template that uses the view as a partial
 var tpl = Temple.render("<h1>{{> hello }}</h1>", { name: "John" })
 .setPartial("hello", Hello)
 .paint("body");
