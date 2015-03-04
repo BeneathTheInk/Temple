@@ -16,6 +16,33 @@ exports.track = function(obj, replacer) {
 	return obj;
 }
 
+var trackProperty =
+exports.trackProperty = function(obj, prop, value, options) {
+	if (!_.isObject(obj)) throw new Error("Expecting object to define the reactive property on.");
+	if (typeof prop !== "string") throw new Error("Expecting string for property name.");
+
+	var dep = new Trackr.Dependency;
+	
+	Object.defineProperty(obj, prop, {
+		configurable: options == null || options.configurable !== false,
+		enumerable: options == null || options.enumerable !== false,
+		set: function(val) {
+			if (val !== value) {
+				value = val;
+				dep.changed();
+			}
+
+			return value;
+		},
+		get: function() {
+			dep.depend();
+			return value;
+		}
+	});
+
+	return obj;
+}
+
 var trackObject =
 exports.trackObject = function(props, replacer) {
 	if (props.__reactive) return props;

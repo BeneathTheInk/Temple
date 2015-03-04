@@ -51,6 +51,7 @@ module.exports = View.extend({
 		row.render = this._onRow;
 		this.rows[key] = row;
 		this.addMember(row);
+		row.mount();
 
 		return row;
 	},

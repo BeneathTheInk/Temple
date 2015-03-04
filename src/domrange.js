@@ -49,25 +49,6 @@ DOMRange.forElement = function (elem) {
 	return range;
 };
 
-DOMRange.destroy = function (m, _skipNodes) {
-	if (m instanceof DOMRange) {
-		m.trigger("destroy", _skipNodes);
-		m.destroyMembers(_skipNodes);
-	}
-
-	else if (!_skipNodes && m.nodeType === 1 && m.$domrange) {
-		// var elems = [];
-		// // Array.prototype.slice.call doesn't work when given a NodeList in
-		// // IE8 ("JScript object expected").
-		// var nodeList = elem.getElementsByTagName('*');
-		// for (var i = 0; i < nodeList.length; i++) {
-		//   elems.push(nodeList[i]);
-		// }
-		// elems.push(elem);
-		m.$domrange = null;
-	}
-};
-
 _.extend(DOMRange.prototype, Events, {
 
 	// This method is called to insert the DOMRange into the DOM for
@@ -75,10 +56,10 @@ _.extend(DOMRange.prototype, Events, {
 	// updating the DOM.
 	// If _isMove is true, move this attached range to a different
 	// location under the same parentElement.
-	paint: function(parentElement, nextNode, _isMove, _isReplace) {
+	attach: function(parentElement, nextNode, _isMove, _isReplace) {
 		if (typeof parentElement === "string") parentElement = document.querySelector(parentElement);
 		if (typeof nextNode === "string") nextNode = parent.querySelector(nextNode);
-		if (parentElement == null) throw new Error("Expecting a valid DOM element to paint in.");
+		if (parentElement == null) throw new Error("Expecting a valid DOM element to attach in.");
 
 		if ((_isMove || _isReplace) && !(this.parentElement === parentElement && this.attached)) {
 			throw new Error("Can only move or replace an attached DOMRange, and only under the same parent element");
@@ -100,7 +81,7 @@ _.extend(DOMRange.prototype, Events, {
 		this.parentElement = parentElement;
 
 		// trigger events only on fresh attachments
-		if (!(_isMove || _isReplace)) this.trigger("paint", parentElement);
+		if (!(_isMove || _isReplace)) this.trigger("attach", parentElement);
 
 		return this;
 	},
@@ -156,7 +137,7 @@ _.extend(DOMRange.prototype, Events, {
 		var oldMembers = this.members;
 
 		// dereference old members
-		for (var i = 0; i < oldMembers.length; i++) this._memberOut(oldMembers[i]);
+		for (var i = 0; i < oldMembers.length; i++) this._memberOut(oldMembers[i], false, true /* _isReplace */);
 
 		// reference new members
 		for (var i = 0; i < newMembers.length; i++) this._memberIn(newMembers[i]);
@@ -169,10 +150,10 @@ _.extend(DOMRange.prototype, Events, {
 				// detach the old members and insert the new members
 				var nextNode = this.lastNode().nextSibling;
 				var parentElement = this.parentElement;
-				// Use detach/paint, but don't trigger events
+				// Use detach/attach, but don't trigger events
 				this.detach(true /*_isReplace*/);
 				this.members = newMembers;
-				this.paint(parentElement, nextNode, false, true /*_isReplace*/);
+				this.attach(parentElement, nextNode, false, true /*_isReplace*/);
 			}
 		}
 
@@ -236,12 +217,12 @@ _.extend(DOMRange.prototype, Events, {
 			members.splice(atIndex, 1);
 		} else {
 			var oldMember = members[atIndex];
-			this._memberOut(oldMember);
 
 			if (members.length === 1) {
 				// becoming empty; use the logic in setMembers
 				this.setMembers([]);
 			} else {
+				this._memberOut(oldMember);
 				members.splice(atIndex, 1);
 				if (this.attached) removeFromDOM(oldMember);
 			}
@@ -273,20 +254,32 @@ _.extend(DOMRange.prototype, Events, {
 		}
 	},
 
-	_memberOut: DOMRange.destroy,
+	_memberOut: function (m, _skipNodes, _isReplace) {
+		if (m instanceof DOMRange) {
+			if (_isReplace) m.destroyMembers(_skipNodes, _isReplace);
+			else m.destroy(_skipNodes);
+		}
+
+		else if (!_skipNodes && m.nodeType === 1 && m.$domrange) {
+			m.$domrange = null;
+		}
+	},
 
 	// Tear down, but don't remove, the members.  Used when chunks
 	// of DOM are being torn down or replaced.
-	destroyMembers: function(_skipNodes) {
+	destroyMembers: function(_skipNodes, _isReplace) {
 		var members = this.members;
 		for (var i = 0; i < members.length; i++) {
-			this._memberOut(members[i], _skipNodes);
+			this._memberOut(members[i], _skipNodes, _isReplace);
 		}
 		return this;
 	},
 
 	destroy: function(_skipNodes) {
-		DOMRange.destroy(this, _skipNodes);
+		this.detach();
+		this.trigger("destroy", _skipNodes);
+		this.destroyMembers(_skipNodes);
+		this.members = [];
 		return this;
 	},
 
@@ -435,7 +428,7 @@ function placeholderNode() {
 function insertIntoDOM(rangeOrNode, parentElement, nextNode, _isMove) {
 	var m = rangeOrNode;
 	if (m instanceof DOMRange) {
-		m.paint(parentElement, nextNode, _isMove);
+		m.attach(parentElement, nextNode, _isMove);
 	} else {
 		if (_isMove) {
 			moveNodeWithHooks(m, parentElement, nextNode);

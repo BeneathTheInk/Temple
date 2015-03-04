@@ -23,7 +23,6 @@
 	},
 	"main": "./lib/index.js",
 	"dependencies": {
-		"templejs": "~0.4.2",
 		"trackr": "~1.0.3",
 		"underscore": "~1.8.1"
 	},

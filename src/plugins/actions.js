@@ -35,7 +35,8 @@ eventNames.forEach(function(event) {
 			var action = new Action(key);
 			action.original = e;
 			action.target = action.node = node;
-			action.context = decor.context;
+			action.context = action.model = decor.model;
+			action.view = decor.view;
 
 			// find the first parent with the fire method
 			var fireOn = self;

@@ -37,7 +37,12 @@ module.exports = DOMRange.extend({
 
 		// initiate like a normal dom range
 		DOMRange.call(this);
+
+		// initialize with options
+		this.initialize.call(this, options);
 	},
+
+	initialize: function(){},
 
 	use: function(p) {
 		return Plugins.loadPlugin(this, p, _.toArray(arguments).slice(1));
@@ -50,9 +55,9 @@ module.exports = DOMRange.extend({
 		return this;
 	},
 
-	// auto mount on paint
+	// attach + mount
 	paint: function(p, n, _isMove, _isReplace) {
-		DOMRange.prototype.paint.apply(this, arguments);
+		DOMRange.prototype.attach.apply(this, arguments);
 		if (!(_isMove || _isReplace || this.isMounted())) this.mount();
 		return this;
 	},

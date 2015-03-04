@@ -9,10 +9,15 @@ var Mustache = module.exports = _.defaults({
 	VERSION: "2.1.0-alpha",
 	NODE_TYPE: NODE_TYPE,
 
-	Trackr: Trackr,
+	// other parts
 	util: require("./util"),
 	Events: require("./events"),
 	Model: require("./model"),
+
+	// trackr short pointers
+	Trackr: Trackr,
+	Dependency: Trackr.Dependency,
+	autorun: Trackr.autorun,
 
 	// all the parsers, declared here for easier access
 	parse: parse,

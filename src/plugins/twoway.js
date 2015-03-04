@@ -15,7 +15,7 @@ module.exports = function(options) {
 		var fbind = this.getFormBinding(id);
 		if (fbind == null) return;
 
-		var el = d.node,
+		var el = d.target,
 			type = getType(el),
 			self = this,
 			onChange, lazy;
@@ -47,7 +47,7 @@ module.exports = function(options) {
 
 	// add value decorator for radios and options
 	this.decorate("value", function valueOf(d, strval) {
-		var el = d.node,
+		var el = d.target,
 			type = getType(el),
 			self = this;
 		

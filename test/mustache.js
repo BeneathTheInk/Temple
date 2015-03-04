@@ -14,7 +14,7 @@ describe("Mustache", function() {
 
 	afterEach(function() {
 		if (tpl != null) {
-			tpl.detach();
+			tpl.destroy();
 			tpl = null;
 		}
 

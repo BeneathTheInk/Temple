@@ -24,17 +24,15 @@ exports.decodeEntities = (function() {
 
 	// this prevents any overhead from creating the object each time
 	var element = document.createElement('div');
+	var entity = /&(?:#x[a-f0-9]+|#[0-9]+|[a-z0-9]+);?/ig;
 
 	return function decodeHTMLEntities(str) {
-		if (str && typeof str === 'string') {
-			// strip script/html tags
-			str = str.replace(/<script[^>]*>([\S\s]*?)<\/script>/gmi, '');
-			str = str.replace(/<\/?\w(?:[^"'>]|"[^"]*"|'[^']*')*>/gmi, '');
-			element.innerHTML = str;
-			str = element.textContent;
-			element.textContent = '';
-		}
+		str = str.replace(entity, function(m) {
+			element.innerHTML = m;
+			return element.textContent;
+		});
 
+		element.textContent = '';
 		return str;
 	}
 })();

@@ -96,8 +96,9 @@ describe("Actions", function() {
 			expect(this).to.equal(tpl);
 			expect(e).to.be.instanceof(Mustache.Action);
 			expect(e.original).to.be.instanceof(Event);
-			expect(e.node).to.be.instanceof(Element);
-			expect(e.context).to.be.instanceof(Mustache.View);
+			expect(e.target).to.be.instanceof(Element);
+			expect(e.model).to.be.instanceof(Mustache.Model);
+			expect(e.view).to.be.instanceof(Mustache.View);
 			seen = true;
 		});
 
