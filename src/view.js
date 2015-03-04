@@ -11,21 +11,25 @@ module.exports = DOMRange.extend({
 
 	constructor: function(data, options) {
 		// first we create the initial view state
-		var state = _.result(this, "initialState") || _.result(this, "defaults") || {};
-		if (!Model.isModel(state)) state = new Model(state, null, options && options.state);
-		
-		// shove state between contexts
-		if (Model.isModel(data)) {
-			state.parent = data.parent;
-			data.parent = state;
-		}
+		var state = _.result(this, "initialState") || _.result(this, "defaults");
+		if (typeof state !== "undefined") {
+			if (!Model.isModel(state)) {
+				state = new Model(state, null, options && options.state);
+			}
+			
+			// shove state between contexts
+			if (Model.isModel(data)) {
+				state.parent = data.parent;
+				data.parent = state;
+			}
 
-		// add to the stack before the real data
-		this.addData(state);
-		this.stateModel = state;
-		util.defineComputedProperty(this, "state", function() {
-			return this.stateModel.data;
-		});
+			// add to the stack before the real data
+			this.addData(state);
+			this.stateModel = state;
+			util.defineComputedProperty(this, "state", function() {
+				return this.stateModel.data;
+			});
+		}
 
 		// quick access to the top model data
 		util.defineComputedProperty(this, "data", function() {
@@ -33,7 +37,7 @@ module.exports = DOMRange.extend({
 		});
 
 		// set the passed in data
-		if (data != null) this.addData(data, options);
+		if (typeof data !== "undefined") this.addData(data, options);
 
 		// initiate like a normal dom range
 		DOMRange.call(this);

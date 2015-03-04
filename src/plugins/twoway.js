@@ -23,7 +23,7 @@ module.exports = function(options) {
 		// detect changes to the input's value
 		if (typeof fbind.change === "function") {
 			onChange = function(e) {
-				fbind.change.call(self, getNodeValue(el, type), d.context, e);
+				fbind.change.call(self, getNodeValue(el, type), d.model, e);
 			};
 
 			el.addEventListener("change", onChange);
@@ -37,7 +37,7 @@ module.exports = function(options) {
 
 		// reactively set the value on the input
 		var c = this.autorun(function() {
-			setNodeValue(el, fbind.get.call(self, d.context), type);
+			setNodeValue(el, fbind.get.call(self, d.model), type);
 		});
 
 		// setNodeValue relies on the children elements
@@ -56,7 +56,7 @@ module.exports = function(options) {
 			return;
 		}
 
-		var args = this.renderArguments(d.template.arguments, d.context);
+		var args = this.renderArguments(d.template.arguments, d.model);
 		el.$bound_value = args.length <= 1 ? args[0] : args;
 		el.value = strval;
 	}, { parse: "string" });

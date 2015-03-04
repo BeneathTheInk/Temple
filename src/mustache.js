@@ -474,7 +474,7 @@ module.exports = View.extend({
 			template: template
 		});
 
-		return new Mustache(data, options);
+		return new Mustache(data || null, options);
 	}
 
 });
