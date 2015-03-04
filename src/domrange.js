@@ -135,26 +135,25 @@ _.extend(DOMRange.prototype, Events, {
 		var newMembers = newNodeAndRangeArray;
 		if (!isArrayLike(newMembers)) throw new Error("Expected array");
 		var oldMembers = this.members;
+		var _isReplace = this.attached && (newMembers.length || oldMembers.length);
 
 		// dereference old members
-		for (var i = 0; i < oldMembers.length; i++) this._memberOut(oldMembers[i], false, true /* _isReplace */);
+		for (var i = 0; i < oldMembers.length; i++) this._memberOut(oldMembers[i], false, _isReplace);
 
 		// reference new members
 		for (var i = 0; i < newMembers.length; i++) this._memberIn(newMembers[i]);
 
-		if (!this.attached) {
+		if (_isReplace) {
+			// detach the old members and insert the new members
+			var nextNode = this.lastNode().nextSibling;
+			var parentElement = this.parentElement;
+			// Use detach/attach, but don't trigger events
+			this.detach(true /*_isReplace*/);
 			this.members = newMembers;
+			this.attach(parentElement, nextNode, false, true /*_isReplace*/);
 		} else {
 			// don't do anything if we're going from empty to empty
-			if (newMembers.length || oldMembers.length) {
-				// detach the old members and insert the new members
-				var nextNode = this.lastNode().nextSibling;
-				var parentElement = this.parentElement;
-				// Use detach/attach, but don't trigger events
-				this.detach(true /*_isReplace*/);
-				this.members = newMembers;
-				this.attach(parentElement, nextNode, false, true /*_isReplace*/);
-			}
+			this.members = newMembers;
 		}
 
 		return this;
