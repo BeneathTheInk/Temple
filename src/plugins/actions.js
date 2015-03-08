@@ -15,11 +15,11 @@ module.exports = function() {
 
 // generate decorators
 var eventNames = [
-	'change', 'click', 'dblclick', 'mousedown', 'mouseup',
-	'mouseenter', 'mouseleave', 'scroll', 'blur', 'focus',
-	'input', 'submit', 'reset', 'keydown', 'keypress', 'keyup',
-	'drag', 'dragdrop', 'dragend', 'dragenter', 'dragexit',
-	'dragleave', 'dragover', 'dragstart', 'drop'
+	'load', 'scroll',
+	'click', 'dblclick', 'mousedown', 'mouseup', 'mouseenter', 'mouseleave',
+	'keydown', 'keypress', 'keyup',
+	'blur', 'focus', 'change', 'input', 'submit', 'reset', 
+	'drag', 'dragdrop', 'dragend', 'dragenter', 'dragexit', 'dragleave', 'dragover', 'dragstart', 'drop'
 ];
 
 var slice = Array.prototype.slice;
