@@ -151,7 +151,7 @@ module.exports = DOMRange.extend({
 });
 
 // chainable methods to proxy to model
-[ "registerProxy" ]
+[ "set", "registerProxy" ]
 .forEach(function(method) {
 	View.prototype[method] = function() {
 		this.model[method].apply(this.model, arguments);
@@ -160,8 +160,8 @@ module.exports = DOMRange.extend({
 });
 
 // methods to proxy to model which don't return this
-[ "set", "get", "getLocal", "getProxyByValue", "getModelAtOffset",
-  "getRootModel", "findModel", "getContainerValue", "getAllModels"
+[ "get", "getLocal", "getProxyByValue", "getModelAtOffset",
+  "getRootModel", "findModel", "getAllModels"
 ].forEach(function(method) {
 	View.prototype[method] = function() {
 		return this.model[method].apply(this.model, arguments);

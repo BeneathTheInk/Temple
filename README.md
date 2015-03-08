@@ -1,11 +1,12 @@
 # Temple
 
-A reactive [Mustache](http://mustache.github.io/) view framework. <http://beneaththeink.com/temple>
+A JavaScript view framework.
 
-* __Modular & Extensible__ - All views are encapsulated, reusable components.
+* __Reactive__ - Powered by [Trackr](https://github.com/beneaththeink/trackr), Temple automatically updates the DOM as data changes.
+* __Template Driven__ - Use a Mustache-HTML hybrid syntax to quickly create UI scaffolding.
+* __Modular & Extensible__ - All views are encapsulated, reusable components..
 * __Data Neutral__ - Temple can be easily integrated with existing frameworks and platforms.
-* __Lightweight__ - A lot functionality has been packed into this very small package.
-* __Reactive__ - Keep the interface up-to-date with auto-running computations powered by [Trackr](https://github.com/beneaththeink/trackr).
+* __Lightweight__ - Temple weighs in at less than 80KB minified.
 
 ## Install
 
@@ -23,7 +24,7 @@ $ npm install templejs
 
 ## Example
 
-Here is a basic example of using Temple. This just uses a simple variable, but Temple has support for all the major [Mustache features](http://mustache.github.io/mustache.5.html).
+Here is a basic example of using Temple. This just uses a simple variable, but Temple has support for most of the major [Mustache features](http://mustache.github.io/mustache.5.html).
 
 ```javascript
 // create a view instance from a template and data
@@ -32,17 +33,17 @@ var tpl = Temple.render("<h1>Hello {{ name }}</h1>", { name: "World" });
 // render and append to the document body
 tpl.paint("body");
 
-// later, change the value reactively
+// later, change the value and watch it auto-update the DOM
 tpl.data.name = "John";
 ```
 
-Temple also has first-class support for DOM events. Enable the plugin and then add an `on-<event>` attribute to any element.
+Listening for DOM events is really easy in Temple. Enable the plugin and then add an `on-<event>` attribute to any element.
 
 ```javascript
 // create a view instance from just a template
 var tpl = Temple.render("<a href='#' on-click='alert'>Click Me</a>")
 
-// DOM events are treated as plugin, so they must be enabled
+// enable the DOM events plugin
 .use("actions")
 
 // add the special alert action
@@ -55,7 +56,7 @@ var tpl = Temple.render("<a href='#' on-click='alert'>Click Me</a>")
 .paint("body");
 ```
 
-You can even turn your views into reusable components.
+Temple even lets you turn your views into reusable components.
 
 ```javascript
 // a reusable View class
@@ -67,4 +68,7 @@ var Hello = Temple.extend({
 var tpl = Temple.render("<h1>{{> hello }}</h1>", { name: "John" })
 .setPartial("hello", Hello)
 .paint("body");
+
+// views can also be rendered directly
+var tpl2 = new Hello({ name: "World" }).paint("body");
 ```
