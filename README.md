@@ -3,24 +3,9 @@
 A JavaScript view framework.
 
 * __Reactive__ - Powered by [Trackr](https://github.com/beneaththeink/trackr), Temple automatically updates the DOM as data changes.
-* __Template Driven__ - Use a Mustache-HTML hybrid syntax to quickly create UI scaffolding.
-* __Modular & Extensible__ - All views are encapsulated, reusable components..
+* __Template Driven__ - Use a Mustache-HTML hybrid syntax to quickly generate UI scaffolding.
+* __Modular & Extensible__ - All views are encapsulated, reusable components.
 * __Data Neutral__ - Temple can be easily integrated with existing frameworks and platforms.
-* __Lightweight__ - Temple weighs in at less than 80KB minified.
-
-## Install
-
-Download the latest version from our [release page](https://github.com/BeneathTheInk/Temple/releases) and use via a script tag. The variable `Temple` will be attached to `window`.
-
-```html
-<script type="text/javascript" src="temple.js"></script>
-```
-
-If using Browserify or Node.js, you can install via NPM and use via `require("templejs")`.
-
-```shell
-$ npm install templejs
-```
 
 ## Example
 
