@@ -10,11 +10,13 @@ var View =
 module.exports = DOMRange.extend({
 
 	constructor: function(data, options) {
+		options = options || {};
+
 		// first we create the initial view state
 		var state = _.result(this, "initialState") || _.result(this, "defaults");
 		if (typeof state !== "undefined") {
 			if (!Model.isModel(state)) {
-				state = new Model(state, null, options && options.state);
+				state = new Model(state, null, options.state);
 			}
 			
 			// shove state between contexts
@@ -30,6 +32,11 @@ module.exports = DOMRange.extend({
 				return this.stateModel.data;
 			});
 		}
+		
+		// add partials
+		this._partials = {};
+		this._components = {};
+		this.setPartial(_.extend({}, options.partials, _.result(this, "partials")));
 
 		// quick access to the top model data
 		util.defineComputedProperty(this, "data", function() {
@@ -146,6 +153,123 @@ module.exports = DOMRange.extend({
 	stop: function() {
 		if (this.isMounted()) this._comp.stop();
 		return this;
+	},
+
+	// sets partial by name
+	setPartial: function(name, partial) {
+		if (_.isObject(name) && partial == null) {
+			_.each(name, function(p, n) { this.setPartial(n, p); }, this);
+			return this;
+		}
+
+		if (!_.isString(name) && name !== "")
+			throw new Error("Expecting non-empty string for partial name.");
+
+		if (partial != null && !util.isSubClass(View, partial))
+			throw new Error("Expecting View subclass or function for partial.");
+
+		if (partial == null) {
+			delete this._partials[name];
+			partial = void 0;
+		} else {
+			var p = this._getPartial(name);
+			p.view = partial;
+			p.dep.changed();
+		}
+
+		return this;
+	},
+
+	// ensures a partial's dependency exists
+	_getPartial: function(name) {
+		if (this._partials[name] == null)
+			this._partials[name] = { dep: new Trackr.Dependency() };
+
+		return this._partials[name];
+	},
+
+	// looks through parents for partial
+	findPartial: function(name) {
+		var c = this, p;
+
+		while (c != null) {
+			if (c._getPartial != null) {
+				p = c._getPartial(name);
+				p.dep.depend();
+				if (p.view != null) return p.view;
+			}
+
+			c = c.parentRange;
+		}
+	},
+
+	// generates a new component from a View subclass or partial's name
+	renderPartial: function(klass, ctx, options) {
+		var comps, name;
+
+		// look up the partial by name
+		if (typeof klass === "string") {
+			name = klass;
+			klass = this.findPartial(klass);
+		}
+
+		// class must be a view
+		if (!util.isSubClass(View, klass)) return null;
+		
+		// normalize context
+		if (ctx == null) ctx = this;
+		if (ctx instanceof View) ctx = ctx.model;
+
+		// create it non-reactively
+		var component = Trackr.nonreactive(function() {
+			return new klass(ctx, options);
+		});
+
+		// add it to the list
+		if (name) {
+			comps = this._components;
+			if (comps[name] == null) comps[name] = [];
+			comps[name].push(component);
+
+			// auto remove when the partial is "stopped"
+			component.once("stop", function() {
+				comps[name] = _.without(comps[name], component);
+			});
+		}
+
+		return component;
+	},
+
+	// returns first rendered partial by name
+	getComponent: function(name) {
+		var comps, comp, res, n, i;
+
+		comps = this._components;
+		if (comps[name] != null && comps[name].length) return comps[name][0];
+
+		for (n in comps) {
+			for (i in comps[n]) {
+				comp = comps[n][i]
+				if (!(comp instanceof View)) continue;
+				res = comp.getComponent(name);
+				if (res != null) return res;
+			}
+		}
+
+		return null;
+	},
+
+	// returns all rendered partials by name
+	getComponents: function(name) {
+		return _.reduce(this._components, function(m, comps, n) {
+			if (n === name) m.push.apply(m, comps);
+			
+			comps.forEach(function(c) {
+				if (c instanceof View) m.push.apply(m, c.getComponents(name));
+			});
+
+			return m;
+		}, []);
 	}
 
 });
