@@ -287,56 +287,6 @@ _.extend(DOMRange.prototype, Events, {
 		return this;
 	},
 
-	containsElement: function(elem) {
-		if (!this.attached) throw new Error("Must be attached");
-
-		// An element is contained in this DOMRange if it's possible to
-		// reach it by walking parent pointers, first through the DOM and
-		// then parentRange pointers.  In other words, the element or some
-		// ancestor of it is at our level of the DOM (a child of our
-		// parentElement), and this element is one of our members or
-		// is a member of a descendant Range.
-
-		// First check that elem is a descendant of this.parentElement,
-		// according to the DOM.
-		if (!elementContains(this.parentElement, elem)) return false;
-
-		// If elem is not an immediate child of this.parentElement,
-		// walk up to its ancestor that is.
-		while (elem.parentNode !== this.parentElement) elem = elem.parentNode;
-
-		var range = elem.$domrange;
-		while (range && range !== this) {
-			range = range.parentRange;
-		}
-
-		return range === this;
-	},
-
-	containsRange: function(range) {
-		if (!this.attached) throw new Error("Must be attached");
-		if (!range.attached) return false;
-
-		// A DOMRange is contained in this DOMRange if it's possible
-		// to reach this range by following parent pointers.  If the
-		// DOMRange has the same parentElement, then it should be
-		// a member, or a member of a member etc.  Otherwise, we must
-		// contain its parentElement.
-
-		if (range.parentElement !== this.parentElement) {
-			return this.containsElement(range.parentElement);
-		}
-
-		// don't contain self
-		if (range === this) return false;
-
-		while (range && range !== this) {
-			range = range.parentRange;
-		}
-
-		return range === this;
-	},
-
 	findAll: function(selector) {
 		var matches = [],
 			el;
@@ -374,31 +324,6 @@ _.extend(DOMRange.prototype, Events, {
 	}
 
 });
-
-// Returns true if element a contains node b and is not node b.
-//
-// The restriction that `a` be an element (not a document fragment,
-// say) is based on what's easy to implement cross-browser.
-function elementContains(a, b) {
-	if (a.nodeType !== 1) return false;
-	if (a === b) return false;
-
-	if (a.compareDocumentPosition) {
-		return a.compareDocumentPosition(b) & 0x10;
-	} else {
-		// Should be only old IE and maybe other old browsers here.
-		// Modern Safari has both functions but seems to get contains() wrong.
-		// IE can't handle b being a text node.  We work around this
-		// by doing a direct parent test now.
-		b = b.parentNode;
-		if (!(b && b.nodeType === 1)) // ELEMENT
-			return false;
-		if (a === b)
-			return true;
-
-		return a.contains(b);
-	}
-};
 
 // In IE 8, don't use empty text nodes as placeholders
 // in empty DOMRanges, use comment nodes instead.  Using

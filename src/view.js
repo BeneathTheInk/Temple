@@ -28,9 +28,9 @@ module.exports = DOMRange.extend({
 			// add to the stack before the real data
 			this.addData(state);
 			this.stateModel = state;
-			util.defineComputedProperty(this, "state", function() {
-				return this.stateModel.data;
-			});
+
+			// setup easy-access state property
+			state.defineDataLink(this, "state");
 		}
 		
 		// add partials
@@ -38,13 +38,11 @@ module.exports = DOMRange.extend({
 		this._components = {};
 		this.setPartial(_.extend({}, options.partials, _.result(this, "partials")));
 
-		// quick access to the top model data
-		util.defineComputedProperty(this, "data", function() {
-			return this.model.data;
-		});
-
 		// set the passed in data
 		if (typeof data !== "undefined") this.addData(data, options);
+		
+		// quick access to the top model data
+		this.model.defineDataLink(this, "data");
 
 		// initiate like a normal dom range
 		DOMRange.call(this);

@@ -216,6 +216,24 @@ _.extend(Model.prototype, {
 		}
 
 		return proxy;
+	},
+
+	// defines a symbolic property on an object that points to the data
+	defineDataLink: function(obj, prop, options) {
+		var model = this;
+
+		Object.defineProperty(obj, prop, {
+			configurable: options != null && options.configurable,
+			enumerable: options == null || options.enumerable !== false,
+			get: function() {
+				return model.getLocal();
+			},
+			set: function(val) {
+				model.set(val);
+			}
+		});
+
+		return obj;
 	}
 
 });

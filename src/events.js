@@ -30,7 +30,7 @@ var Events = module.exports = {
 	once: function(name, callback, context) {
 		if (!eventsApi(this, 'once', name, [callback, context]) || !callback) return this;
 		var self = this;
-		var fn = once(function() {
+		var fn = _.once(function() {
 			self.off(name, fn);
 			callback.apply(this, arguments);
 		});
@@ -96,7 +96,7 @@ var Events = module.exports = {
 		for (var id in listeningTo) {
 			obj = listeningTo[id];
 			obj.off(name, callback, this);
-			if (remove || isEmpty(obj._events)) delete this._listeningTo[id];
+			if (remove || _.isEmpty(obj._events)) delete this._listeningTo[id];
 		}
 		return this;
 	}
@@ -165,21 +165,3 @@ _.each(listenMethods, function(implementation, method) {
 // Aliases for backwards compatibility.
 Events.bind   = Events.on;
 Events.unbind = Events.off;
-
-function isEmpty(obj) {
-	if (obj == null) return true;
-	if (Array.isArray(obj) || typeof obj === "string") return obj.length === 0;
-	for (var key in obj) if (_.has(obj, key)) return false;
-	return true;
-}
-
-function once(func) {
-	var ran = false, memo;
-	return function() {
-		if (ran) return memo;
-		ran = true;
-		memo = func.apply(this, arguments);
-		func = null;
-		return memo;
-	}
-}

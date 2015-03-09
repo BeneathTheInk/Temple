@@ -18,6 +18,13 @@ exports.isSubClass = function(parent, fn) {
 	return fn === parent || (fn != null && fn.prototype instanceof parent);
 }
 
+// like jQuery's empty(), removes all children
+var emptyNode =
+exports.emptyNode = function(node) {
+	while (node.lastChild) node.removeChild(node.lastChild);
+	return node;
+}
+
 // cleans html, then converts html entities to unicode
 exports.decodeEntities = (function() {
 	if (typeof document === "undefined") return;
@@ -32,7 +39,8 @@ exports.decodeEntities = (function() {
 			return element.textContent;
 		});
 
-		element.textContent = '';
+		emptyNode(element);
+
 		return str;
 	}
 })();
@@ -47,7 +55,7 @@ exports.parseHTML = (function() {
 	return function parseHTML(html) {
 		element.innerHTML = html != null ? html.toString() : "";
 		var nodes = _.toArray(element.childNodes);
-		for (var i in nodes) element.removeChild(nodes[i]);
+		emptyNode(element);
 		return nodes;
 	}
 })();
@@ -116,35 +124,6 @@ var matches = exports.matches = function(node, selector) {
 	}
 
 	return false;
-}
-
-exports.closest = function(elem, selector) {
-	while (elem != null) {
-		if (elem.nodeType === 1 && matches(elem, selector)) return elem;
-		elem = elem.parentNode;
-	}
-
-	return null;
-}
-
-var defineComputedProperty =
-exports.defineComputedProperty = function(obj, prop, value) {
-	if (typeof value !== "function")
-		throw new Error("Expecting function for computed property value.");
-
-	Object.defineProperty(obj, prop, {
-		configurable: true,
-		enumerable: true,
-		get: function() {
-			return value.call(obj);
-		}
-	});
-}
-
-exports.defineComputedProperties = function(obj, props) {
-	Object.keys(props).forEach(function(key) {
-		defineComputedProperty(obj, key, props[key]);
-	});
 }
 
 // array write operations
