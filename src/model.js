@@ -94,11 +94,12 @@ _.extend(Model.prototype, {
 	},
 
 	// returns the value at path, but only looks in the data on this model
-	getLocal: function(path) {
+	getLocal: function(path, ctx) {
 		if (typeof path === "string") path = parse(path, { startRule: "path" });
 		if (path == null) path = { parts: [] };
 		if (!_.isObject(path)) throw new Error("Expecting string or object for path.");
-		
+		if (ctx == null) ctx = this;
+
 		var self = this;
 		this._dep.depend();
 
@@ -106,7 +107,7 @@ _.extend(Model.prototype, {
 			target = self._get(target, part.key);
 
 			_.each(part.children, function(k) {
-				if (_.isObject(k)) k = self.get(k);
+				if (_.isObject(k)) k = ctx.get(k);
 				target = self._get(target, k);
 			});
 
@@ -120,14 +121,7 @@ _.extend(Model.prototype, {
 
 		if (typeof paths === "string") paths = parse(paths, { startRule: "pathQuery" });
 		if (!_.isArray(paths)) paths = paths != null ? [ paths ] : [];
-		
-		if (!paths.length) {
-			var model = this.findModel(function(m) { return !_.isUndefined(m.data); });
-			if (model == null) return;
-			var val = model.data;
-			if (_.isFunction(val)) val = val.call(this, null);
-			return val;
-		}
+		if (!paths.length) paths.push({ type: "all", parts: [] });
 
 		return _.reduce(paths, function(result, path, index) {
 			var model = self,
@@ -138,7 +132,6 @@ _.extend(Model.prototype, {
 				model = self.getRootModel();
 			} else if (path.type === "parent") {
 				model = self.getModelAtOffset(path.distance);
-				scope = false;
 			} else if (path.type === "all") {
 				scope = false;
 			}
@@ -146,7 +139,7 @@ _.extend(Model.prototype, {
 			if (model == null) return;
 
 			while (_.isUndefined(val) && model != null) {
-				val = model.getLocal(path);
+				val = model.getLocal(path, self);
 				model = model.parent;
 				if (scope) break;
 			}
@@ -226,7 +219,8 @@ _.extend(Model.prototype, {
 			configurable: options != null && options.configurable,
 			enumerable: options == null || options.enumerable !== false,
 			get: function() {
-				return model.getLocal();
+				model._dep.depend();
+				return model.data;
 			},
 			set: function(val) {
 				model.set(val);
