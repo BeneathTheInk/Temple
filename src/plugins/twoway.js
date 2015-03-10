@@ -26,11 +26,11 @@ module.exports = function(options) {
 				fbind.change.call(self, getNodeValue(el, type), d.model, e);
 			};
 
-			el.addEventListener("change", onChange);
+			el.addEventListener("input", onChange);
 			if (!(options.lazy || lazy)) el.addEventListener("keyup", onChange);
 
 			d.comp.onInvalidate(function() {
-				el.removeEventListener("change", onChange);
+				el.removeEventListener("input", onChange);
 				el.removeEventListener("keyup", onChange);
 			});
 		}
