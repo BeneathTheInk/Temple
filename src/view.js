@@ -42,7 +42,17 @@ module.exports = DOMRange.extend({
 		if (typeof data !== "undefined") this.addData(data, options);
 		
 		// quick access to the top model data
-		this.model.defineDataLink(this, "data");
+		Object.defineProperty(this, "data", {
+			configurable: true,
+			enumerable: true,
+			get: function() {
+				this.model._dep.depend();
+				return this.model.data;
+			},
+			set: function(val) {
+				this.model.set(val);
+			}
+		});
 
 		// initiate like a normal dom range
 		DOMRange.call(this);
