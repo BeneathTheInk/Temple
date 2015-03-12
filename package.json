@@ -24,7 +24,7 @@
 	"main": "./lib/index.js",
 	"dependencies": {
 		"trackr": "~1.0.3",
-		"underscore": "~1.8.1"
+		"underscore": "~1.8.2"
 	},
 	"devDependencies": {
 		"grunt": "~0.4.5",
@@ -36,8 +36,8 @@
 		"grunt-peg": "~1.5.0",
 		"grunt-wrap2000": "~0.1.0",
 		"chai": "~2.1.0",
-		"minimist": "~1.1.0",
-		"mocha": "~2.2.0"
+		"minimist": "~1.1.1",
+		"mocha": "~2.2.1"
 	},
 	"license": "MIT",
 	"keywords": [

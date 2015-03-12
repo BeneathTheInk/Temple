@@ -38,7 +38,7 @@ var server = http.createServer(function(req, res) {
 		if (stat && stat.isFile()) {
 			mime = mimes[path.extname(fpath)];
 			res.setHeader("Content-Type", mime);
-			fs.createReadStream(fpath, "utf-8").pipe(res);
+			fs.createReadStream(fpath, { encoding: "utf-8" }).pipe(res);
 			return;
 		}
 
