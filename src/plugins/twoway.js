@@ -101,7 +101,7 @@ function getFormBinding(id) {
 	while (c != null) {
 		bindings = c._formBindings;
 		if (bindings != null && bindings[id] != null) return bindings[id];
-		c = c.parent;
+		c = c.parentRange;
 	}
 }
 

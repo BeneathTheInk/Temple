@@ -42,8 +42,8 @@ eventNames.forEach(function(event) {
 			var fireOn = self;
 			while (typeof fireOn.fireAction !== "function") {
 				// if it has no parent, we can't do anything
-				if (fireOn.parent == null) return;
-				fireOn = fireOn.parent;
+				if (fireOn.parentRange == null) return;
+				fireOn = fireOn.parentRange;
 			}
 
 			// fire the action
@@ -151,13 +151,13 @@ function fireAction(action) {
 		}, this);
 	}
 
-	if (action.bubbles && this.parent != null) {
+	if (action.bubbles && this.parentRange != null) {
 		// find the first parent with the fire method
-		var fireOn = this.parent;
+		var fireOn = this.parentRange;
 		while (typeof fireOn.fireAction !== "function") {
 			// if it has no parent, we can't do anything
-			if (fireOn.parent == null) return;
-			fireOn = fireOn.parent;
+			if (fireOn.parentRange == null) return;
+			fireOn = fireOn.parentRange;
 		}
 
 		fireOn.fireAction.apply(fireOn, args);
