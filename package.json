@@ -1,6 +1,6 @@
 {
 	"name": "templejs",
-	"version": "0.5.1",
+	"version": "0.5.2",
 	"description": "A reactive Mustache view framework.",
 	"author": "Beneath the Ink <info@beneaththeink.com>",
 	"publishConfig": {
