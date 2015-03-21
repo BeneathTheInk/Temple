@@ -340,29 +340,39 @@ module.exports = View.extend({
 		if (ctx instanceof View) ctx = ctx.model;
 
 		// a wrapper computation to ez-clean the rest
-		return this.autorun(function() {
+		return this.autorun(function(_comp) {
 			decorators.forEach(function(d) {
-				self.autorun(function(comp) {
-					// assemble the arguments!
-					var args = [ {
-						target: el,
-						model: ctx,
-						view: self,
-						template: attr,
-						comp: comp,
-						options: d.options
-					} ];
+				if (d.options && d.options.defer) _.defer(execDecorator);
+				else execDecorator();
 
-					// render arguments based on options
-					if (d.options && d.options.parse === "string") {
-						args.push(self.renderTemplateAsString(attr.children, ctx));
-					} else if (d.options == null || d.options.parse !== false) {
-						args = args.concat(self.renderArguments(attr.arguments, ctx));
-					}
+				function execDecorator() {
+					var dcomp = self.autorun(function(comp) {
+						// assemble the arguments!
+						var args = [ {
+							target: el,
+							model: ctx,
+							view: self,
+							template: attr,
+							comp: comp,
+							options: d.options
+						} ];
 
-					// execute the callback
-					d.callback.apply(d.context || self, args);
-				});
+						// render arguments based on options
+						if (d.options && d.options.parse === "string") {
+							args.push(self.renderTemplateAsString(attr.children, ctx));
+						} else if (d.options == null || d.options.parse !== false) {
+							args = args.concat(self.renderArguments(attr.arguments, ctx));
+						}
+
+						// execute the callback
+						d.callback.apply(d.context || self, args);
+					});
+
+					// clean up
+					_comp.onInvalidate(function() {
+						dcomp.stop();
+					});
+				}
 			});
 		});
 	}
