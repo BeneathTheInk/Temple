@@ -65,17 +65,13 @@ Using Temple is really simple; all you need is some data, a template, and a plac
 4. When rendered using the following JavaScript:
 
 	```js
-	var tpl = Temple.render(template, data).paint("body");
+	var view = Temple.render(template, data).paint("body");
 	```
 
-The `.render()` method creates a __view instance__ from the _template_ and _data_ and `.paint()` renders the view and appends it to the bottom of `<body>` as matched by the `"body"` CSS selector.
+The `.render()` method creates a __view instance__ from the _template_ and _data_. Next, `.paint()` renders the view and appends it to the bottom of `<body>` as matched by the `"body"` CSS selector. Now rendered, the view is reactive and will update for an changes to data until it is removed from the DOM by calling `.detach()`.
 
-Once rendered, a Temple view instance is reactive: changes to data will automatically rerender the DOM nodes. This process is controlled by an invalidation cycle that happens at most every animation frame. The rendering engine is decently effecient and will rerender the minimum parts necessary to ensure the interface is up-to-date.
+Next up:
 
-You can try out the Temple's reactivity by changing data anytime after calling `.paint()`.
-
-```js
-tpl.data.value = 31415;
-tpl.data.in_ca = false;
-```
+- [View Lifecycle](view-lifecycle.md)
+- [Reactivity & Data](reactivity-data.md)
 
