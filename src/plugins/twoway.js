@@ -1,5 +1,6 @@
 var _ = require("underscore");
 
+var input_types = [ "text", "number", "date" ];
 var value_types = [ "radio", "option" ];
 
 module.exports = function(options) {
@@ -18,7 +19,7 @@ module.exports = function(options) {
 		var el = d.target,
 			type = getType(el),
 			self = this,
-			onChange, lazy;
+			evtName, onChange, lazy;
 
 		// detect changes to the input's value
 		if (typeof fbind.change === "function") {
@@ -26,11 +27,12 @@ module.exports = function(options) {
 				fbind.change.call(self, getNodeValue(el, type), d.model, e);
 			};
 
-			el.addEventListener("input", onChange);
+			evtName = _.contains(input_types, type) ? "input" : "change";
+			el.addEventListener(evtName, onChange);
 			if (!(options.lazy || lazy)) el.addEventListener("keyup", onChange);
 
 			d.comp.onInvalidate(function() {
-				el.removeEventListener("input", onChange);
+				el.removeEventListener(evtName, onChange);
 				el.removeEventListener("keyup", onChange);
 			});
 		}
