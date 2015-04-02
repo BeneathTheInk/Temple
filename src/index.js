@@ -6,7 +6,7 @@ var _ = require("underscore"),
 
 // properties that Node.js and the browser can handle
 var Temple = module.exports = _.defaults({
-	VERSION: "0.5.3",
+	VERSION: "0.5.4",
 	NODE_TYPE: NODE_TYPE,
 
 	// other parts

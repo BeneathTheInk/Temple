@@ -3,7 +3,7 @@
  * (c) 2014-2015 Beneath the Ink, Inc.
  * Copyright (C) 2011--2015 Meteor Development Group
  * MIT License
- * Version 0.5.3
+ * Version 0.5.4
  */
 
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.Temple = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
@@ -593,7 +593,7 @@ var _ = require("underscore"),
 
 // properties that Node.js and the browser can handle
 var Temple = module.exports = _.defaults({
-	VERSION: "0.5.3",
+	VERSION: "0.5.4",
 	NODE_TYPE: NODE_TYPE,
 
 	// other parts
@@ -2236,6 +2236,7 @@ registerPlugin("twoway", require("./twoway"));
 },{"./actions":7,"./twoway":9,"underscore":17}],9:[function(require,module,exports){
 var _ = require("underscore");
 
+var input_types = [ "text", "number", "date" ];
 var value_types = [ "radio", "option" ];
 
 module.exports = function(options) {
@@ -2254,7 +2255,7 @@ module.exports = function(options) {
 		var el = d.target,
 			type = getType(el),
 			self = this,
-			onChange, lazy;
+			evtName, onChange, lazy;
 
 		// detect changes to the input's value
 		if (typeof fbind.change === "function") {
@@ -2262,11 +2263,12 @@ module.exports = function(options) {
 				fbind.change.call(self, getNodeValue(el, type), d.model, e);
 			};
 
-			el.addEventListener("input", onChange);
+			evtName = _.contains(input_types, type) ? "input" : "change";
+			el.addEventListener(evtName, onChange);
 			if (!(options.lazy || lazy)) el.addEventListener("keyup", onChange);
 
 			d.comp.onInvalidate(function() {
-				el.removeEventListener("input", onChange);
+				el.removeEventListener(evtName, onChange);
 				el.removeEventListener("keyup", onChange);
 			});
 		}
