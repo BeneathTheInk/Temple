@@ -138,7 +138,7 @@ describe("Mustache", function() {
 				version: Temple.VERSION,
 				children: [{
 					type: NODE_TYPE.XCOMMENT,
-					value: "comment"
+					value: " comment "
 				},{
 					type: NODE_TYPE.ELEMENT,
 					name: "div",
@@ -529,7 +529,7 @@ describe("Mustache", function() {
 		});
 
 		it("parses string argument", function() {
-			render("<span custom='\"Hello \\\"World\\\"\"'></span>", { val: "World" });
+			render('<span custom=\'"Hello \\\\"World\\\\""\'></span>', { val: "World" });
 			var seen = 0;
 
 			tpl.decorate("custom", function(d, val) {

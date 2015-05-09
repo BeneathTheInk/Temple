@@ -34,13 +34,9 @@ textNode
 
 // Comment Nodes
 commentNode
-	= "<!--" v:commentValue "-->"  {
-		return { type: NODE_TYPE.XCOMMENT, value: v.trim() };
+	= "<!--" v:$(!"-->" .)* "-->" {
+		return { type: NODE_TYPE.XCOMMENT, value: v };
 	}
-	
-commentValue
-	= & "-->"
-	/ l:. r:commentValue? { return l + (r != null ? r : ""); }
 
 // Element Nodes
 elementNode
@@ -75,9 +71,9 @@ elementEnd
 
 // Element Attribute
 attribute
-	= key:key value:("=" ws strict_string ws)? {
+	= key:key value:("=" ws string ws)? {
 		value = value != null ? value[2] : "";
-		
+
 		return {
 			type: NODE_TYPE.ATTRIBUTE,
 			name: key,
@@ -87,7 +83,7 @@ attribute
 		}
 	}
 
-attrValue = nodes: 
+attrValue = nodes:
 	( section
 	/ extraStache
 	/ doubleStache
@@ -95,22 +91,19 @@ attrValue = nodes:
 	/ textNode )* { return _.compact(nodes); }
 
 attrArguments =
-	l:attrArgValue r:("," attrArguments)? { return r != null && r[1] != null ? [l].concat(r[1]) : [l]; }
+	l:attrArg r:("," attrArg)* { return [].concat(l, _.pluck(r, 1)); }
 
-// Value
-attrArgValue = val:
-	( ( ws v:stache    ws attrArgNotEnd { return v; } )
-	/ ( ws v:string    ws attrArgNotEnd { return v; } )
-	/ ( ws v:boolean   ws attrArgNotEnd { return v; } )
-	/ ( ws v:number    ws attrArgNotEnd { return v; } )
-	/ ( ws v:null      ws attrArgNotEnd { return v; } )
-	/ ( ws v:undefined ws attrArgNotEnd { return v; } )
-	/ (    v:$[^,]*                     { return v.trim(); } ) ) {
-		if (_.isObject(val)) return val;
-		else return { type: NODE_TYPE.LITERAL, value: val };
+attrArg = ws val:
+	( stache
+	/ string
+	/ boolean
+	/ number
+	/ null
+	/ undefined
+	/ v:$(!"," .)* { return v.trim(); } ) ws {
+		if (val != null && val.type) return val;
+		return { type: NODE_TYPE.LITERAL, value: val };
 	}
-
-attrArgNotEnd = &([,] / !.)
 
 // mustache section
 section
@@ -173,7 +166,7 @@ extraStache
 /*
 Paths
 */
-pathQuery = l:path r:("|" pathQuery)? { return r != null && r[1] != null ? [l].concat(r[1]) : [l]; }
+pathQuery = l:path r:("|" path)* { return [].concat(l, _.pluck(r, 1)); }
 
 pathQueryWithRaw = m:pathQuery { return { raw: text(), result: m } }
 
@@ -191,7 +184,7 @@ pathPrefix
 	/ "." { return { type: "local" }; }
 	/ "/" { return { type: "root" }; }
 
-pathCore = l:pathPart r:("." pathCore)? { return r != null && r[1] != null ? [l].concat(r[1]) : [l]; }
+pathCore = l:pathPart r:("." pathPart)* { return [].concat(l, _.pluck(r, 1)); }
 
 pathPart = k:$([a-z0-9$_]i [a-z0-9:\-_$]i*) c:pathDynamic* { return { key: k, children: c } }
 
@@ -203,7 +196,7 @@ Literals
 boolean
 	= "true" { return true; }
 	/ "false" { return false; }
-	
+
 number = "-"? [0-9]+ ("." [0-9]+)? { return parseFloat(text(), 10); }
 
 integer = [0-9]+ { return parseInt(text(), 10); }
@@ -212,12 +205,8 @@ string
 	= "\"" v:(escape / [^"])* "\"" { return v.join(""); }
 	/ "'" v:(escape / [^'])* "'" { return v.join(""); }
 
-strict_string
-	= "\"" v:$[^"]* "\"" { return v; }
-	/ "'" v:$[^']* "'" { return v; }
-
 null = "null" { return null; }
-undefined = ("undefined" / "void" ws ![,; \t\n\r]+) { return void 0; }
+undefined = ("undefined" / "void" gws (![,; \t\n\r] .)+) { return void 0; }
 
 /*
 Utils
@@ -225,5 +214,6 @@ Utils
 key = ws k:$[a-z0-9_-]i+ ws { return k; }
 
 ws "whitespace" = $[ \t\n\r]*
+gws "guaranteed whitespace" = $[ \t\n\r]+
 
 escape = "\\" char:. { return char; }
