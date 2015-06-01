@@ -6,14 +6,14 @@
 		<title>Temple | A JavaScript View Framework by Beneath the Ink</title>
 		<!--[if lt IE 9]><script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
 		
-		<link rel="stylesheet" href="/css/main.css" type="text/css" />
+		<link rel="stylesheet" href="/Temple/css/main.css" type="text/css" />
 
-		<script type="text/javascript" src="/js/jquery.min.js"></script>
-		<script type="text/javascript" src="/js/bootstrap.min.js"></script>
-		<script type="text/javascript" src="/js/ace-editor/ace.js"></script>
-		<script type="text/javascript" src="/js/temple.min.js"></script>
-		<script type="text/javascript">var BASEURL = "";</script>
-		<script type="text/javascript" src="/js/sandbox.js"></script>
+		<script type="text/javascript" src="/Temple/js/jquery.min.js"></script>
+		<script type="text/javascript" src="/Temple/js/bootstrap.min.js"></script>
+		<script type="text/javascript" src="/Temple/js/ace-editor/ace.js"></script>
+		<script type="text/javascript" src="/Temple/js/temple.min.js"></script>
+		<script type="text/javascript">var BASEURL = "/Temple";</script>
+		<script type="text/javascript" src="/Temple/js/sandbox.js"></script>
 	</head>
 	<body class="home">
 		<nav class="navbar navbar-static-top navbar-inverse" id="top">
@@ -24,13 +24,13 @@
 						<span class="icon-bar"></span>
 						<span class="icon-bar"></span>
 					</button>
-					<a class="navbar-brand" href="/"><i class="icon icon-bank"></i> Temple <small>By Beneath the Ink</small></a>
+					<a class="navbar-brand" href="/Temple/"><i class="icon icon-bank"></i> Temple <small>By Beneath the Ink</small></a>
 				</div>
 
 				<div class="collapse navbar-collapse" id="primary-nav">
 					<ul class="nav navbar-nav navbar-right">
-						<li><a href="/guide">Guide</a></li>
-						<li><a href="/docs">Docs</a></li>
+						<li><a href="/Temple/guide">Guide</a></li>
+						<li><a href="/Temple/docs">Docs</a></li>
 						<li><a href="https://github.com/BeneathTheInk/Temple">Github</a></li>
 					</ul>
 				</div>
@@ -49,7 +49,7 @@
 					</span>
 				</h1>
 				<p>A lightweight JavaScript view framework for building first class web interfaces.</p>
-				<p class="action"><a href="/guide/install" class="btn btn-lg btn-download">Download Temple</a> <small>Latest v0.3.6</small></p>
+				<p class="action"><a href="/Temple/guide/install" class="btn btn-lg btn-download">Download Temple</a> <small>Latest v0.3.6</small></p>
 			</div>
 		</div>
 	</div>
@@ -80,7 +80,7 @@
 
 	<section class="example">
 		<div class="container">
-			<h1 id="a-quick-example">A Quick Example</h1><p>This is an interactive example of Temple. Head over to the <a href="/guide">guide</a> for a more thorough rundown.</p>
+			<h1 id="a-quick-example">A Quick Example</h1><p>This is an interactive example of Temple. Head over to the <a href="/Temple/guide">guide</a> for a more thorough rundown.</p>
 <script type="text/plain" data-sandbox data-height="630">Ly8gcXVpY2sgYWNjZXNzIHRvIHRoZSBzZWxlY3RvciB1dGlsaXR5CnZhciB0dCA9IFRlbXBsZS5mcm9tU2VsZWN0b3I7CgovLyBhIGNsb2NrIGRpZ2l0IGlzIGEgdGV4dCBub2RlIGNvbnRhaW5pbmcgYSBudW1iZXIKdmFyIENsb2NrRGlnaXQgPSBUZW1wbGUuVGV4dC5leHRlbmQoewogICAgY29uc3RydWN0b3I6IGZ1bmN0aW9uKGNsb2NrKSB7CiAgICAgICAgVGVtcGxlLlRleHQuY2FsbCh0aGlzKTsKICAgICAgICB0aGlzLmNsb2NrID0gY2xvY2s7CiAgICB9LAoKICAgIC8vIHRoaXMgbWV0aG9kIHBvcHVsYXRlcyB0aGUgdGhlIGRpZ2l0IHdpdGggdGhlIHByb3BlciBudW1iZXIKICAgIHJlbmRlcjogZnVuY3Rpb24obWV0aG9kKSB7CiAgICAgICAgbWV0aG9kID0gImdldCIgKyBtZXRob2RbMF0udG9VcHBlckNhc2UoKSArIG1ldGhvZC5zdWJzdHIoMSk7CiAgICAgICAgdmFyIGQgPSB0aGlzLmNsb2NrLmN1cnJlbnRUaW1lW21ldGhvZF0oKTsKICAgICAgICB0aGlzLnNldFZhbHVlKChkIDwgMTAgPyAiMCIgOiAiIikgKyBkKTsKICAgIH0KfSk7CgovLyBhIGNsb2NrIGlzIHRpbWUgKyBkaWdpdHMKdmFyIENsb2NrID0gVGVtcGxlLkRPTS5kaXYuZXh0ZW5kKHsKICAgIGNvbnN0cnVjdG9yOiBmdW5jdGlvbigpIHsKICAgICAgICAvLyBkZWZpbmVzIHRoZSB0aW1lIGFzIGEgcmVhY3RpdmUgdmFyaWFibGUKICAgICAgICBUZW1wbGUudXRpbC5kZWZpbmVSZWFjdGl2ZVByb3BlcnR5KHRoaXMsICJjdXJyZW50VGltZSIsIG5ldyBEYXRlKCkpOwogICAgICAgIFRlbXBsZS5ET00uZGl2LmNhbGwodGhpcyk7CgogICAgICAgIC8vIHNldHMgZGVmYXVsdCBzdHlsZXMgCiAgICAgICAgdGhpcy5zdHlsZSh7CiAgICAgICAgICAgICJ0ZXh0LWFsaWduIjogImNlbnRlciIsCiAgICAgICAgICAgICJmb250LXNpemUiOiAiNjRweCIsCiAgICAgICAgICAgICJsaW5lLWhlaWdodCI6ICI2NHB4IiwKICAgICAgICAgICAgImZvbnQtd2VpZ2h0IjogImJvbGQiCiAgICAgICAgfSk7CiAgICB9LAoKICAgIC8vIHVwZGF0ZXMgdGhlIHJlYWN0aXZlIHZhcmlhYmxlIHdpdGggYSBuZXcgZGF0ZQogICAgdXBkYXRlVGltZTogZnVuY3Rpb24oKSB7CiAgICAgICAgdGhpcy5jdXJyZW50VGltZSA9IG5ldyBEYXRlKCk7CiAgICAgICAgcmV0dXJuIHRoaXM7CiAgICB9LAoKICAgIC8vIGR1cmluZyBtb3VudCwgYW4gaW50ZXJ2YWwgaXMgY3JlYXRlZCB0aGF0IGF1dG9tYXRpY2FsbHkgdXBkYXRlcyB0aGUgdGltZQogICAgYmVmb3JlTW91bnQ6IGZ1bmN0aW9uKCkgewogICAgICAgIHRoaXMudXBkYXRlVGltZSgpOwogICAgICAgIHZhciBpbnQgPSBzZXRJbnRlcnZhbCh0aGlzLnVwZGF0ZVRpbWUuYmluZCh0aGlzKSwgMTAwKTsKCiAgICAgICAgdGhpcy5vbmNlKCJzdG9wIiwgZnVuY3Rpb24oKSB7CiAgICAgICAgICAgIGNsZWFySW50ZXJ2YWwoaW50KTsKICAgICAgICB9KTsKICAgIH0sCgogICAgLy8gcmV0dXJucyB0aHJlZSBuZXcgZGlnaXRzIGZvciB0aGUgY3VycmVudCB0aW1lCiAgICByZW5kZXI6IGZ1bmN0aW9uKCkgewogICAgICAgIGNvbnNvbGUubG9nKCJyZW5kZXIiKTsKICAgICAgICByZXR1cm4gWwogICAgICAgICAgICB0dCgiZGl2IiwgbmV3IENsb2NrRGlnaXQodGhpcykubW91bnQoImhvdXJzIikpLAogICAgICAgICAgICB0dCgiZGl2IiwgbmV3IENsb2NrRGlnaXQodGhpcykubW91bnQoIm1pbnV0ZXMiKSksCiAgICAgICAgICAgIHR0KCJkaXYiLCBuZXcgQ2xvY2tEaWdpdCh0aGlzKS5tb3VudCgic2Vjb25kcyIpKQogICAgICAgIF07CiAgICB9Cn0pOwoKLy8gY3JlYXRlIGFuZCByZW5kZXIgYSBuZXcgY2xvY2sKbmV3IENsb2NrKCkucGFpbnQoImJvZHkiKS5tb3VudCgpOw==</script>
 		</div>
 	</section>
