@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Temple | A JavaScript View Framework by Beneath the Ink</title>
+		<!--[if lt IE 9]><script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+		
+		<link rel="stylesheet" href="/temple/css/main.css" type="text/css" />
+
+		<script type="text/javascript" src="/temple/js/jquery.min.js"></script>
+		<script type="text/javascript" src="/temple/js/bootstrap.min.js"></script>
+		<script type="text/javascript" src="/temple/js/ace-editor/ace.js"></script>
+		<script type="text/javascript" src="/temple/js/temple.min.js"></script>
+		<script type="text/javascript">var BASEURL = "/temple";</script>
+		<script type="text/javascript" src="/temple/js/sandbox.js"></script>
+	</head>
+	<body class="home">
+		<nav class="navbar navbar-static-top navbar-inverse" id="top">
+			<div class="container">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#primary-nav">
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="/temple/"><i class="icon icon-bank"></i> Temple <small>By Beneath the Ink</small></a>
+				</div>
+
+				<div class="collapse navbar-collapse" id="primary-nav">
+					<ul class="nav navbar-nav navbar-right">
+						<li><a href="/temple/guide">Guide</a></li>
+						<li><a href="/temple/docs">Docs</a></li>
+						<li><a href="https://github.com/BeneathTheInk/Temple">Github</a></li>
+					</ul>
+				</div>
+			</div>
+		</nav>
+
+		
+<div class="jumbotron">
+	<div class="container">
+		<div class="row">
+			<div class="col-lg-10 col-lg-offset-1 centered">
+				<h1>
+					<span class="icon-stack icon-lg">
+						<i class="icon icon-square icon-stack-2x"></i>
+						<i class="icon icon-bank icon-stack-1x icon-inverse"></i>
+					</span>
+				</h1>
+				<p>A lightweight JavaScript view framework for building first class web interfaces.</p>
+				<p class="action"><a href="/temple/guide/install" class="btn btn-lg btn-download">Download Temple</a> <small>Latest v0.3.6</small></p>
+			</div>
+		</div>
+	</div>
+</div>
+
+<main>
+	<section class="features">
+		<div class="container">
+			<div class="row">
+				<div class="col-lg-4">
+					<i class="icon icon-paper-plane-o"></i>
+					<h3>Lightweight</h3>
+					<p>Web interfaces can be highly complex and irregular, so Temple has been kept small and focused to help it work in a wide variety of situations. With no external dependencies, Temple weighs in at under 30KB minified.</p>
+				</div>
+				<div class="col-lg-4">
+					<i class="icon icon-code-fork"></i>
+					<h3>Modular</h3>
+					<p>In Temple, views are encapsulated, reusable components making interfaces easier to test and maintain. Only the foundation for an interactive UI is provided, allowing Temple to be a flexible base for any web application.</p>
+				</div>
+				<div class="col-lg-4">
+					<i class="icon icon-flash"></i>
+					<h3>Reactive</h3>
+					<p>Reactivity in Temple is powered by <a href="http://manual.meteor.com/#deps">Meteor's dependency package</a>. These auto-running computations keep interfaces up-to-date consistently and effeciently without getting in the way of existing data models.</p>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<section class="example">
+		<div class="container">
+			<h1 id="a-quick-example">A Quick Example</h1><p>This is an interactive example of Temple. Head over to the <a href="/temple/guide">guide</a> for a more thorough rundown.</p>
+<script type="text/plain" data-sandbox data-height="630">Ly8gcXVpY2sgYWNjZXNzIHRvIHRoZSBzZWxlY3RvciB1dGlsaXR5CnZhciB0dCA9IFRlbXBsZS5mcm9tU2VsZWN0b3I7CgovLyBhIGNsb2NrIGRpZ2l0IGlzIGEgdGV4dCBub2RlIGNvbnRhaW5pbmcgYSBudW1iZXIKdmFyIENsb2NrRGlnaXQgPSBUZW1wbGUuVGV4dC5leHRlbmQoewogICAgY29uc3RydWN0b3I6IGZ1bmN0aW9uKGNsb2NrKSB7CiAgICAgICAgVGVtcGxlLlRleHQuY2FsbCh0aGlzKTsKICAgICAgICB0aGlzLmNsb2NrID0gY2xvY2s7CiAgICB9LAoKICAgIC8vIHRoaXMgbWV0aG9kIHBvcHVsYXRlcyB0aGUgdGhlIGRpZ2l0IHdpdGggdGhlIHByb3BlciBudW1iZXIKICAgIHJlbmRlcjogZnVuY3Rpb24obWV0aG9kKSB7CiAgICAgICAgbWV0aG9kID0gImdldCIgKyBtZXRob2RbMF0udG9VcHBlckNhc2UoKSArIG1ldGhvZC5zdWJzdHIoMSk7CiAgICAgICAgdmFyIGQgPSB0aGlzLmNsb2NrLmN1cnJlbnRUaW1lW21ldGhvZF0oKTsKICAgICAgICB0aGlzLnNldFZhbHVlKChkIDwgMTAgPyAiMCIgOiAiIikgKyBkKTsKICAgIH0KfSk7CgovLyBhIGNsb2NrIGlzIHRpbWUgKyBkaWdpdHMKdmFyIENsb2NrID0gVGVtcGxlLkRPTS5kaXYuZXh0ZW5kKHsKICAgIGNvbnN0cnVjdG9yOiBmdW5jdGlvbigpIHsKICAgICAgICAvLyBkZWZpbmVzIHRoZSB0aW1lIGFzIGEgcmVhY3RpdmUgdmFyaWFibGUKICAgICAgICBUZW1wbGUudXRpbC5kZWZpbmVSZWFjdGl2ZVByb3BlcnR5KHRoaXMsICJjdXJyZW50VGltZSIsIG5ldyBEYXRlKCkpOwogICAgICAgIFRlbXBsZS5ET00uZGl2LmNhbGwodGhpcyk7CgogICAgICAgIC8vIHNldHMgZGVmYXVsdCBzdHlsZXMgCiAgICAgICAgdGhpcy5zdHlsZSh7CiAgICAgICAgICAgICJ0ZXh0LWFsaWduIjogImNlbnRlciIsCiAgICAgICAgICAgICJmb250LXNpemUiOiAiNjRweCIsCiAgICAgICAgICAgICJsaW5lLWhlaWdodCI6ICI2NHB4IiwKICAgICAgICAgICAgImZvbnQtd2VpZ2h0IjogImJvbGQiCiAgICAgICAgfSk7CiAgICB9LAoKICAgIC8vIHVwZGF0ZXMgdGhlIHJlYWN0aXZlIHZhcmlhYmxlIHdpdGggYSBuZXcgZGF0ZQogICAgdXBkYXRlVGltZTogZnVuY3Rpb24oKSB7CiAgICAgICAgdGhpcy5jdXJyZW50VGltZSA9IG5ldyBEYXRlKCk7CiAgICAgICAgcmV0dXJuIHRoaXM7CiAgICB9LAoKICAgIC8vIGR1cmluZyBtb3VudCwgYW4gaW50ZXJ2YWwgaXMgY3JlYXRlZCB0aGF0IGF1dG9tYXRpY2FsbHkgdXBkYXRlcyB0aGUgdGltZQogICAgYmVmb3JlTW91bnQ6IGZ1bmN0aW9uKCkgewogICAgICAgIHRoaXMudXBkYXRlVGltZSgpOwogICAgICAgIHZhciBpbnQgPSBzZXRJbnRlcnZhbCh0aGlzLnVwZGF0ZVRpbWUuYmluZCh0aGlzKSwgMTAwKTsKCiAgICAgICAgdGhpcy5vbmNlKCJzdG9wIiwgZnVuY3Rpb24oKSB7CiAgICAgICAgICAgIGNsZWFySW50ZXJ2YWwoaW50KTsKICAgICAgICB9KTsKICAgIH0sCgogICAgLy8gcmV0dXJucyB0aHJlZSBuZXcgZGlnaXRzIGZvciB0aGUgY3VycmVudCB0aW1lCiAgICByZW5kZXI6IGZ1bmN0aW9uKCkgewogICAgICAgIGNvbnNvbGUubG9nKCJyZW5kZXIiKTsKICAgICAgICByZXR1cm4gWwogICAgICAgICAgICB0dCgiZGl2IiwgbmV3IENsb2NrRGlnaXQodGhpcykubW91bnQoImhvdXJzIikpLAogICAgICAgICAgICB0dCgiZGl2IiwgbmV3IENsb2NrRGlnaXQodGhpcykubW91bnQoIm1pbnV0ZXMiKSksCiAgICAgICAgICAgIHR0KCJkaXYiLCBuZXcgQ2xvY2tEaWdpdCh0aGlzKS5tb3VudCgic2Vjb25kcyIpKQogICAgICAgIF07CiAgICB9Cn0pOwoKLy8gY3JlYXRlIGFuZCByZW5kZXIgYSBuZXcgY2xvY2sKbmV3IENsb2NrKCkucGFpbnQoImJvZHkiKS5tb3VudCgpOw==</script>
+		</div>
+	</section>
+</main>
+
+
+		<div id="footer">
+			<div class="container centered">
+				<p>
+					<a href="https://github.com/BeneathTheInk/Temple">Github</a> &bullet;
+					<a href="https://github.com/BeneathTheInk/Temple/issues">Issues</a> &bullet;
+					<a href="https://github.com/BeneathTheInk/Temple/releases">Releases</a>
+				</p>
+				<p>
+					Created &amp; maintained by <a href="http://github.com/tyler-johnson">Tyler Johnson</a>. Licensed under <a href="http://opensource.org/licenses/MIT" rel="nofollow">MIT</a>.
+					<span class="copyright">&copy; 2014 <a href="http://beneaththeink.com">Beneath the Ink, Inc.</a></span>
+				</p>
+			</div>
+		</div>
+	</body>
+</html>

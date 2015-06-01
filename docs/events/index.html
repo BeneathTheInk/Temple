@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Events & Life Cycle ~ Temple | A JavaScript View Framework by Beneath the Ink</title>
+		<!--[if lt IE 9]><script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+		
+		<link rel="stylesheet" href="/temple/css/main.css" type="text/css" />
+
+		<script type="text/javascript" src="/temple/js/jquery.min.js"></script>
+		<script type="text/javascript" src="/temple/js/bootstrap.min.js"></script>
+		<script type="text/javascript" src="/temple/js/ace-editor/ace.js"></script>
+		<script type="text/javascript" src="/temple/js/temple.min.js"></script>
+		<script type="text/javascript">var BASEURL = "/temple";</script>
+		<script type="text/javascript" src="/temple/js/sandbox.js"></script>
+	</head>
+	<body class="page page-subnav">
+		<nav class="navbar navbar-static-top navbar-inverse" id="top">
+			<div class="container">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#primary-nav">
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="/temple/"><i class="icon icon-bank"></i> Temple <small>By Beneath the Ink</small></a>
+				</div>
+
+				<div class="collapse navbar-collapse" id="primary-nav">
+					<ul class="nav navbar-nav navbar-right">
+						<li><a href="/temple/guide">Guide</a></li>
+						<li><a href="/temple/docs">Docs</a></li>
+						<li><a href="https://github.com/BeneathTheInk/Temple">Github</a></li>
+					</ul>
+				</div>
+			</div>
+		</nav>
+
+		
+<main><section>
+	<div class="container">
+		<div class="row">
+			<div class="col-lg-3">
+				<div class="sidebar">
+					<ul class="nav">
+						
+						
+						<li>
+							<a href="/temple/docs">API Documentation</a>
+							
+						</li>
+						
+						
+						<li class="active">
+							<a href="/temple/docs/events">Events & Life Cycle</a>
+							
+							<ul class="nav">
+								
+								<li><a href="#events"> Events</a></li>
+								
+								<li><a href="#mount-life-cycle"> Mount Life Cycle</a></li>
+								
+							</ul>
+							
+						</li>
+						
+						
+						<li>
+							<a href="/temple/docs/binding">Binding</a>
+							
+						</li>
+						
+						
+						<li>
+							<a href="/temple/docs/node">Node</a>
+							
+						</li>
+						
+						
+						<li>
+							<a href="/temple/docs/element">Element</a>
+							
+						</li>
+						
+						
+						<li>
+							<a href="/temple/docs/text-comment">Text / Comment</a>
+							
+						</li>
+						
+						
+						<li>
+							<a href="/temple/docs/html">HTML</a>
+							
+						</li>
+						
+						
+						<li>
+							<a href="/temple/docs/utils">Utils & Extras</a>
+							
+						</li>
+						
+					</ul>
+					<a href="#top" class="backtotop">Back to Top</a>
+				</div>
+			</div>
+			<div class="col-lg-9 content">
+			<h2 id="events">Events</h2><p>Included in the Temple core is the event API taken directly Backbone. Below is a quick reference for the event API. Please see the <a href="http://backbonejs.org/#Events" target="_blank">Backbone documentation on events</a> for a more in-depth guide.</p>
+<pre><code class="hljs">view.on( event, callback [, context ])
+view.once( event, callback [, context ])
+view.off([ event ][, callback ][, context ])
+view.trigger( event [, args... ])
+view.listenTo( other, event, callback )
+view.listenToOnce( other, event, callback )
+view.stopListening( other, event, callback )</code></pre><p>Instances of Temple will emit several events:</p>
+<ul>
+<li><strong>&quot;parent&quot;</strong> <em>(previous, current)</em> - when the parent binding of the view changes.</li>
+<li><strong>&quot;child:add&quot;</strong> <em>(child)</em> - when a child is added to the view.</li>
+<li><strong>&quot;child:move&quot;</strong> <em>(child)</em> - when an existing child binding changes positions.</li>
+<li><strong>&quot;child:remove&quot;</strong> <em>(child)</em> - when an existing child binding is removed from the view.</li>
+<li><strong>&quot;update&quot;</strong> - when <code>updateNodes()</code> is called on the view.</li>
+<li><strong>&quot;paint&quot;</strong> <em>(parentNode, beforeNode)</em> - when <code>paint()</code> is called, after it has been added to the DOM.</li>
+<li><strong>&quot;detach&quot;</strong> - when <code>detach()</code> is called, after it has been removed from the DOM.</li>
+</ul>
+<h2 id="mount-life-cycle">Mount Life Cycle</h2><p>Every Temple binding can initiate and run it&#39;s own reactive computation. While mounted, the binding will trigger events for each step in the cycle. The following is a list of those events and when in the cycle each is fired. Please see the <code>mount()</code> method for an in-depth look into how this cycle works.</p>
+<ul>
+<li><strong>&quot;mount:before&quot;</strong> <em>(args)</em> - Triggered immediately when the <code>mount()</code> method is called. Only passed <code>args</code>, an array of arguments passed to <code>mount()</code>.</li>
+<li><strong>&quot;render:before&quot;</strong> <em>(args, comp)</em> - Triggered when the autorun computation begins. This means it is run once immediately with <code>mount()</code> and then zero or more time later. <code>comp</code> is the current autorun computation.</li>
+<li><strong>&quot;render&quot;</strong> <em>(args, comp, bindings)</em> - Triggered after <code>render()</code> is called on the binding, but before the bindings are added as children. <code>bindings</code> is the array of bindings returned from <code>render()</code></li>
+<li><strong>&quot;render:after&quot;</strong> <em>(args, comp, bindings)</em> - Triggered after bindings from <code>.render()</code> are added as children.</li>
+<li><strong>&quot;mount&quot;</strong> <em>(args, comp)</em> - Triggered after the autorun&#39;s computation&#39;s first run.</li>
+<li><strong>&quot;mount:after&quot;</strong> <em>(args, comp)</em> - Triggered directly after the <code>&quot;mount&quot;</code> event.</li>
+<li><strong>&quot;invalidate:before&quot;</strong> <em>(args, comp, bindings)</em> - Triggered when the autorun computation is invalidated, but before the children bindings are removed.</li>
+<li><strong>&quot;invalidate&quot;</strong> <em>(args, comp)</em> - Triggered when the autorun computation is invalidated and the children bindings are removed.</li>
+<li><strong>&quot;invalidate:after&quot;</strong> <em>(args, comp)</em> - Triggered directly after the <code>&quot;invalidate&quot;</code> event.</li>
+<li><strong>&quot;stop&quot;</strong> <em>(args)</em> - Triggered when the autorun computation is stopped. This is always triggered after the <code>&quot;invalidate&quot;</code> event.</li>
+</ul>
+
+			</div>
+		</div>
+	</div>
+</section></main>
+
+<script type="text/javascript">
+(function() {
+	var el, top, bottom, bodyHeight, winHeight, state,
+		updateState, updateSize, win;
+
+	win = $(window);
+	win.ready(function() {
+		el = $(".sidebar");
+		updateSize();
+		win.resize(debounce(updateSize, 100)).scroll(updateState);
+	});
+
+	updateSize = function() {
+		top = el.offset().top - 30;
+		bottom = $("#footer").outerHeight(true);
+		bodyHeight = document.body.offsetHeight;
+		winHeight = window.innerHeight;
+		updateState();
+	}
+
+	updateState = throttle(function() {
+		var y = document.body.scrollTop,
+			newState = inTop(y) ? "top" : inBottom(y) ? "bottom" : "middle";
+
+		if (state === newState) {
+			if (newState === "bottom") el.css("bottom", bottomOffset(y));
+			return;
+		}
+
+		el.removeClass("affix affix-top affix-bottom");
+		el.css({ bottom: "" });
+
+		switch(newState) {
+			case "top":
+				el.addClass("affix-top");
+				break;
+
+			case "middle":
+				el.addClass("affix");
+				break;
+
+			case "bottom":
+				el.addClass("affix-bottom").css("bottom", bottomOffset(y));
+				break;
+		}
+
+		if (state === "top") el.prop("scrollTop", 0);
+
+		state = newState;
+	}, 50);
+
+	function inTop(y) {
+		return y < top;
+	}
+
+	function inBottom(y) {
+		return y + winHeight >= bodyHeight - bottom;
+	}
+
+	function bottomOffset(y) {
+		return winHeight - (bodyHeight - y - bottom);
+	}
+
+	function debounce(func, wait, immediate) {
+		var timeout, args, context, timestamp, result;
+
+		var later = function() {
+			var last = Date.now() - timestamp;
+
+			if (last < wait && last > 0) {
+				timeout = setTimeout(later, wait - last);
+			} else {
+				timeout = null;
+				if (!immediate) {
+					result = func.apply(context, args);
+					if (!timeout) context = args = null;
+				}
+			}
+		};
+
+		return function() {
+			context = this;
+			args = arguments;
+			timestamp = Date.now();
+			var callNow = immediate && !timeout;
+			if (!timeout) timeout = setTimeout(later, wait);
+			if (callNow) {
+				result = func.apply(context, args);
+				context = args = null;
+			}
+
+			return result;
+		};
+	}
+
+	function throttle(func, wait, options) {
+		var context, args, result;
+		var timeout = null;
+		var previous = 0;
+		if (!options) options = {};
+		var later = function() {
+			previous = options.leading === false ? 0 : Date.now();
+			timeout = null;
+			result = func.apply(context, args);
+			if (!timeout) context = args = null;
+		};
+		return function() {
+			var now = Date.now();
+			if (!previous && options.leading === false) previous = now;
+			var remaining = wait - (now - previous);
+			context = this;
+			args = arguments;
+			if (remaining <= 0 || remaining > wait) {
+				clearTimeout(timeout);
+				timeout = null;
+				previous = now;
+				result = func.apply(context, args);
+				if (!timeout) context = args = null;
+			} else if (!timeout && options.trailing !== false) {
+				timeout = setTimeout(later, remaining);
+			}
+			return result;
+		};
+	}
+}).call(this);
+</script>
+
+
+		<div id="footer">
+			<div class="container centered">
+				<p>
+					<a href="https://github.com/BeneathTheInk/Temple">Github</a> &bullet;
+					<a href="https://github.com/BeneathTheInk/Temple/issues">Issues</a> &bullet;
+					<a href="https://github.com/BeneathTheInk/Temple/releases">Releases</a>
+				</p>
+				<p>
+					Created &amp; maintained by <a href="http://github.com/tyler-johnson">Tyler Johnson</a>. Licensed under <a href="http://opensource.org/licenses/MIT" rel="nofollow">MIT</a>.
+					<span class="copyright">&copy; 2014 <a href="http://beneaththeink.com">Beneath the Ink, Inc.</a></span>
+				</p>
+			</div>
+		</div>
+	</body>
+</html>

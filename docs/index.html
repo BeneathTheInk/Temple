@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+	<head>
+		<meta charset="UTF-8" />
+		<title>API Documentation ~ Temple | A JavaScript View Framework by Beneath the Ink</title>
+		<!--[if lt IE 9]><script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+		
+		<link rel="stylesheet" href="/temple/css/main.css" type="text/css" />
+
+		<script type="text/javascript" src="/temple/js/jquery.min.js"></script>
+		<script type="text/javascript" src="/temple/js/bootstrap.min.js"></script>
+		<script type="text/javascript" src="/temple/js/ace-editor/ace.js"></script>
+		<script type="text/javascript" src="/temple/js/temple.min.js"></script>
+		<script type="text/javascript">var BASEURL = "/temple";</script>
+		<script type="text/javascript" src="/temple/js/sandbox.js"></script>
+	</head>
+	<body class="page page-subnav">
+		<nav class="navbar navbar-static-top navbar-inverse" id="top">
+			<div class="container">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#primary-nav">
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="/temple/"><i class="icon icon-bank"></i> Temple <small>By Beneath the Ink</small></a>
+				</div>
+
+				<div class="collapse navbar-collapse" id="primary-nav">
+					<ul class="nav navbar-nav navbar-right">
+						<li><a href="/temple/guide">Guide</a></li>
+						<li><a href="/temple/docs">Docs</a></li>
+						<li><a href="https://github.com/BeneathTheInk/Temple">Github</a></li>
+					</ul>
+				</div>
+			</div>
+		</nav>
+
+		
+<main><section>
+	<div class="container">
+		<div class="row">
+			<div class="col-lg-3">
+				<div class="sidebar">
+					<ul class="nav">
+						
+						
+						<li class="active">
+							<a href="/temple/docs">API Documentation</a>
+							
+						</li>
+						
+						
+						<li>
+							<a href="/temple/docs/events">Events & Life Cycle</a>
+							
+						</li>
+						
+						
+						<li>
+							<a href="/temple/docs/binding">Binding</a>
+							
+						</li>
+						
+						
+						<li>
+							<a href="/temple/docs/node">Node</a>
+							
+						</li>
+						
+						
+						<li>
+							<a href="/temple/docs/element">Element</a>
+							
+						</li>
+						
+						
+						<li>
+							<a href="/temple/docs/text-comment">Text / Comment</a>
+							
+						</li>
+						
+						
+						<li>
+							<a href="/temple/docs/html">HTML</a>
+							
+						</li>
+						
+						
+						<li>
+							<a href="/temple/docs/utils">Utils & Extras</a>
+							
+						</li>
+						
+					</ul>
+					<a href="#top" class="backtotop">Back to Top</a>
+				</div>
+			</div>
+			<div class="col-lg-9 content">
+			<h1 id="api-documentation">API Documentation</h1>
+			</div>
+		</div>
+	</div>
+</section></main>
+
+<script type="text/javascript">
+(function() {
+	var el, top, bottom, bodyHeight, winHeight, state,
+		updateState, updateSize, win;
+
+	win = $(window);
+	win.ready(function() {
+		el = $(".sidebar");
+		updateSize();
+		win.resize(debounce(updateSize, 100)).scroll(updateState);
+	});
+
+	updateSize = function() {
+		top = el.offset().top - 30;
+		bottom = $("#footer").outerHeight(true);
+		bodyHeight = document.body.offsetHeight;
+		winHeight = window.innerHeight;
+		updateState();
+	}
+
+	updateState = throttle(function() {
+		var y = document.body.scrollTop,
+			newState = inTop(y) ? "top" : inBottom(y) ? "bottom" : "middle";
+
+		if (state === newState) {
+			if (newState === "bottom") el.css("bottom", bottomOffset(y));
+			return;
+		}
+
+		el.removeClass("affix affix-top affix-bottom");
+		el.css({ bottom: "" });
+
+		switch(newState) {
+			case "top":
+				el.addClass("affix-top");
+				break;
+
+			case "middle":
+				el.addClass("affix");
+				break;
+
+			case "bottom":
+				el.addClass("affix-bottom").css("bottom", bottomOffset(y));
+				break;
+		}
+
+		if (state === "top") el.prop("scrollTop", 0);
+
+		state = newState;
+	}, 50);
+
+	function inTop(y) {
+		return y < top;
+	}
+
+	function inBottom(y) {
+		return y + winHeight >= bodyHeight - bottom;
+	}
+
+	function bottomOffset(y) {
+		return winHeight - (bodyHeight - y - bottom);
+	}
+
+	function debounce(func, wait, immediate) {
+		var timeout, args, context, timestamp, result;
+
+		var later = function() {
+			var last = Date.now() - timestamp;
+
+			if (last < wait && last > 0) {
+				timeout = setTimeout(later, wait - last);
+			} else {
+				timeout = null;
+				if (!immediate) {
+					result = func.apply(context, args);
+					if (!timeout) context = args = null;
+				}
+			}
+		};
+
+		return function() {
+			context = this;
+			args = arguments;
+			timestamp = Date.now();
+			var callNow = immediate && !timeout;
+			if (!timeout) timeout = setTimeout(later, wait);
+			if (callNow) {
+				result = func.apply(context, args);
+				context = args = null;
+			}
+
+			return result;
+		};
+	}
+
+	function throttle(func, wait, options) {
+		var context, args, result;
+		var timeout = null;
+		var previous = 0;
+		if (!options) options = {};
+		var later = function() {
+			previous = options.leading === false ? 0 : Date.now();
+			timeout = null;
+			result = func.apply(context, args);
+			if (!timeout) context = args = null;
+		};
+		return function() {
+			var now = Date.now();
+			if (!previous && options.leading === false) previous = now;
+			var remaining = wait - (now - previous);
+			context = this;
+			args = arguments;
+			if (remaining <= 0 || remaining > wait) {
+				clearTimeout(timeout);
+				timeout = null;
+				previous = now;
+				result = func.apply(context, args);
+				if (!timeout) context = args = null;
+			} else if (!timeout && options.trailing !== false) {
+				timeout = setTimeout(later, remaining);
+			}
+			return result;
+		};
+	}
+}).call(this);
+</script>
+
+
+		<div id="footer">
+			<div class="container centered">
+				<p>
+					<a href="https://github.com/BeneathTheInk/Temple">Github</a> &bullet;
+					<a href="https://github.com/BeneathTheInk/Temple/issues">Issues</a> &bullet;
+					<a href="https://github.com/BeneathTheInk/Temple/releases">Releases</a>
+				</p>
+				<p>
+					Created &amp; maintained by <a href="http://github.com/tyler-johnson">Tyler Johnson</a>. Licensed under <a href="http://opensource.org/licenses/MIT" rel="nofollow">MIT</a>.
+					<span class="copyright">&copy; 2014 <a href="http://beneaththeink.com">Beneath the Ink, Inc.</a></span>
+				</p>
+			</div>
+		</div>
+	</body>
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Interactivity &amp; Dynamic UIs ~ Temple | A JavaScript View Framework by Beneath the Ink</title>
+		<!--[if lt IE 9]><script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+		
+		<link rel="stylesheet" href="/temple/css/main.css" type="text/css" />
+
+		<script type="text/javascript" src="/temple/js/jquery.min.js"></script>
+		<script type="text/javascript" src="/temple/js/bootstrap.min.js"></script>
+		<script type="text/javascript" src="/temple/js/ace-editor/ace.js"></script>
+		<script type="text/javascript" src="/temple/js/temple.min.js"></script>
+		<script type="text/javascript">var BASEURL = "/temple";</script>
+		<script type="text/javascript" src="/temple/js/sandbox.js"></script>
+	</head>
+	<body class="page page-subnav">
+		<nav class="navbar navbar-static-top navbar-inverse" id="top">
+			<div class="container">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#primary-nav">
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="/temple/"><i class="icon icon-bank"></i> Temple <small>By Beneath the Ink</small></a>
+				</div>
+
+				<div class="collapse navbar-collapse" id="primary-nav">
+					<ul class="nav navbar-nav navbar-right">
+						<li><a href="/temple/guide">Guide</a></li>
+						<li><a href="/temple/docs">Docs</a></li>
+						<li><a href="https://github.com/BeneathTheInk/Temple">Github</a></li>
+					</ul>
+				</div>
+			</div>
+		</nav>
+
+		
+<main><section>
+	<div class="container">
+		<div class="row">
+			<div class="col-lg-3">
+				<div class="sidebar">
+					<ul class="nav">
+						
+						
+						<li>
+							<a href="/temple/guide">Why Temple?</a>
+							
+						</li>
+						
+						
+						<li>
+							<a href="/temple/guide/install">Install</a>
+							
+						</li>
+						
+						
+						<li>
+							<a href="/temple/guide/basics">Temple Basics</a>
+							
+						</li>
+						
+						
+						<li class="active">
+							<a href="/temple/guide/interactivity">Interactivity &amp; Dynamic UIs</a>
+							
+						</li>
+						
+						
+						<li>
+							<a href="/temple/guide/reactive">Thinking Reactive</a>
+							
+						</li>
+						
+					</ul>
+					<a href="#top" class="backtotop">Back to Top</a>
+				</div>
+			</div>
+			<div class="col-lg-9 content">
+			<h1 id="interactivity-amp-dynamic-uis">Interactivity &amp; Dynamic UIs</h1><p>An important part of interfaces is understanding and responding to user interactions. The DOM has a set of standard methods for listening to user events on elements and Temple has extended this native API to make it more compatible with the Temple ecosystem.</p>
+<p>For starters, let&#39;s say hello to someone, dynamically.</p>
+<script type="text/plain" data-sandbox data-height="300">Ly8gdGV4dCBiaW5kaW5nIHRvIGhvbGQgdGhlIHZhbHVlCnZhciBncmVldGluZyA9IG5ldyBUZW1wbGUuVGV4dCgiV29ybGQiKTsKCi8vIGFuIGlucHV0IGVsZW1lbnQgdG8gY29udHJvbCB0aGUgdmFsdWUKdmFyIGlucHV0ID0gbmV3IFRlbXBsZS5ET00uaW5wdXQoKTsKaW5wdXQuYXR0cih7IHR5cGU6ICJ0ZXh0IiwgdmFsdWU6ICJXb3JsZCIgfSk7CgovLyBvbiBrZXl1cCwgc2V0IHRoZSB0ZXh0IGJpbmRpbmcgdmFsdWUgdG8gdGhlIGlucHV0IHZhbHVlCmlucHV0LmFkZEV2ZW50TGlzdGVuZXIoImtleXVwIiwgZnVuY3Rpb24oKSB7CiAgICBncmVldGluZy5zZXRWYWx1ZSh0aGlzLnByb3AoInZhbHVlIikpOwp9KTsKCi8vIHJlbmRlciBpbiB0aGUgYm9keQpuZXcgVGVtcGxlKAogICAgaW5wdXQsCiAgICBuZXcgVGVtcGxlLkRPTS5icigpLAogICAgIkhlbGxvLCAiLCBncmVldGluZwopLnBhaW50KCJib2R5Iik7</script><p>In this example, we are creating a one-way data binding between a input field and a text node. Whenever the user types into the input field, the value of the text node is updated with input&#39;s value. The <code>keyup</code> event is just one example of an event that can be used with Temple&#39;s <code>addEventListener()</code> method; Temple supports every event the native DOM supports.</p>
+<p>This example, while very easy to understand, is unfortunately lacking. For one, this is very easily reproduced in native DOM, which would most likely result in less code and faster results. Secondly, this example will only ever execute once, meaning as an interface component, it is fairly useless.</p>
+<p>So what&#39;s the point? Well for one, Temple should never be used for just plain DOM generation. There a far better tools for that. Temple is going to be most comfortable in structured environments, where interfaces can be subdivided into their most basic parts.</p>
+<p>Let&#39;s transform the previous example into a Temple component.</p>
+<script type="text/plain" data-sandbox data-height="440">Ly8gZXh0ZW5kIFRlbXBsZSB0byBjcmVhdGUgYSBjdXN0b20gY29tcG9uZW50CnZhciBIZWxsbyA9IFRlbXBsZS5leHRlbmQoewogICAgaW5pdGlhbGl6ZTogZnVuY3Rpb24oKSB7CiAgICAgICAgLy8gdGV4dCBiaW5kaW5nIHRvIGhvbGQgdGhlIHZhbHVlCiAgICAgICAgdmFyIGdyZWV0aW5nID0gbmV3IFRlbXBsZS5UZXh0KCJXb3JsZCIpOwoKICAgICAgICAvLyBhbiBpbnB1dCBlbGVtZW50IHRvIGNvbnRyb2wgdGhlIHZhbHVlCiAgICAgICAgdmFyIGlucHV0ID0gbmV3IFRlbXBsZS5ET00uaW5wdXQoKTsKICAgICAgICBpbnB1dC5hdHRyKHsgdHlwZTogInRleHQiLCB2YWx1ZTogIldvcmxkIiB9KTsKCiAgICAgICAgLy8gb24ga2V5dXAsIHNldCB0aGUgdGV4dCBiaW5kaW5nIHZhbHVlIHRvIHRoZSBpbnB1dCB2YWx1ZQogICAgICAgIGlucHV0LmFkZEV2ZW50TGlzdGVuZXIoImtleXVwIiwgZnVuY3Rpb24oKSB7CiAgICAgICAgICAgIGdyZWV0aW5nLnNldFZhbHVlKGlucHV0LnByb3AoInZhbHVlIikpOwogICAgICAgIH0pOwoKICAgICAgICAvLyByZW5kZXIgc3RydWN0dXJlCiAgICAgICAgdGhpcy5hcHBlbmQoCiAgICAgICAgICAgIGlucHV0LAogICAgICAgICAgICBuZXcgVGVtcGxlLkRPTS5icigpLAogICAgICAgICAgICAiSGVsbG8sICIsIGdyZWV0aW5nCiAgICAgICAgKTsKICAgIH0gCn0pOwoKLy8gcmVuZGVyIGFuIGluc3RhbmNlIG9mIHRoZSBuZXcgY29tcG9uZW50IGluIHRoZSBib2R5Cm5ldyBIZWxsbygpLnBhaW50KCJib2R5Iik7</script><p>As you can see, this example is very similar to the previous example and even produces an identical output. The difference is that we&#39;ve wrapped the bindings into a Temple component via the <code>extend()</code> method. A new instance of the component is created and rendered into the DOM.</p>
+<p>Organizing views this way allows us to reuse code while keeping each instance completely sandboxed from the rest of the interface. This helps to make the component easier to maintain and test, regardless of where it is being rendered or how many are needed.</p>
+<p>Our <code>Hello</code> component isn&#39;t perfect yet. In a real world scenario, the input value would need to be readable from outside the component. Let&#39;s rewrite the component so it exposes a few methods that provide access to the data.</p>
+<script type="text/plain" data-sandbox data-height="550">Ly8gZXh0ZW5kIFRlbXBsZSB0byBjcmVhdGUgYSBjdXN0b20gY29tcG9uZW50CnZhciBIZWxsbyA9IFRlbXBsZS5leHRlbmQoewogICAgaW5pdGlhbGl6ZTogZnVuY3Rpb24odmFsdWUpIHsKICAgICAgICB2YXIgc2VsZiA9IHRoaXM7CgogICAgICAgIC8vIHRleHQgYmluZGluZyB0byBob2xkIHRoZSB2YWx1ZQogICAgICAgIHZhciBncmVldGluZyA9IG5ldyBUZW1wbGUuVGV4dCgpOwoKICAgICAgICAvLyBhbiBpbnB1dCBlbGVtZW50IHRvIGNvbnRyb2wgdGhlIHZhbHVlCiAgICAgICAgdmFyIGlucHV0ID0gbmV3IFRlbXBsZS5ET00uaW5wdXQoKTsKICAgICAgICBpbnB1dC5hdHRyKCJ0eXBlIiwgInRleHQiKTsKCiAgICAgICAgLy8gb24ga2V5dXAsIHNldCB0aGUgdGV4dCBiaW5kaW5nIHZhbHVlIHRvIHRoZSBpbnB1dCB2YWx1ZQogICAgICAgIGlucHV0LmFkZEV2ZW50TGlzdGVuZXIoImtleXVwIiwgZnVuY3Rpb24oKSB7CiAgICAgICAgICAgIHNlbGYuc2V0VmFsdWUoaW5wdXQucHJvcCgidmFsdWUiKSk7CiAgICAgICAgfSk7CgogICAgICAgIC8vIHVwZGF0ZSB0aGUgaW50ZXJmYWNlIGlmIHRoZSBncmVldGluZyBpcyBjaGFuZ2VkCiAgICAgICAgdGhpcy5vbigiaGVsbG8iLCBmdW5jdGlvbih2YWwpIHsKICAgICAgICAgICAgZ3JlZXRpbmcuc2V0VmFsdWUodmFsKTsKCiAgICAgICAgICAgIGlmIChpbnB1dC5wcm9wKCJ2YWx1ZSIpICE9PSB2YWwpIHsKICAgICAgICAgICAgICAgIGlucHV0LnByb3AoInZhbHVlIiwgdmFsKTsKICAgICAgICAgICAgfQogICAgICAgIH0pOwoKICAgICAgICAvLyByZW5kZXIgc3RydWN0dXJlCiAgICAgICAgdGhpcy5hcHBlbmQoCiAgICAgICAgICAgIGlucHV0LAogICAgICAgICAgICBuZXcgVGVtcGxlLkRPTS5icigpLAogICAgICAgICAgICAiSGVsbG8sICIsIGdyZWV0aW5nCiAgICAgICAgKTsKCiAgICAgICAgLy8gc2V0IHRoZSBkZWZhdWx0IHZhbHVlCiAgICAgICAgaWYgKHZhbHVlKSB0aGlzLnNldFZhbHVlKHZhbHVlKTsKICAgIH0sCgogICAgZ2V0VmFsdWU6IGZ1bmN0aW9uKCkgewogICAgICAgIHJldHVybiB0aGlzLnZhbHVlOwogICAgfSwKCiAgICBzZXRWYWx1ZTogZnVuY3Rpb24odmFsKSB7CiAgICAgICAgdGhpcy50cmlnZ2VyKCJoZWxsbyIsIHRoaXMudmFsdWUgPSB2YWwpOwogICAgICAgIHJldHVybiB0aGlzOwogICAgfQp9KTsKCi8vIHJlbmRlciBhbiBpbnN0YW5jZSBvZiBIZWxsbwp2YXIgaGVsbG8gPSBuZXcgSGVsbG8oIldvcmxkIik7Cgp2YXIgbmFtZXMgPSBbICJDcmFpZyIsICJKYW5lIiwgIlRvbSIsICJKb2huIiwgIk1hcnkiLCAiSnVsaWEiLCAiU3RldmUiIF07Cgp2YXIgcmFuZG9OYW1lID0gbmV3IFRlbXBsZS5ET00uYnV0dG9uKCJSYW5kb20gTmFtZSIpCiAgICAuc3R5bGUoIm1hcmdpbi10b3AiLCAiMjBweCIpCiAgICAuYWRkRXZlbnRMaXN0ZW5lcigiY2xpY2siLCBmdW5jdGlvbihlKSB7CiAgICAgICAgZS5wcmV2ZW50RGVmYXVsdCgpOwogICAgICAgIGhlbGxvLnNldFZhbHVlKG5hbWVzW01hdGguZmxvb3IoTWF0aC5yYW5kb20oKSAqIG5hbWVzLmxlbmd0aCldKTsKICAgIH0pOwoKbmV3IFRlbXBsZSgKICAgIG5ldyBUZW1wbGUuRE9NLmRpdihoZWxsbyksCiAgICByYW5kb05hbWUKKS5wYWludCgiYm9keSIpOw==</script>
+			</div>
+		</div>
+	</div>
+</section></main>
+
+<script type="text/javascript">
+(function() {
+	var el, top, bottom, bodyHeight, winHeight, state,
+		updateState, updateSize, win;
+
+	win = $(window);
+	win.ready(function() {
+		el = $(".sidebar");
+		updateSize();
+		win.resize(debounce(updateSize, 100)).scroll(updateState);
+	});
+
+	updateSize = function() {
+		top = el.offset().top - 30;
+		bottom = $("#footer").outerHeight(true);
+		bodyHeight = document.body.offsetHeight;
+		winHeight = window.innerHeight;
+		updateState();
+	}
+
+	updateState = throttle(function() {
+		var y = document.body.scrollTop,
+			newState = inTop(y) ? "top" : inBottom(y) ? "bottom" : "middle";
+
+		if (state === newState) {
+			if (newState === "bottom") el.css("bottom", bottomOffset(y));
+			return;
+		}
+
+		el.removeClass("affix affix-top affix-bottom");
+		el.css({ bottom: "" });
+
+		switch(newState) {
+			case "top":
+				el.addClass("affix-top");
+				break;
+
+			case "middle":
+				el.addClass("affix");
+				break;
+
+			case "bottom":
+				el.addClass("affix-bottom").css("bottom", bottomOffset(y));
+				break;
+		}
+
+		if (state === "top") el.prop("scrollTop", 0);
+
+		state = newState;
+	}, 50);
+
+	function inTop(y) {
+		return y < top;
+	}
+
+	function inBottom(y) {
+		return y + winHeight >= bodyHeight - bottom;
+	}
+
+	function bottomOffset(y) {
+		return winHeight - (bodyHeight - y - bottom);
+	}
+
+	function debounce(func, wait, immediate) {
+		var timeout, args, context, timestamp, result;
+
+		var later = function() {
+			var last = Date.now() - timestamp;
+
+			if (last < wait && last > 0) {
+				timeout = setTimeout(later, wait - last);
+			} else {
+				timeout = null;
+				if (!immediate) {
+					result = func.apply(context, args);
+					if (!timeout) context = args = null;
+				}
+			}
+		};
+
+		return function() {
+			context = this;
+			args = arguments;
+			timestamp = Date.now();
+			var callNow = immediate && !timeout;
+			if (!timeout) timeout = setTimeout(later, wait);
+			if (callNow) {
+				result = func.apply(context, args);
+				context = args = null;
+			}
+
+			return result;
+		};
+	}
+
+	function throttle(func, wait, options) {
+		var context, args, result;
+		var timeout = null;
+		var previous = 0;
+		if (!options) options = {};
+		var later = function() {
+			previous = options.leading === false ? 0 : Date.now();
+			timeout = null;
+			result = func.apply(context, args);
+			if (!timeout) context = args = null;
+		};
+		return function() {
+			var now = Date.now();
+			if (!previous && options.leading === false) previous = now;
+			var remaining = wait - (now - previous);
+			context = this;
+			args = arguments;
+			if (remaining <= 0 || remaining > wait) {
+				clearTimeout(timeout);
+				timeout = null;
+				previous = now;
+				result = func.apply(context, args);
+				if (!timeout) context = args = null;
+			} else if (!timeout && options.trailing !== false) {
+				timeout = setTimeout(later, remaining);
+			}
+			return result;
+		};
+	}
+}).call(this);
+</script>
+
+
+		<div id="footer">
+			<div class="container centered">
+				<p>
+					<a href="https://github.com/BeneathTheInk/Temple">Github</a> &bullet;
+					<a href="https://github.com/BeneathTheInk/Temple/issues">Issues</a> &bullet;
+					<a href="https://github.com/BeneathTheInk/Temple/releases">Releases</a>
+				</p>
+				<p>
+					Created &amp; maintained by <a href="http://github.com/tyler-johnson">Tyler Johnson</a>. Licensed under <a href="http://opensource.org/licenses/MIT" rel="nofollow">MIT</a>.
+					<span class="copyright">&copy; 2014 <a href="http://beneaththeink.com">Beneath the Ink, Inc.</a></span>
+				</p>
+			</div>
+		</div>
+	</body>
+</html>
