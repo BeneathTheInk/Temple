@@ -66,12 +66,12 @@ _.extend(Model.prototype, {
 		if (index < 0) return this.getAllModels()[~index];
 
 		var model = this;
-		
+
 		while (index && model) {
 			model = model.parent;
 			index--;
 		}
-		
+
 		return model;
 	},
 
@@ -177,41 +177,32 @@ _.extend(Model.prototype, {
 			model = model.parent;
 		}
 
+		proxies.push.apply(proxies, Model._defaultProxies);
+
 		return proxies;
+	},
+
+	hasProxy: function(proxy, proxies) {
+		if (proxies == null) proxies = this.getAllProxies();
+		return _.contains(proxies, proxy);
 	},
 
 	registerProxy: function(proxy) {
 		if (typeof proxy !== "object" || proxy == null) throw new Error("Expecting object for proxy.");
 		if (typeof proxy.match !== "function") throw new Error("Layer missing required match method.");
 		if (typeof proxy.get !== "function") throw new Error("Layer missing required get method.");
-		this.proxies.unshift(proxy);
+		if (!this.hasProxy(proxy)) this.proxies.unshift(proxy);
 		return this;
 	},
 
-	getProxyByValue: function(target) {
-		var proxy;
-		
-		// look locally first
-		proxy = _.find(this.proxies, function(p) {
-			return p.match(target);
+	getProxyByValue: function(target, proxies) {
+		if (proxies == null) proxies = this.getAllProxies();
+		return _.find(proxies, function(proxy) {
+			return proxy.match(target);
 		});
-
-		// then recursively check the parents
-		if (proxy == null && this.parent != null) {
-			proxy = this.parent.getProxyByValue(target);
-		}
-
-		// otherwise look through the defaults
-		if (proxy == null) {
-			proxy = _.find(Model._defaultProxies, function(p) {
-				return p.match(target);
-			});
-		}
-
-		return proxy;
 	},
 
-	// defines a symbolic property on an object that points to the data
+	// defines a reactive property on an object that points to the data
 	defineDataLink: function(obj, prop, options) {
 		var model = this;
 
