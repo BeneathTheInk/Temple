@@ -166,6 +166,70 @@ describe("Mustache", function() {
 			});
 		});
 
+		it("parses mustache attributes", function() {
+			var template = Temple.parse("<div class=\"{{# foo }}myclass{{/ foo }}\"></div>");
+
+			expect(template).to.deep.equal({
+				type: NODE_TYPE.ROOT,
+				version: Temple.VERSION,
+				children: [{
+					type: NODE_TYPE.ELEMENT,
+					name: "div",
+					attributes: [{
+						type: NODE_TYPE.ATTRIBUTE,
+						name: "class",
+						value: "{{# foo }}myclass{{/ foo }}",
+						children: [{
+							type: NODE_TYPE.SECTION,
+							value: [{ parts: [{ children: [], key: "foo" }], type: "all" }],
+							children: [{
+								type: NODE_TYPE.TEXT,
+								value: "myclass"
+							}]
+						}],
+						arguments: [{
+							type: NODE_TYPE.LITERAL,
+							value: "{{# foo }}myclass{{/ foo }}"
+						}]
+					}],
+					children: []
+				}]
+			});
+		});
+
+		it("parses attributes with slashes and mustache", function() {
+			var template = Temple.parse("<div class=\"{{ foo }}/{{ bar }}\"></div>");
+
+			expect(template).to.deep.equal({
+				type: NODE_TYPE.ROOT,
+				version: Temple.VERSION,
+				children: [{
+					type: NODE_TYPE.ELEMENT,
+					name: "div",
+					attributes: [{
+						type: NODE_TYPE.ATTRIBUTE,
+						name: "class",
+						value: "{{ foo }}/{{ bar }}",
+						children: [{
+							type: NODE_TYPE.INTERPOLATOR,
+							value: [{ parts: [{ children: [], key: "foo" }], type: "all" }]
+						},{
+							type: NODE_TYPE.TEXT,
+							value: "/"
+						},{
+							type: NODE_TYPE.INTERPOLATOR,
+							value: [{ parts: [{ children: [], key: "bar" }], type: "all" }]
+						}],
+						arguments: [{
+							type: NODE_TYPE.LITERAL,
+							value: "{{ foo }}/{{ bar }}"
+						}]
+					}],
+					children: []
+				}]
+			});
+		});
+
 	});
 
 	describe("Sections", function() {

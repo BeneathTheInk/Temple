@@ -73,13 +73,21 @@ elementEnd
 attribute
 	= key:key value:("=" ws string ws)? {
 		value = value != null ? value[2] : "";
+		var args
+
+		// could fail on complex attributes
+		try {
+			args = parse(value,  _.extend({}, options, { startRule: "attrArguments" }));
+		} catch(e) {
+			args = [{ type: NODE_TYPE.LITERAL, value: value }];
+		}
 
 		return {
 			type: NODE_TYPE.ATTRIBUTE,
 			name: key,
 			value: value,
 			children: parse(value, _.extend({}, options, { startRule: "attrValue" })),
-			arguments: parse(value,  _.extend({}, options, { startRule: "attrArguments" }))
+			arguments: args
 		}
 	}
 
