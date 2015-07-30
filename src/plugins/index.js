@@ -47,3 +47,5 @@ exports.registerPlugin = function(name, fn) {
 // load built in plugins
 registerPlugin("actions", require("./actions"));
 registerPlugin("twoway", require("./twoway"));
+registerPlugin("adoption", require("./adoption"));
+registerPlugin("refs", require("./refs"));

@@ -50,13 +50,13 @@ var Temple = module.exports = _.defaults({
 // no need for node js to hurt itself on any hard edges
 if (typeof document === "undefined") return;
 
-// load the real class for the browser
-Temple = module.exports = _.extend(require("./mustache"), module.exports);
-
-// load the plugin API
-_.extend(Temple, require("./plugins"));
-
-// and attach the rest of the parts that Node can't use
+// attach the other parts that Node can't use
 Temple.DOMRange = require("./domrange");
 Temple.View = require("./view");
 Temple.Section = require("./section");
+
+// load the real class for the browser
+Temple = module.exports = _.extend(require("./mustache"), Temple);
+
+// load the plugin API
+_.extend(Temple, require("./plugins"));
