@@ -7,7 +7,6 @@ var View = require("./view");
 var Model = require("./model");
 var Section = require("./section");
 var $track = require("trackr-objects");
-var idom = require('incremental-dom');
 var DOMRange = require("./domrange");
 
 var Mustache =
