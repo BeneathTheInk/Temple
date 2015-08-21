@@ -41,7 +41,9 @@ _.extend(Model.prototype, {
 
 	// sets the data on the model
 	set: function(data, options) {
-		if (options && options.track !== false) {
+		options = options || {};
+
+		if (options.track !== false) {
 			data = track(data, options.track);
 		}
 

@@ -20,7 +20,7 @@ function adopt(view, parent, before) {
 
 	// render when not in loading mode
 	var onRender;
-	this.on("render", onRender = function(a, comp) {
+	this.on("render", onRender = function(comp) {
 		if (comp.firstRun) view.paint(parent, before);
 		comp.onInvalidate(function() {
 			if (comp.stopped) view.detach();
