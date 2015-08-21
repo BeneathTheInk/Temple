@@ -23,7 +23,11 @@
 	},
 	"main": "./lib/index.js",
 	"dependencies": {
-		"trackr": "~1.0.3",
+		"backbone-events-standalone": "~0.2.7",
+		"backbone-extend-standalone": "~0.1.2",
+		"matches-selector": "~1.0.0",
+		"trackr": "~2.0.0",
+		"trackr-objects": "~0.2.0",
 		"underscore": "~1.8.3"
 	},
 	"devDependencies": {

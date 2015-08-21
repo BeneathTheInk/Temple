@@ -1,22 +1,22 @@
-var Trackr = require("trackr"),
-	_ = require("underscore"),
-	util = require("./util"),
-	parse = require("./m+xml").parse,
-	$track = require("./track").track;
+var Trackr = require("trackr");
+var track = require("trackr-objects");
+var _ = require("underscore");
+var utils = require("./utils");
+var parse = require("./m+xml").parse;
 
 var Model =
 module.exports = function Model(data, parent, options) {
 	this.proxies = [];
 	this._dep = new Trackr.Dependency();
 	if (Model.isModel(parent)) this.parent = parent;
-	this.set(data, options && options.track);
+	this.set(data, options);
 }
 
 Model.isModel = function(o) {
 	return o instanceof Model;
 }
 
-Model.extend = util.subclass;
+Model.extend = require("backbone-extend-standalone");
 
 Model._defaultProxies = [ {
 	isList:  true,
@@ -34,17 +34,26 @@ Model.callProxyMethod = function(proxy, target, method, args, ctx) {
 	var args = _.isArray(args) ? _.clone(args) : [];
 	args.unshift(proxy, method, target);
 	args.push(ctx);
-	return util.result.apply(null, args);
+	return utils.result.apply(null, args);
 }
 
 _.extend(Model.prototype, {
 
 	// sets the data on the model
-	set: function(data, track) {
-		if (track !== false) data = $track(data, track);
+	set: function(data, options) {
+		if (options && options.track !== false) {
+			data = track(data, options.track);
+		}
+
 		this.data = data;
 		this._dep.changed();
 		return this;
+	},
+
+	append: function(model, options) {
+		if (Model.isModel(model)) model.parent = this;
+		else model = new Model(model, this, options);
+		return model;
 	},
 
 	// an array of models in the current stack, with the root as the first

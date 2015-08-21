@@ -4,8 +4,9 @@
 //////////////////////////////////////////////////
 
 var _ = require("underscore"),
-	Events = require("./events"),
-	util = require("./util");
+	Events = require("backbone-events-standalone"),
+	utils = require("./utils"),
+	matchesSelector = require("matches-selector");
 
 function isArrayLike(a) {
 	return a != null && typeof a.length === "number";
@@ -38,14 +39,14 @@ function DOMRange(nodeAndRangeArray) {
 };
 
 module.exports = DOMRange;
-DOMRange.extend = util.subclass;
+DOMRange.extend = require("backbone-extend-standalone");
 
 // finds the DOMRange the element is a part of
 DOMRange.forElement = function (elem) {
 	if (elem.nodeType !== 1) throw new Error("Expected element, found: " + elem);
-	
+
 	var range = null;
-	
+
 	while (elem && !range) {
 		range = (elem.$domrange || null);
 		elem = elem.parentNode;
@@ -166,7 +167,7 @@ _.extend(DOMRange.prototype, Events, {
 
 	addMember: function(newMember, atIndex, _isMove) {
 		var members = this.members;
-		
+
 		// validate the index
 		if (typeof atIndex !== "number" || isNaN(atIndex) ||
 			atIndex < 0 || atIndex > members.length) {
@@ -206,7 +207,7 @@ _.extend(DOMRange.prototype, Events, {
 
 	removeMember: function(atIndex, _isMove) {
 		var members = this.members;
-		
+
 		// also accepts the member to remove
 		if (typeof atIndex !== "number" || isNaN(atIndex)) {
 			atIndex = this.indexOf(atIndex);
@@ -296,7 +297,7 @@ _.extend(DOMRange.prototype, Events, {
 			if (el instanceof DOMRange) {
 				matches.push.apply(matches, el.findAll(selector));
 			} else if (typeof el.querySelectorAll === "function") {
-				if (el.nodeType === 1 && util.matchesSelector(el, selector)) matches.push(el);
+				if (el.nodeType === 1 && matchesSelector(el, selector)) matches.push(el);
 				matches.push.apply(matches, el.querySelectorAll(selector));
 			}
 		}
@@ -311,7 +312,7 @@ _.extend(DOMRange.prototype, Events, {
 			el = this.members[i];
 			if (el instanceof DOMRange) {
 				res = el.find(selector);
-			} else if (el.nodeType === 1 && util.matchesSelector(el, selector)) {
+			} else if (el.nodeType === 1 && matchesSelector(el, selector)) {
 				res = el;
 			} else if (typeof el.querySelector === "function") {
 				res = el.querySelector(selector);

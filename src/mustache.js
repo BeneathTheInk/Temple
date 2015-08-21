@@ -1,13 +1,14 @@
-var Trackr = require("trackr"),
-	_ = require("underscore"),
-	NODE_TYPE = require("./types"),
-	parse = require("./m+xml").parse,
-	util = require("./util"),
-	View = require("./view"),
-	Model = require("./model"),
-	Section = require("./section"),
-	$track = require("./track").track,
-	DOMRange = require("./domrange");
+var Trackr = require("trackr");
+var _ = require("underscore");
+var NODE_TYPE = require("./types");
+var parse = require("./m+xml").parse;
+var utils = require("./utils");
+var View = require("./view");
+var Model = require("./model");
+var Section = require("./section");
+var $track = require("trackr-objects");
+var idom = require('incremental-dom');
+var DOMRange = require("./domrange");
 
 var Mustache =
 module.exports = View.extend({
@@ -120,12 +121,12 @@ module.exports = View.extend({
 	// special partial setter that converts strings into mustache Views
 	setPartial: function(name, partial) {
 		if (_.isObject(name)) return View.prototype.setPartial.call(this, name);
-		
+
 		if (_.isString(partial)) partial = parse(partial);
 		if (_.isObject(partial) && partial.type === NODE_TYPE.ROOT) partial = Mustache.extend({ template: partial });
-		if (partial != null && !util.isSubClass(View, partial))
+		if (partial != null && !utils.isSubClass(View, partial))
 			throw new Error("Expecting string template, parsed template, View subclass or function for partial.");
-		
+
 		return View.prototype.setPartial.call(this, name, partial);
 	},
 
@@ -180,10 +181,10 @@ module.exports = View.extend({
 
 				else {
 					var el = document.createElement(template.name);
-					
+
 					template.attributes.forEach(function(attr) {
 						if (this.renderDecorations(el, attr, view)) return;
-						
+
 						this.autorun(function() {
 							el.setAttribute(attr.name, this.renderTemplateAsString(attr.children, view));
 						});
@@ -201,22 +202,22 @@ module.exports = View.extend({
 							el.appendChild(child);
 						}
 					}
-					
+
 					return el;
 				}
 
 			case NODE_TYPE.TEXT:
-				return document.createTextNode(util.decodeEntities(template.value));
+				return document.createTextNode(utils.decodeEntities(template.value));
 
 			case NODE_TYPE.HTML:
-				return new DOMRange(util.parseHTML(template.value));
+				return new DOMRange(utils.parseHTML(template.value));
 
 			case NODE_TYPE.XCOMMENT:
 				return document.createComment(template.value);
 
 			case NODE_TYPE.INTERPOLATOR:
 				var node = document.createTextNode("");
-				
+
 				this.autorun(function() {
 					var val = view.get(template.value);
 					node.nodeValue = typeof val === "string" ? val : val != null ? val.toString() : "";
@@ -226,9 +227,9 @@ module.exports = View.extend({
 
 			case NODE_TYPE.TRIPLE:
 				var range = new DOMRange();
-				
+
 				this.autorun(function() {
-					range.setMembers(util.parseHTML(view.get(template.value)));
+					range.setMembers(utils.parseHTML(view.get(template.value)));
 				});
 
 				return range;
@@ -286,7 +287,7 @@ module.exports = View.extend({
 				proxy = model.getProxyByValue(val);
 				isList = model.callProxyMethod(proxy, val, "isList");
 				isEmpty = Section.isEmpty(model, proxy);
-				
+
 				makeRow = function(i) {
 					var row, data;
 

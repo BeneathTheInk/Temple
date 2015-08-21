@@ -1,14 +1,14 @@
-var _ = require("underscore"),
-	Trackr = require("trackr"),
-	Events = require("./events"),
-	util = require("./util"),
-	Model = require("./model"),
-	Plugins = require("./plugins"),
-	DOMRange = require("./domrange");
+var _ = require("underscore");
+var Trackr = require("trackr");
+var Events = require("backbone-events-standalone");
+var utils = require("./utils");
+var Model = require("./model");
+var Plugins = require("./plugins");
+var DOMRange = require("./domrange");
 
 var View =
 module.exports = DOMRange.extend({
-
+	
 	constructor: function(data, options) {
 		options = options || {};
 
@@ -18,11 +18,11 @@ module.exports = DOMRange.extend({
 			if (!Model.isModel(state)) {
 				state = new Model(state, null, options.state);
 			}
-			
+
 			// shove state between contexts
 			if (Model.isModel(data)) {
-				state.parent = data.parent;
-				data.parent = state;
+				if (data.parent) data.parent.append(state);
+				state.append(data);
 			}
 
 			// add to the stack before the real data
@@ -32,7 +32,7 @@ module.exports = DOMRange.extend({
 			// setup easy-access state property
 			state.defineDataLink(this, "state");
 		}
-		
+
 		// add partials
 		this._partials = {};
 		this._components = {};
@@ -40,19 +40,6 @@ module.exports = DOMRange.extend({
 
 		// set the passed in data
 		if (typeof data !== "undefined") this.addData(data, options);
-		
-		// quick access to the top model data
-		Object.defineProperty(this, "data", {
-			configurable: true,
-			enumerable: true,
-			get: function() {
-				this.model._dep.depend();
-				return this.model.data;
-			},
-			set: function(val) {
-				this.model.set(val);
-			}
-		});
 
 		// initiate like a normal dom range
 		DOMRange.call(this);
@@ -77,7 +64,7 @@ module.exports = DOMRange.extend({
 	// attach + mount
 	paint: function(p, n, _isMove, _isReplace) {
 		DOMRange.prototype.attach.apply(this, arguments);
-		if (!(_isMove || _isReplace || this.isMounted())) this.mount();
+		if (!(_isMove || _isReplace || this.comp)) this.mount();
 		return this;
 	},
 
@@ -88,47 +75,41 @@ module.exports = DOMRange.extend({
 		return this;
 	},
 
-	autorun: function(fn, onlyOnActive) {
-		var comp = Trackr.autorun(fn, this);
-		if (onlyOnActive && !Trackr.active) comp.stop();
-		return comp;
+	autorun: function(fn, options) {
+		return Trackr.autorun(fn, options, this);
 	},
 
 	// a generalized reactive workflow helper
 	mount: function() {
-		var args = _.toArray(arguments), comp;
-
 		Trackr.nonreactive(function() {
 			// stop existing mount
 			this.stop();
 
 			// the first event in the cycle, before everything else
-			this._mounting = true;
-			this.trigger("mount:before", args);
+			this.trigger("mount:before");
 		}, this);
 
 		// the autorun computation
-		comp = this._comp = this.autorun(function(comp) {
-			this.render.apply(this, args);
-			this.trigger("render", args, comp);
+		var comp = this.comp = this.autorun(function(comp) {
+			this.render();
+			this.trigger("render", comp);
 
 			// auto clean up
 			comp.onInvalidate(function() {
 				// remaining invalidate events
-				this.trigger("invalidate", args, comp);
+				this.trigger("invalidate", comp);
 
 				// detect if the computation stopped
 				if (comp.stopped) {
-					this.trigger("stop", args);
-					delete this._comp;
+					this.trigger("stop", comp);
+					delete this.comp;
 				}
 			});
 		});
 
 		// remaining mount events happen after the first render
 		Trackr.nonreactive(function() {
-			this.trigger("mount:after", args, comp);
-			delete this._mounting;
+			this.trigger("mount:after", comp);
 		}, this);
 
 		return this;
@@ -136,30 +117,8 @@ module.exports = DOMRange.extend({
 
 	render: function(){},
 
-	isMounted: function() {
-		return this.isMounting() || this._comp != null;
-	},
-
-	isMounting: function() {
-		return !!this._mounting;
-	},
-
-	getComputation: function() {
-		return this._comp;
-	},
-
-	invalidate: function() {
-		if (this.isMounted()) this._comp.invalidate();
-		return this;
-	},
-
-	onInvalidate: function(fn) {
-		if (this.isMounted()) this._comp.onInvalidate(fn);
-		return this;
-	},
-
 	stop: function() {
-		if (this.isMounted()) this._comp.stop();
+		if (this.comp) this.comp.stop();
 		return this;
 	},
 
@@ -173,7 +132,7 @@ module.exports = DOMRange.extend({
 		if (!_.isString(name) && name !== "")
 			throw new Error("Expecting non-empty string for partial name.");
 
-		if (partial != null && !util.isSubClass(View, partial))
+		if (partial != null && !utils.isSubClass(View, partial))
 			throw new Error("Expecting View subclass or function for partial.");
 
 		if (partial == null) {
@@ -222,8 +181,8 @@ module.exports = DOMRange.extend({
 		}
 
 		// class must be a view
-		if (!util.isSubClass(View, klass)) return null;
-		
+		if (!utils.isSubClass(View, klass)) return null;
+
 		// normalize context
 		if (ctx == null) ctx = this;
 		if (ctx instanceof View) ctx = ctx.model;
@@ -271,7 +230,7 @@ module.exports = DOMRange.extend({
 	getComponents: function(name) {
 		return _.reduce(this._components, function(m, comps, n) {
 			if (n === name) m.push.apply(m, comps);
-			
+
 			comps.forEach(function(c) {
 				if (c instanceof View) m.push.apply(m, c.getComponents(name));
 			});
@@ -280,6 +239,19 @@ module.exports = DOMRange.extend({
 		}, []);
 	}
 
+});
+
+// quick access to the top model data
+Object.defineProperty(View.prototype, "data", {
+	configurable: true,
+	enumerable: true,
+	get: function() {
+		this.model._dep.depend();
+		return this.model.data;
+	},
+	set: function(val) {
+		this.model.set(val);
+	}
 });
 
 // chainable methods to proxy to model
@@ -297,5 +269,17 @@ module.exports = DOMRange.extend({
 ].forEach(function(method) {
 	View.prototype[method] = function() {
 		return this.model[method].apply(this.model, arguments);
+	}
+});
+
+// proxy a few computation methods
+[ "invalidate", "onInvalidate" ].forEach(function(method) {
+	View.prototype[method] = function() {
+		if (!this.comp) {
+			throw new Error("Cannot run " + method + "(). This view is not mounted.");
+		}
+
+		this.comp[method].apply(this.comp, arguments);
+		return this;
 	}
 });

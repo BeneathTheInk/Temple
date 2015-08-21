@@ -1,23 +1,22 @@
-var _ = require("underscore"),
-	Trackr = require("trackr"),
-	parse = require("./m+xml").parse,
-	NODE_TYPE = require("./types"),
-	track = require("./track");
+var _ = require("underscore");
+var Trackr = require("trackr");
+var parse = require("./m+xml").parse;
+var NODE_TYPE = require("./types");
 
 // properties that Node.js and the browser can handle
-var Temple = module.exports = _.defaults({
+var Temple = module.exports = {
 	VERSION: "0.5.7",
 	NODE_TYPE: NODE_TYPE,
 
 	// other parts
-	util: require("./util"),
-	Events: require("./events"),
+	utils: require("./utils"),
 	Model: require("./model"),
 
 	// trackr short pointers
 	Trackr: Trackr,
 	Dependency: Trackr.Dependency,
 	autorun: Trackr.autorun,
+	track: require("trackr-objects"),
 
 	// all the parsers, declared here for easier access
 	parse: parse,
@@ -45,7 +44,7 @@ var Temple = module.exports = _.defaults({
 			version: Temple.VERSION
 		};
 	}
-}, track);
+};
 
 // no need for node js to hurt itself on any hard edges
 if (typeof document === "undefined") return;

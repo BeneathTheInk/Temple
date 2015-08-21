@@ -1,8 +1,8 @@
-var _ = require("underscore"),
-	Trackr = require("trackr"),
-	util = require("./util"),
-	Model = require("./model"),
-	View = require("./view");
+var _ = require("underscore");
+var Trackr = require("trackr");
+var utils = require("./utils");
+var Model = require("./model");
+var View = require("./view");
 
 var Section =
 module.exports = View.extend({
@@ -46,7 +46,7 @@ module.exports = View.extend({
 
 		// create a new row
 		var row = new View(data);
-		
+
 		// set up render and mount it
 		row.render = this._onRow;
 		this.rows[key] = row;
@@ -139,7 +139,7 @@ module.exports = View.extend({
 						// add the row after we set the data
 						if (row == null) this.addRow(key, rmodel);
 					}, this);
-						
+
 					// pretend like nothing happened
 					Trackr.currentComputation = comp;
 
