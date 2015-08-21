@@ -1,5 +1,4 @@
 var _ = require("underscore");
-var matchesSelector = require("matches-selector");
 
 // like underscore's result, but pass arguments through
 exports.result = function(object, property) {
@@ -90,7 +89,7 @@ var matches = exports.matches = function(node, selector) {
 	}
 
 	if (node.nodeType === window.Node.ELEMENT_NODE) {
-		return matchesSelector(node, selector);
+		return require("matches-selector")(node, selector);
 	}
 
 	return false;
