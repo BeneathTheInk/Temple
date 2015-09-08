@@ -39,14 +39,14 @@ function disown(view) {
 	if (this._adopted == null) return;
 
 	var index;
-	if (this._adopted.some(function(a, i) {
+	if (!this._adopted.some(function(a, i) {
 		if (a.view === view) {
 			index = i;
 			return true;
 		}
 	})) return;
 
-	this.off("render", this._adopted[i].render);
+	this.off("render", this._adopted[index].render);
 	this._adopted.splice(index, 1);
 
 	return view;
