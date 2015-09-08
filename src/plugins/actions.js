@@ -1,6 +1,18 @@
 var _ = require("underscore"),
 	Mustache = require("../");
 
+// generate decorators
+var eventNames = [
+	'load', 'scroll',
+	'click', 'dblclick', 'mousedown', 'mouseup', 'mouseenter', 'mouseleave',
+	'keydown', 'keypress', 'keyup',
+	'blur', 'focus', 'change', 'input', 'submit', 'reset',
+	'drag', 'dragdrop', 'dragend', 'dragenter', 'dragexit', 'dragleave', 'dragover', 'dragstart', 'drop'
+];
+
+var slice = Array.prototype.slice;
+var decorators = {};
+
 // the plugin
 module.exports = function() {
 	this.addAction = addAction;
@@ -11,19 +23,7 @@ module.exports = function() {
 
 	var initActions = _.result(this, "actions");
 	if (initActions != null) this.addAction(initActions);
-}
-
-// generate decorators
-var eventNames = [
-	'load', 'scroll',
-	'click', 'dblclick', 'mousedown', 'mouseup', 'mouseenter', 'mouseleave',
-	'keydown', 'keypress', 'keyup',
-	'blur', 'focus', 'change', 'input', 'submit', 'reset', 
-	'drag', 'dragdrop', 'dragend', 'dragenter', 'dragexit', 'dragleave', 'dragover', 'dragstart', 'drop'
-];
-
-var slice = Array.prototype.slice;
-var decorators = {};
+};
 
 eventNames.forEach(function(event) {
 	decorators["on-" + event] = function(decor, key) {
@@ -57,7 +57,7 @@ eventNames.forEach(function(event) {
 		decor.comp.onInvalidate(function() {
 			node.removeEventListener(event, listener);
 		});
-	}
+	};
 });
 
 // Action Class
@@ -72,7 +72,7 @@ Action.prototype.bubbles = true;
 Action.prototype.stopPropagation = function() {
 	this.bubbles = false;
 	return this;
-}
+};
 
 // Msutache Instance Methods
 function addAction(name, fn) {
@@ -87,7 +87,7 @@ function addAction(name, fn) {
 	if (this._actions == null) this._actions = {};
 	if (this._actions[name] == null) this._actions[name] = [];
 	if (!~this._actions[name].indexOf(fn)) this._actions[name].push(fn);
-	
+
 	return this;
 }
 
@@ -136,9 +136,9 @@ function removeAction(name, fn) {
 
 function fireAction(action) {
 	if (typeof action === "string") action = new Action(action);
-	if (_.isObject(action) && !(action instanceof Action)) action = _.extend(new Action, action);
+	if (_.isObject(action) && !(action instanceof Action)) action = _.extend(new Action(), action);
 	if (!(action instanceof Action)) throw new Error("Expecting action name, object or instance of Action.");
-	
+
 	var name = action.name,
 		args = slice.call(arguments, 1);
 
@@ -162,6 +162,6 @@ function fireAction(action) {
 
 		fireOn.fireAction.apply(fireOn, args);
 	}
-	
+
 	return this;
 }

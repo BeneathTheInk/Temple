@@ -3,7 +3,7 @@ var Mustache = require("../");
 module.exports = function() {
 	this.adopt = adopt;
 	this.disown = disown;
-}
+};
 
 function adopt(view, parent, before) {
 	if (!(view instanceof Mustache.View)) {

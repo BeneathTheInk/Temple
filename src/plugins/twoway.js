@@ -19,7 +19,7 @@ module.exports = function(options) {
 		var el = d.target,
 			type = getType(el),
 			self = this,
-			evtName, onChange, lazy;
+			evtName, onChange;
 
 		// detect changes to the input's value
 		if (typeof fbind.change === "function") {
@@ -50,9 +50,8 @@ module.exports = function(options) {
 	// add value decorator for radios and options
 	this.decorate("value", function valueOf(d, strval) {
 		var el = d.target,
-			type = getType(el),
-			self = this;
-		
+			type = getType(el);
+
 		if (!_.contains(value_types, type)) {
 			el.value = strval;
 			return;
@@ -66,7 +65,7 @@ module.exports = function(options) {
 	// add initial form bindings
 	var initialBinds = _.result(this, "twoway");
 	if (_.isObject(initialBinds)) this.addFormBinding(initialBinds);
-}
+};
 
 function addFormBinding(id, getter, onChange) {
 	if (_.isObject(id)) {
@@ -120,7 +119,7 @@ var type_map = {
 	"file": [ "file" ],
 	"checkbox": [ "checkbox" ],
 	"radio": [ "radio" ]
-}
+};
 
 function getType(el) {
 	switch (el.tagName.toLowerCase()) {

@@ -18,4 +18,4 @@ module.exports = {
 
 	// MISC
 	LITERAL           : 13
-}
+};

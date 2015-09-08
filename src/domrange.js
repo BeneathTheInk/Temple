@@ -5,7 +5,6 @@
 
 var _ = require("underscore"),
 	Events = require("backbone-events-standalone"),
-	utils = require("./utils"),
 	matchesSelector = require("matches-selector");
 
 function isArrayLike(a) {
@@ -36,7 +35,7 @@ function DOMRange(nodeAndRangeArray) {
 	this.attached = false;
 	this.parentElement = null;
 	this.parentRange = null;
-};
+}
 
 module.exports = DOMRange;
 DOMRange.extend = require("backbone-extend-standalone");
@@ -142,12 +141,13 @@ _.extend(DOMRange.prototype, Events, {
 		if (!isArrayLike(newMembers)) throw new Error("Expected array");
 		var oldMembers = this.members;
 		var _isReplace = this.attached && (newMembers.length || oldMembers.length);
+		var i;
 
 		// dereference old members
-		for (var i = 0; i < oldMembers.length; i++) this._memberOut(oldMembers[i], false, _isReplace);
+		for (i = 0; i < oldMembers.length; i++) this._memberOut(oldMembers[i], false, _isReplace);
 
 		// reference new members
-		for (var i = 0; i < newMembers.length; i++) this._memberIn(newMembers[i]);
+		for (i = 0; i < newMembers.length; i++) this._memberIn(newMembers[i]);
 
 		if (_isReplace) {
 			// detach the old members and insert the new members
@@ -302,7 +302,7 @@ _.extend(DOMRange.prototype, Events, {
 			}
 		}
 
-		return matches
+		return matches;
 	},
 
 	find: function(selector) {
@@ -366,7 +366,7 @@ function insertIntoDOM(rangeOrNode, parentElement, nextNode, _isMove) {
 			insertNodeWithHooks(m, parentElement, nextNode);
 		}
 	}
-};
+}
 
 function removeFromDOM(rangeOrNode) {
 	var m = rangeOrNode;
@@ -375,7 +375,7 @@ function removeFromDOM(rangeOrNode) {
 	} else {
 		removeNodeWithHooks(m);
 	}
-};
+}
 
 function removeNodeWithHooks(n) {
 	if (!n.parentNode) return;
@@ -384,7 +384,7 @@ function removeNodeWithHooks(n) {
 	} else {
 		n.parentNode.removeChild(n);
 	}
-};
+}
 
 function insertNodeWithHooks(n, parent, next) {
 	// `|| null` because IE throws an error if 'next' is undefined
@@ -394,7 +394,7 @@ function insertNodeWithHooks(n, parent, next) {
 	} else {
 		parent.insertBefore(n, next);
 	}
-};
+}
 
 function moveNodeWithHooks(n, parent, next) {
 	if (n.parentNode !== parent)
@@ -406,4 +406,4 @@ function moveNodeWithHooks(n, parent, next) {
 	} else {
 		parent.insertBefore(n, next);
 	}
-};
+}

@@ -1,14 +1,13 @@
 var _ = require("underscore");
 var Trackr = require("trackr");
-var Events = require("backbone-events-standalone");
 var utils = require("./utils");
 var Model = require("./model");
 var Plugins = require("./plugins");
 var DOMRange = require("./domrange");
+var NODE_TYPE = require("./types");
 
 var View =
 module.exports = DOMRange.extend({
-	
 	constructor: function(data, options) {
 		options = options || {};
 
@@ -156,14 +155,15 @@ module.exports = DOMRange.extend({
 	},
 
 	// looks through parents for partial
-	findPartial: function(name) {
+	findPartial: function(name, options) {
+		options = options || {};
 		var c = this, p;
 
 		while (c != null) {
 			if (c._getPartial != null) {
 				p = c._getPartial(name);
 				p.dep.depend();
-				if (p.view != null) return p.view;
+				if (options.local || p.view != null) return p.view;
 			}
 
 			c = c.parentRange;
@@ -173,6 +173,12 @@ module.exports = DOMRange.extend({
 	// generates a new component from a View subclass or partial's name
 	renderPartial: function(klass, ctx, options) {
 		var comps, name;
+
+		// look up partial with template object
+		if (typeof klass === "object" && klass.type === NODE_TYPE.PARTIAL) {
+			name = klass.value;
+			klass = this.findPartial(name, { local: klass.local });
+		}
 
 		// look up the partial by name
 		if (typeof klass === "string") {
@@ -216,7 +222,7 @@ module.exports = DOMRange.extend({
 
 		for (n in comps) {
 			for (i in comps[n]) {
-				comp = comps[n][i]
+				comp = comps[n][i];
 				if (!(comp instanceof View)) continue;
 				res = comp.getComponent(name);
 				if (res != null) return res;
@@ -260,7 +266,7 @@ Object.defineProperty(View.prototype, "data", {
 	View.prototype[method] = function() {
 		this.model[method].apply(this.model, arguments);
 		return this;
-	}
+	};
 });
 
 // methods to proxy to model which don't return this
@@ -269,7 +275,7 @@ Object.defineProperty(View.prototype, "data", {
 ].forEach(function(method) {
 	View.prototype[method] = function() {
 		return this.model[method].apply(this.model, arguments);
-	}
+	};
 });
 
 // proxy a few computation methods
@@ -281,5 +287,5 @@ Object.defineProperty(View.prototype, "data", {
 
 		this.comp[method].apply(this.comp, arguments);
 		return this;
-	}
+	};
 });

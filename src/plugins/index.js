@@ -24,7 +24,7 @@ exports.loadPlugin = function(tpl, plugin, args) {
 
 	plugin.apply(tpl, args);
 	return tpl;
-}
+};
 
 var registerPlugin =
 exports.registerPlugin = function(name, fn) {
@@ -42,7 +42,7 @@ exports.registerPlugin = function(name, fn) {
 	}
 
 	plugins[name] = fn;
-}
+};
 
 // load built in plugins
 registerPlugin("actions", require("./actions"));

@@ -10,11 +10,11 @@ module.exports = function Model(data, parent, options) {
 	this._dep = new Trackr.Dependency();
 	if (Model.isModel(parent)) this.parent = parent;
 	this.set(data, options);
-}
+};
 
 Model.isModel = function(o) {
 	return o instanceof Model;
-}
+};
 
 Model.extend = require("backbone-extend-standalone");
 
@@ -31,11 +31,11 @@ Model._defaultProxies = [ {
 } ];
 
 Model.callProxyMethod = function(proxy, target, method, args, ctx) {
-	var args = _.isArray(args) ? _.clone(args) : [];
+	args = _.isArray(args) ? _.clone(args) : [];
 	args.unshift(proxy, method, target);
 	args.push(ctx);
 	return utils.result.apply(null, args);
-}
+};
 
 _.extend(Model.prototype, {
 
@@ -67,7 +67,7 @@ _.extend(Model.prototype, {
 			models.unshift(model = model.parent);
 		}
 
-		return models
+		return models;
 	},
 
 	// gets the model in the stack at the index

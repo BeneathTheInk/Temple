@@ -21,7 +21,8 @@ HTML
 */
 html = nodes:
 	( section
-	/ extraStache
+	/ commentStache
+	/ partialStache
 	/ doubleStache
 	/ tripleStache
 	/ commentNode
@@ -93,7 +94,8 @@ attribute
 
 attrValue = nodes:
 	( section
-	/ extraStache
+	/ commentStache
+	/ partialStache
 	/ doubleStache
 	/ tripleStache
 	/ textNode )* { return _.compact(nodes); }
@@ -147,7 +149,7 @@ stache
 
 // Mustache double stache
 doubleStache
-	= "{{" ![/#{!>\^] m:"&"? value:pathQuery "}}" {
+	= "{{" ![/#{!$>\^] m:"&"? value:pathQuery "}}" {
 		return {
 			type: m ? NODE_TYPE.TRIPLE : NODE_TYPE.INTERPOLATOR,
 			value: value
@@ -163,11 +165,20 @@ tripleStache
 		}
 	}
 
-extraStache
-	=  "{{" m:[!>] value:(escape / [^}])* "}}" {
+commentStache
+	= "{{$" value:(escape / [^}])* "}}" {
 		return {
-			type: m === ">" ? NODE_TYPE.PARTIAL : NODE_TYPE.MCOMMENT,
+			type: NODE_TYPE.MCOMMENT,
 			value: value.join("").trim()
+		}
+	}
+
+partialStache
+	=  "{{" m:[$>] value:(escape / [^}])* "}}" {
+		return {
+			type: NODE_TYPE.PARTIAL,
+			value: value.join("").trim(),
+			local: m === "$"
 		}
 	}
 

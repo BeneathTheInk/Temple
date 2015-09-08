@@ -7,23 +7,20 @@ exports.result = function(object, property) {
 };
 
 // tests value as pojo (plain old javascript object)
-var isPlainObject =
-exports.isPlainObject = function(obj) {
-	return obj != null && (obj.constructor === Object || obj.__proto__ === Object.prototype);
-}
+exports.isPlainObject = require("is-plain-object");
 
 // tests function as a subclass of a parent function
 // here, a class is technically a subclass of itself
 exports.isSubClass = function(parent, fn) {
 	return fn === parent || (fn != null && fn.prototype instanceof parent);
-}
+};
 
 // like jQuery's empty(), removes all children
 var emptyNode =
 exports.emptyNode = function(node) {
 	while (node.lastChild) node.removeChild(node.lastChild);
 	return node;
-}
+};
 
 // inserts an array nodes into a parent
 exports.insertNodes = function(nodes, parent, before) {
@@ -38,7 +35,7 @@ exports.insertNodes = function(nodes, parent, before) {
 			parent.insertBefore(node, next);
 		}
 	}
-}
+};
 
 // cleans html, then converts html entities to unicode
 exports.decodeEntities = (function() {
@@ -57,7 +54,7 @@ exports.decodeEntities = (function() {
 		emptyNode(element);
 
 		return str;
-	}
+	};
 })();
 
 // convert html into DOM nodes
@@ -72,7 +69,7 @@ exports.parseHTML = (function() {
 		var nodes = _.toArray(element.childNodes);
 		emptyNode(element);
 		return nodes;
-	}
+	};
 })();
 
 var matches = exports.matches = function(node, selector) {
@@ -93,4 +90,4 @@ var matches = exports.matches = function(node, selector) {
 	}
 
 	return false;
-}
+};

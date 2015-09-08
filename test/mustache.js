@@ -125,7 +125,8 @@ describe("Mustache", function() {
 				version: Temple.VERSION,
 				children: [{
 					type: NODE_TYPE.PARTIAL,
-					value: "partial"
+					value: "partial",
+					local: false
 				}]
 			});
 		});

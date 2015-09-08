@@ -1,4 +1,3 @@
-var Trackr = require("trackr");
 var _ = require("underscore");
 var NODE_TYPE = require("./types");
 var parse = require("./m+xml").parse;
@@ -66,16 +65,16 @@ module.exports = View.extend({
 	// finds all decorators, locally and in parent
 	findDecorators: function(name) {
 		var decorators = [],
-			c = this;
-
+			c = this, k, d;
 
 		while (c != null) {
 			if (c._decorators != null && _.isArray(c._decorators[name])) {
-				c._decorators[name].forEach(function(d) {
+				for (k in c._decorators[name]) {
+					d = c._decorators[name][k];
 					if (!_.findWhere(decorators, { callback: d.callback })) {
 						decorators.push(_.extend({ context: c }, d));
 					}
-				});
+				}
 			}
 
 			c = c.parentRange;
@@ -157,7 +156,7 @@ module.exports = View.extend({
 				return this.renderTemplate(template.children, view, toMount);
 
 			case NODE_TYPE.ELEMENT:
-				var part = this.renderPartial(template.name, view);
+				var part = this.renderPartial(template, view);
 				var obj;
 
 				if (part != null) {
@@ -205,6 +204,8 @@ module.exports = View.extend({
 					return el;
 				}
 
+				break;
+
 			case NODE_TYPE.TEXT:
 				return document.createTextNode(utils.decodeEntities(template.value));
 
@@ -248,7 +249,7 @@ module.exports = View.extend({
 				return section;
 
 			case NODE_TYPE.PARTIAL:
-				var partial = this.renderPartial(template.value, view);
+				var partial = this.renderPartial(template, view);
 				if (partial) toMount.push(partial);
 				return partial;
 		}
@@ -258,7 +259,7 @@ module.exports = View.extend({
 	renderTemplateAsString: function(template, ctx) {
 		if (ctx == null) ctx = this;
 		if (ctx instanceof View) ctx = ctx.model;
-		var self = this;
+		var self = this, val;
 
 		if (_.isArray(template)) return template.map(function(t) {
 			return self.renderTemplateAsString(t, ctx);
@@ -273,12 +274,12 @@ module.exports = View.extend({
 
 			case NODE_TYPE.INTERPOLATOR:
 			case NODE_TYPE.TRIPLE:
-				var val = ctx.get(template.value);
+				val = ctx.get(template.value);
 				return val != null ? val.toString() : "";
 
 			case NODE_TYPE.SECTION:
 			case NODE_TYPE.INVERTED:
-				var inverted, model, val, isEmpty, makeRow, proxy, isList;
+				var inverted, model, isEmpty, makeRow, proxy, isList;
 
 				inverted = template.type === NODE_TYPE.INVERTED;
 				val = ctx.get(template.value);
@@ -288,7 +289,7 @@ module.exports = View.extend({
 				isEmpty = Section.isEmpty(model, proxy);
 
 				makeRow = function(i) {
-					var row, data;
+					var data;
 
 					if (i == null) {
 						data = model;
@@ -298,7 +299,7 @@ module.exports = View.extend({
 					}
 
 					return self.renderTemplateAsString(template.children, data);
-				}
+				};
 
 				if (!(isEmpty ^ inverted)) {
 					return isList && !inverted ?

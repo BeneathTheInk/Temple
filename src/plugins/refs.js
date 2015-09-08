@@ -2,7 +2,7 @@ module.exports = function() {
 	this.refs = {};
 	this.decorate("ref", ref);
 	this.findByRef = findByRef;
-}
+};
 
 function ref(d, key) {
 	// don't overwrite

@@ -1,10 +1,8 @@
 var _ = require("underscore");
 var Trackr = require("trackr");
-var utils = require("./utils");
 var Model = require("./model");
 var View = require("./view");
 
-var Section =
 module.exports = View.extend({
 	constructor: function() {
 		this.rows = {};
@@ -82,9 +80,8 @@ module.exports = View.extend({
 	render: function() {
 		if (this._path == null) throw new Error("Missing path.");
 
-		var self = this,
-			val, isEmpty, inverted, isList,
-			rowSort, model, proxy, keys;
+		var val, isEmpty, inverted, isList,
+			model, proxy, keys;
 
 		val = this.get(this._path);
 		model = new Model(val, this.model);
@@ -97,7 +94,7 @@ module.exports = View.extend({
 		}
 
 		Trackr.nonreactive(function() {
-			isEmpty = !val || (isList && !getEmptiness())
+			isEmpty = !val || (isList && !getEmptiness());
 		});
 
 		if (isEmpty && inverted) {
@@ -131,7 +128,7 @@ module.exports = View.extend({
 						rmodel = row != null ? row.model :
 							new Model(null, new Model({ $key: key }, this.model));
 
-						this._row_deps[key] = this.autorun(function(c) {
+						this._row_deps[key] = this.autorun(function() {
 							rmodel.set(model.callProxyMethod(proxy, val, "get", key));
 							// if (rowSort != null) rowSort.invalidate();
 						});
