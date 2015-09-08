@@ -1,11 +1,8 @@
 {
 	"name": "templejs",
-	"version": "0.5.11",
+	"version": "0.5.12",
 	"description": "A reactive Mustache view framework.",
 	"author": "Beneath the Ink <info@beneaththeink.com>",
-	"publishConfig": {
-		"registry": "http://registry.npmjs.org"
-	},
 	"contributors": [
 		{
 			"name": "Tyler Johnson",
