@@ -234,6 +234,8 @@ module.exports = DOMRange.extend({
 
 	// returns all rendered partials by name
 	getComponents: function(name) {
+		if (name == null) return _.flatten(_.values(this._components));
+
 		return _.reduce(this._components, function(m, comps, n) {
 			if (n === name) m.push.apply(m, comps);
 
@@ -243,6 +245,36 @@ module.exports = DOMRange.extend({
 
 			return m;
 		}, []);
+	},
+
+	// returns rendered partials, searching children views
+	findComponents: function(name) {
+		var tpls = [ this ],
+			comps = [],
+			tpl;
+
+		while (tpls.length) {
+			tpl = tpls.shift();
+			comps = comps.concat(tpl.getComponents(name));
+			tpls.push(tpl.getComponents());
+		}
+
+		return comps;
+	},
+
+	// returns rendered partials, searching children views
+	findComponent: function(name) {
+		var tpls = [ this ],
+			tpl, comp;
+
+		while (tpls.length) {
+			tpl = tpls.shift();
+			comp = tpl.getComponent(name);
+			if (comp) return comp;
+			tpls = tpls.concat(tpl.getComponents());
+		}
+
+		return null;
 	}
 
 });

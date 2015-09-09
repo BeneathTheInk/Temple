@@ -166,7 +166,7 @@ tripleStache
 	}
 
 commentStache
-	= "{{$" value:(escape / [^}])* "}}" {
+	= "{{!" value:(escape / [^}])* "}}" {
 		return {
 			type: NODE_TYPE.MCOMMENT,
 			value: value.join("").trim()

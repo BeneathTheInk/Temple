@@ -1,3 +1,5 @@
+var _ = require("underscore");
+
 module.exports = function() {
 	this.refs = {};
 	this.decorate("ref", ref);
@@ -21,11 +23,13 @@ function ref(d, key) {
 }
 
 function findByRef(key) {
-	var tpl = this;
+	var tpls = [ this ],
+		tpl;
 
-	while (tpl != null) {
+	while (tpls.length) {
+		tpl = tpls.shift();
 		if (tpl.refs && tpl.refs[key]) return tpl.refs[key];
-		tpl = tpl.parentRange;
+		tpls = tpls.concat(tpl.getComponents());
 	}
 
 	return null;

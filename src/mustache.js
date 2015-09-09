@@ -156,7 +156,7 @@ module.exports = View.extend({
 				return this.renderTemplate(template.children, view, toMount);
 
 			case NODE_TYPE.ELEMENT:
-				var part = this.renderPartial(template, view);
+				var part = this.renderPartial(template.name, view);
 				var obj;
 
 				if (part != null) {

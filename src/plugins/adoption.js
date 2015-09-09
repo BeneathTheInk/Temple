@@ -12,6 +12,10 @@ function adopt(view, parent, before) {
 
 	if (this._adopted == null) this._adopted = [];
 
+	// have original parent disown child and set the adopted parent reference
+	if (view.adoptedParent) view.adoptedParent.disown(view.adoptedParent);
+	view.adoptedParent = this;
+
 	// make sure it is an independent
 	view.detach();
 
@@ -46,6 +50,7 @@ function disown(view) {
 		}
 	})) return;
 
+	if (view.adoptedParent === this) delete view.adoptedParent;
 	this.off("render", this._adopted[index].render);
 	this._adopted.splice(index, 1);
 
