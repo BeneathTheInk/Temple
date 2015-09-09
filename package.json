@@ -22,7 +22,10 @@
   "dependencies": {
     "backbone-events-standalone": "~0.2.7",
     "backbone-extend-standalone": "~0.1.2",
-    "is-plain-object": "^2.0.1",
+    "html-parse-stringify": "^1.0.2",
+    "html2idom": "0.0.5",
+    "incremental-dom": "google/incremental-dom",
+    "is-plain-object": "~2.0.1",
     "matches-selector": "~1.0.0",
     "trackr": "~2.0.0",
     "trackr-objects": "~0.2.0",

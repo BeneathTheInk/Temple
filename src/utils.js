@@ -58,19 +58,13 @@ exports.decodeEntities = (function() {
 })();
 
 // convert html into DOM nodes
-exports.parseHTML = (function() {
-	if (typeof document === "undefined") return;
+exports.toString = function(value) {
+	if (typeof value !== "string") {
+		value = value != null ? value.toString() : "";
+	}
 
-	// this prevents any overhead from creating the object each time
-	var element = document.createElement('div');
-
-	return function parseHTML(html) {
-		element.innerHTML = html != null ? html.toString() : "";
-		var nodes = _.toArray(element.childNodes);
-		emptyNode(element);
-		return nodes;
-	};
-})();
+	return value;
+};
 
 var matches = exports.matches = function(node, selector) {
 	if (_.isArray(selector)) return selector.some(function(s) {

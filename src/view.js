@@ -1,52 +1,66 @@
 var _ = require("underscore");
 var Trackr = require("trackr");
+var Events = require("backbone-events-standalone");
 var utils = require("./utils");
 var Model = require("./model");
 var Plugins = require("./plugins");
-var DOMRange = require("./domrange");
+var NodeRange = require("./node-range");
 var NODE_TYPE = require("./types");
 
 var View =
-module.exports = DOMRange.extend({
-	constructor: function(data, options) {
-		options = options || {};
+module.exports = function(data, options) {
+	options = options || {};
+	this._range = new NodeRange();
 
-		// first we create the initial view state
-		var state = _.result(this, "initialState") || _.result(this, "defaults");
-		if (typeof state !== "undefined") {
-			if (!Model.isModel(state)) {
-				state = new Model(state, null, options.state);
-			}
-
-			// shove state between contexts
-			if (Model.isModel(data)) {
-				if (data.parent) data.parent.append(state);
-				state.append(data);
-			}
-
-			// add to the stack before the real data
-			this.addData(state);
-			this.stateModel = state;
-
-			// setup easy-access state property
-			state.defineDataLink(this, "state");
+	// first we create the initial view state
+	var state = _.result(this, "initialState") || _.result(this, "defaults");
+	if (typeof state !== "undefined") {
+		if (!Model.isModel(state)) {
+			state = new Model(state, null, options.state);
 		}
 
-		// add partials
-		this._partials = {};
-		this._components = {};
-		this.setPartial(_.extend({}, options.partials, _.result(this, "partials")));
+		// shove state between contexts
+		if (Model.isModel(data)) {
+			if (data.parent) data.parent.append(state);
+			state.append(data);
+		}
 
-		// set the passed in data
-		if (typeof data !== "undefined") this.addData(data, options);
+		// add to the stack before the real data
+		this.addData(state);
+		this.stateModel = state;
 
-		// initiate like a normal dom range
-		DOMRange.call(this);
+		// setup easy-access state property
+		state.defineDataLink(this, "state");
+	}
 
-		// initialize with options
-		this.initialize.call(this, options);
+	// add partials
+	this._partials = {};
+	this._components = {};
+	this.setPartial(_.extend({}, options.partials, _.result(this, "partials")));
+
+	// set the passed in data
+	if (typeof data !== "undefined") this.addData(data, options);
+
+	// initialize with options
+	this.initialize.call(this, options);
+};
+
+View.extend = require("backbone-extend-standalone");
+
+// quick access to the top model data
+Object.defineProperty(View.prototype, "data", {
+	configurable: true,
+	enumerable: true,
+	get: function() {
+		this.model._dep.depend();
+		return this.model.data;
 	},
+	set: function(val) {
+		this.model.set(val);
+	}
+});
 
+_.extend(View.prototype, Events, {
 	initialize: function(){},
 
 	use: function(p) {
@@ -61,16 +75,22 @@ module.exports = DOMRange.extend({
 	},
 
 	// attach + mount
-	paint: function(p, n, _isMove, _isReplace) {
-		DOMRange.prototype.attach.apply(this, arguments);
-		if (!(_isMove || _isReplace || this.comp)) this.mount();
+	paint: function(parent, before) {
+		this.detach();
+
+		if (typeof parent === "string") parent = document.querySelector(parent);
+		if (parent == null) throw new Error("Expecting a valid DOM element to attach in.");
+		if (typeof before === "string") before = parent.querySelector(before);
+		this._range.moveTo(parent, before);
+		this.mount();
+
 		return this;
 	},
 
-	// auto stop on detach
-	detach: function(_isReplace) {
-		if (!_isReplace) this.stop();
-		DOMRange.prototype.detach.apply(this, arguments);
+	// stop and remove dom
+	detach: function() {
+		this.stop();
+		this._range.empty().detach();
 		return this;
 	},
 

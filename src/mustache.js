@@ -5,8 +5,9 @@ var utils = require("./utils");
 var View = require("./view");
 var Model = require("./model");
 var Section = require("./section");
-var $track = require("trackr-objects");
-var DOMRange = require("./domrange");
+var idom = require('incremental-dom');
+var NodeRange = require("./node-range");
+var ihtml = require("./html-parser");
 
 var Mustache =
 module.exports = View.extend({
@@ -133,125 +134,153 @@ module.exports = View.extend({
 		if (this._template == null)
 			throw new Error("Expected a template to be set before rendering.");
 
-		var toMount;
-		this.setMembers(this.renderTemplate(this._template, null, toMount = []));
-		_.invoke(toMount, "mount");
+		var self = this;
+
+		idom.patch(this._range, function() {
+			self.renderTemplate(self._template);
+		});
+
+		// var toMount;
+		// this.setMembers(this.renderTemplate(this._template, null, toMount = []));
+		// _.invoke(toMount, "mount");
 	},
 
 	// converts a template into an array of elements and DOMRanges
-	renderTemplate: function(template, view, toMount) {
+	renderTemplate: function(template, view) {
 		if (view == null) view = this;
-		if (toMount == null) toMount = [];
 		var self = this;
 
-		if (_.isArray(template)) return template.reduce(function(r, t) {
-			var b = self.renderTemplate(t, view, toMount);
-			if (_.isArray(b)) r.push.apply(r, b);
-			else if (b != null) r.push(b);
-			return r;
-		}, []);
+		if (_.isArray(template)) {
+			template.forEach(function(t) {
+				self.renderTemplate(t, view);
+			});
+			return;
+		}
 
 		switch(template.type) {
 			case NODE_TYPE.ROOT:
-				return this.renderTemplate(template.children, view, toMount);
+				this.renderTemplate(template.children, view);
+				break;
 
 			case NODE_TYPE.ELEMENT:
-				var part = this.renderPartial(template.name, view);
-				var obj;
+				idom.elementOpen(template.name, "");
+				this.renderTemplate(template.children, view);
+				idom.elementClose(template.name);
+				break;
 
-				if (part != null) {
-					part.addData(obj = $track({}));
+				// var part = this.renderPartial(template.name, view);
+				// var obj;
+				//
+				// if (part != null) {
+				// 	part.addData(obj = $track({}));
+				//
+				// 	template.attributes.forEach(function(attr) {
+				// 		self.autorun(function(c) {
+				// 			var val = this.renderArguments(attr.arguments, view);
+				// 			if (val.length === 1) val = val[0];
+				// 			else if (!val.length) val = void 0;
+				//
+				// 			if (c.firstRun) obj.defineProperty(attr.name, val);
+				// 			else obj[attr.name] = val;
+				// 		});
+				// 	});
+				//
+				// 	toMount.push(part);
+				// 	return part;
+				// }
+				//
+				// else {
+				// 	var el = document.createElement(template.name);
+				//
+				// 	template.attributes.forEach(function(attr) {
+				// 		if (this.renderDecorations(el, attr, view)) return;
+				//
+				// 		this.autorun(function() {
+				// 			el.setAttribute(attr.name, this.renderTemplateAsString(attr.children, view));
+				// 		});
+				// 	}, this);
+				//
+				// 	var children = this.renderTemplate(template.children, view, toMount),
+				// 		child, i;
+				//
+				// 	for (i in children) {
+				// 		child = children[i];
+				// 		if (child instanceof DOMRange) {
+				// 			child.parentRange = view; // fake the parent
+				// 			child.attach(el);
+				// 		} else {
+				// 			el.appendChild(child);
+				// 		}
+				// 	}
+				//
+				// 	return el;
+				// }
 
-					template.attributes.forEach(function(attr) {
-						self.autorun(function(c) {
-							var val = this.renderArguments(attr.arguments, view);
-							if (val.length === 1) val = val[0];
-							else if (!val.length) val = void 0;
+			case NODE_TYPE.TEXT:
+				// return document.createTextNode(utils.decodeEntities(template.value));
+				idom.text(utils.decodeEntities(template.value));
+				break;
 
-							if (c.firstRun) obj.defineProperty(attr.name, val);
-							else obj[attr.name] = val;
-						});
-					});
+			case NODE_TYPE.HTML:
+				ihtml(template.value);
+				break;
 
-					toMount.push(part);
-					return part;
-				}
+				// return new DOMRange(utils.parseHTML(template.value));
 
-				else {
-					var el = document.createElement(template.name);
+			case NODE_TYPE.XCOMMENT:
+				// return document.createComment(template.value);
 
-					template.attributes.forEach(function(attr) {
-						if (this.renderDecorations(el, attr, view)) return;
+			case NODE_TYPE.INTERPOLATOR:
+				var tnode = idom.text("");
 
-						this.autorun(function() {
-							el.setAttribute(attr.name, this.renderTemplateAsString(attr.children, view));
-						});
-					}, this);
+				this.autorun(function() {
+					var value = view.get(template.value);
 
-					var children = this.renderTemplate(template.children, view, toMount),
-						child, i;
-
-					for (i in children) {
-						child = children[i];
-						if (child instanceof DOMRange) {
-							child.parentRange = view; // fake the parent
-							child.attach(el);
-						} else {
-							el.appendChild(child);
-						}
+					if (typeof value !== "string") {
+						value = value != null ? value.toString() : "";
 					}
 
-					return el;
-				}
+					tnode.data = value;
+				});
 
 				break;
 
-			case NODE_TYPE.TEXT:
-				return document.createTextNode(utils.decodeEntities(template.value));
-
-			case NODE_TYPE.HTML:
-				return new DOMRange(utils.parseHTML(template.value));
-
-			case NODE_TYPE.XCOMMENT:
-				return document.createComment(template.value);
-
-			case NODE_TYPE.INTERPOLATOR:
-				var node = document.createTextNode("");
-
-				this.autorun(function() {
-					var val = view.get(template.value);
-					node.nodeValue = typeof val === "string" ? val : val != null ? val.toString() : "";
-				});
-
-				return node;
-
 			case NODE_TYPE.TRIPLE:
-				var range = new DOMRange();
+				var range = new NodeRange();
 
-				this.autorun(function() {
-					range.setMembers(utils.parseHTML(view.get(template.value)));
+				this.autorun(function(comp) {
+					var value = utils.toString(view.get(template.value));
+
+					if (comp.firstRun) {
+						range.append(ihtml(value));
+						range.refreshPosition();
+					} else {
+						idom.patch(range, function() {
+							ihtml(value);
+						});
+					}
 				});
 
-				return range;
+				break;
 
 			case NODE_TYPE.INVERTED:
 			case NODE_TYPE.SECTION:
-				var section = new Section(view.model)
-					.invert(template.type === NODE_TYPE.INVERTED)
-					.setPath(template.value)
-					.onRow(function() {
-						var _toMount;
-						this.setMembers(self.renderTemplate(template.children, this, _toMount = []));
-						_.invoke(_toMount, "mount");
-					});
-
-				toMount.push(section);
-				return section;
+				// var section = new Section(view.model)
+				// 	.invert(template.type === NODE_TYPE.INVERTED)
+				// 	.setPath(template.value)
+				// 	.onRow(function() {
+				// 		var _toMount;
+				// 		this.setMembers(self.renderTemplate(template.children, this, _toMount = []));
+				// 		_.invoke(_toMount, "mount");
+				// 	});
+				//
+				// toMount.push(section);
+				// return section;
 
 			case NODE_TYPE.PARTIAL:
-				var partial = this.renderPartial(template, view);
-				if (partial) toMount.push(partial);
-				return partial;
+				// var partial = this.renderPartial(template.value, view);
+				// if (partial) toMount.push(partial);
+				// return partial;
 		}
 	},
 

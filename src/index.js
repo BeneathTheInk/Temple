@@ -50,7 +50,6 @@ var Temple = module.exports = {
 if (typeof document === "undefined") return;
 
 // attach the other parts that Node can't use
-Temple.DOMRange = require("./domrange");
 Temple.View = require("./view");
 Temple.Section = require("./section");
 
