@@ -5,7 +5,7 @@ var NODE_TYPE = require("./types");
 
 // properties that Node.js and the browser can handle
 var Temple = module.exports = {
-	VERSION: "0.5.13",
+	VERSION: "0.5.14",
 	NODE_TYPE: NODE_TYPE,
 
 	// other parts
