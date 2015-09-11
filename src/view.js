@@ -192,6 +192,7 @@ module.exports = DOMRange.extend({
 		// normalize context
 		if (ctx == null) ctx = this;
 		if (ctx instanceof View) ctx = ctx.model;
+		if (ctx instanceof Model) ctx = ctx.append(ctx.data);
 
 		// create it non-reactively
 		var component = Trackr.nonreactive(function() {
