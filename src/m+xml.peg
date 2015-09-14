@@ -8,11 +8,29 @@
 	});
 }
 
-start = html:html {
-	return {
-		type: NODE_TYPE.ROOT,
-		children: html,
-		version: Mustache.VERSION
+start = ws nodes:(elementNode ws)* {
+	var comps = _.pluck(nodes, 0).map(function(node) {
+		return {
+			name: node.name,
+			type: NODE_TYPE.VIEW,
+			attributes: node.attributes.reduce(function(as, attr) {
+				var args = _.pluck(attr.arguments, "value");
+				as[attr.name] = attr.value == null ? true : args.length === 1 ? args[0] : args;
+				return as;
+			}, {}),
+			children: node.children
+		};
+	});
+
+	if (comps.length === 1) {
+		comps[0].version = Mustache.version;
+		return comps[0];
+	} else {
+		return {
+			type: NODE_TYPE.ROOT,
+			version: Mustache.VERSION,
+			views: comps
+		};
 	}
 }
 
@@ -26,6 +44,7 @@ html = nodes:
 	/ doubleStache
 	/ tripleStache
 	/ commentNode
+	/ scriptNode
 	/ elementNode
 	/ textNode )* { return _.compact(nodes); }
 
@@ -39,11 +58,20 @@ commentNode
 		return { type: NODE_TYPE.XCOMMENT, value: v };
 	}
 
+scriptNode
+	= "<" ws "script" attributes:(attribute)* ">" v:$(!"</script>" .)* "</script>" {
+		return {
+			type: NODE_TYPE.SCRIPT,
+			value: v,
+			attributes: attributes
+		};
+	}
+
 // Element Nodes
 elementNode
 	= start:elementSelfClosed
 	/ start:elementStart nodes:html end:elementEnd {
-		if (start.name.toLowerCase() !== end.toLowerCase()) {
+		if (start.name !== end) {
 			throw new Error("Element tag mismatch: " + start.name + " !== " + end);
 		}
 
@@ -55,7 +83,7 @@ elementNode
 elementSelfClosed
 	= "<" tagname:key attributes:(attribute)* "/>" {
 		return {
-			name: tagname,
+			name: tagname.toLowerCase(),
 			type: NODE_TYPE.ELEMENT,
 			attributes: attributes,
 			children: []
@@ -64,7 +92,7 @@ elementSelfClosed
 
 elementStart
 	= "<" tagname:key attributes:(attribute)* ">" {
-		return { name: tagname, attributes: attributes };
+		return { name: tagname.toLowerCase(), attributes: attributes };
 	}
 
 elementEnd
@@ -73,21 +101,25 @@ elementEnd
 // Element Attribute
 attribute
 	= key:key value:("=" ws string ws)? {
-		value = value != null ? value[2] : "";
-		var args
+		value = value != null ? value[2] : null;
+		var args;
 
-		// could fail on complex attributes
-		try {
-			args = parse(value,  _.extend({}, options, { startRule: "attrArguments" }));
-		} catch(e) {
-			args = [{ type: NODE_TYPE.LITERAL, value: value }];
+		if (value != null) {
+			// could fail on complex attributes
+			try {
+				args = parse(value,  _.extend({}, options, { startRule: "attrArguments" }));
+			} catch(e) {
+				args = [{ type: NODE_TYPE.LITERAL, value: value }];
+			}
+		} else {
+			args = [];
 		}
 
 		return {
 			type: NODE_TYPE.ATTRIBUTE,
 			name: key,
 			value: value,
-			children: parse(value, _.extend({}, options, { startRule: "attrValue" })),
+			children: value != null ? parse(value, _.extend({}, options, { startRule: "attrValue" })) : [],
 			arguments: args
 		}
 	}

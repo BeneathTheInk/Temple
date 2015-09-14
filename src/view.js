@@ -1,88 +1,58 @@
 var _ = require("underscore");
 var Trackr = require("trackr");
-var Events = require("backbone-events-standalone");
 var utils = require("./utils");
-var Model = require("./model");
+var Context = require("./context");
 var Plugins = require("./plugins");
 var NodeRange = require("./node-range");
 var NODE_TYPE = require("./types");
+var merge = require("plain-merge");
 
 var View =
-module.exports = function(data, options) {
-	options = options || {};
-	this._range = new NodeRange();
-
-	// first we create the initial view state
-	var state = _.result(this, "initialState") || _.result(this, "defaults");
-	if (typeof state !== "undefined") {
-		if (!Model.isModel(state)) {
-			state = new Model(state, null, options.state);
+module.exports = Context.extend({
+	constructor: function(data, parent, options) {
+		if (!Context.isContext(parent)) {
+			options = parent;
+			parent = null;
 		}
 
-		// shove state between contexts
-		if (Model.isModel(data)) {
-			if (data.parent) data.parent.append(state);
-			state.append(data);
-		}
+		options = options || {};
 
-		// add to the stack before the real data
-		this.addData(state);
-		this.stateModel = state;
+		// add partials
+		// this._partials = {};
+		this._components = {};
+		// this.setPartial(_.extend({}, options.partials, _.result(this, "partials")));
 
-		// setup easy-access state property
-		state.defineDataLink(this, "state");
-	}
+		// add decorators
+		this.decorate(_.extend({}, options.decorators, _.result(this, "decorators")));
 
-	// add partials
-	this._partials = {};
-	this._components = {};
-	this.setPartial(_.extend({}, options.partials, _.result(this, "partials")));
+		// load initial data
+		var defaults = _.result(this, "initialState") || _.result(this, "defaults");
+		data = merge.extend({}, defaults, data);
 
-	// set the passed in data
-	if (typeof data !== "undefined") this.addData(data, options);
+		// call the context constructor
+		Context.call(this, data, parent, options);
 
-	// initialize with options
-	this.initialize.call(this, options);
-};
-
-View.extend = require("backbone-extend-standalone");
-
-// quick access to the top model data
-Object.defineProperty(View.prototype, "data", {
-	configurable: true,
-	enumerable: true,
-	get: function() {
-		this.model._dep.depend();
-		return this.model.data;
+		// initialize with options
+		this.initialize.call(this, options);
 	},
-	set: function(val) {
-		this.model.set(val);
-	}
-});
 
-_.extend(View.prototype, Events, {
 	initialize: function(){},
 
 	use: function(p) {
 		return Plugins.loadPlugin(this, p, _.toArray(arguments).slice(1));
 	},
 
-	// adds data to the current stack
-	addData: function(data, options) {
-		if (!Model.isModel(data)) data = new Model(data, this.model, options);
-		this.model = data;
-		return this;
-	},
-
 	// attach + mount
 	paint: function(parent, before) {
-		this.detach();
+		// this.detach();
 
-		if (typeof parent === "string") parent = document.querySelector(parent);
-		if (parent == null) throw new Error("Expecting a valid DOM element to attach in.");
-		if (typeof before === "string") before = parent.querySelector(before);
-		this._range.moveTo(parent, before);
-		this.mount();
+
+
+		// if (typeof parent === "string") parent = document.querySelector(parent);
+		// if (parent == null) throw new Error("Expecting a valid DOM element to attach in.");
+		// if (typeof before === "string") before = parent.querySelector(before);
+		// this._range.moveTo(parent, before);
+		// this.mount();
 
 		return this;
 	},
@@ -134,104 +104,188 @@ _.extend(View.prototype, Events, {
 		return this;
 	},
 
-	render: function(){},
+	render: function() {
+
+	},
 
 	stop: function() {
 		if (this.comp) this.comp.stop();
 		return this;
 	},
 
-	// sets partial by name
-	setPartial: function(name, partial) {
-		if (_.isObject(name) && partial == null) {
-			_.each(name, function(p, n) { this.setPartial(n, p); }, this);
+	// creates a decorator
+	decorate: function(name, fn, options) {
+		if (typeof name === "object" && fn == null) {
+			_.each(name, function(fn, n) {
+				if (_.isArray(fn)) this.decorate(n, fn[0], fn[1]);
+				else this.decorate(n, fn, options);
+			}, this);
 			return this;
 		}
 
-		if (!_.isString(name) && name !== "")
-			throw new Error("Expecting non-empty string for partial name.");
+		if (typeof name !== "string" || name === "") throw new Error("Expecting non-empty string for decorator name.");
+		if (typeof fn !== "function") throw new Error("Expecting function for decorator.");
 
-		if (partial != null && !utils.isSubClass(View, partial))
-			throw new Error("Expecting View subclass or function for partial.");
+		if (this._decorators == null) this._decorators = {};
+		if (this._decorators[name] == null) this._decorators[name] = [];
+		var decorators = this._decorators[name];
 
-		if (partial == null) {
-			delete this._partials[name];
-			partial = void 0;
-		} else {
-			var p = this._getPartial(name);
-			p.view = partial;
-			p.dep.changed();
+		if (!_.findWhere(decorators, { callback: fn })) {
+			decorators.push({
+				callback: fn,
+				options: options || {}
+			});
 		}
 
 		return this;
 	},
 
-	// ensures a partial's dependency exists
-	_getPartial: function(name) {
-		if (this._partials[name] == null)
-			this._partials[name] = { dep: new Trackr.Dependency() };
-
-		return this._partials[name];
-	},
-
-	// looks through parents for partial
-	findPartial: function(name, options) {
-		options = options || {};
-		var c = this, p;
+	// finds all decorators, locally and in parent
+	findDecorators: function(name) {
+		var decorators = [],
+			c = this, k, d;
 
 		while (c != null) {
-			if (c._getPartial != null) {
-				p = c._getPartial(name);
-				p.dep.depend();
-				if (options.local || p.view != null) return p.view;
+			if (c._decorators != null && _.isArray(c._decorators[name])) {
+				for (k in c._decorators[name]) {
+					d = c._decorators[name][k];
+					if (!_.findWhere(decorators, { callback: d.callback })) {
+						decorators.push(_.extend({ context: c }, d));
+					}
+				}
 			}
 
 			c = c.parentRange;
 		}
+
+		return decorators;
 	},
 
-	// generates a new component from a View subclass or partial's name
-	renderPartial: function(klass, ctx, options) {
-		var comps, name;
-
-		// look up partial with template object
-		if (typeof klass === "object" && klass.type === NODE_TYPE.PARTIAL) {
-			name = klass.value;
-			klass = this.findPartial(name, { local: klass.local });
+	// removes a decorator
+	stopDecorating: function(name, fn) {
+		if (typeof name === "function" && fn == null) {
+			fn = name;
+			name = null;
 		}
 
-		// look up the partial by name
-		if (typeof klass === "string") {
-			name = klass;
-			klass = this.findPartial(klass);
+		if (this._decorators == null || (name == null && fn == null)) {
+			this._decorators = {};
 		}
 
-		// class must be a view
-		if (!utils.isSubClass(View, klass)) return null;
+		else if (fn == null) {
+			delete this._decorators[name];
+		}
 
-		// normalize context
-		if (ctx == null) ctx = this;
-		if (ctx instanceof View) ctx = ctx.model;
+		else if (name == null) {
+			_.each(this._decorators, function(d, n) {
+				this._decorators[n] = _.filter(d, function(_d) {
+					return _d.callback !== fn;
+				});
+			}, this);
+		}
 
-		// create it non-reactively
-		var component = Trackr.nonreactive(function() {
-			return new klass(ctx, options);
-		});
-
-		// add it to the list
-		if (name) {
-			comps = this._components;
-			if (comps[name] == null) comps[name] = [];
-			comps[name].push(component);
-
-			// auto remove when the partial is "stopped"
-			component.once("stop", function() {
-				comps[name] = _.without(comps[name], component);
+		else {
+			var d = this._decorators[name];
+			this._decorators[name] = _.filter(d, function(_d) {
+				return _d.callback !== fn;
 			});
 		}
 
-		return component;
+		return this;
 	},
+
+	// // sets partial by name
+	// setPartial: function(name, partial) {
+	// 	if (_.isObject(name) && partial == null) {
+	// 		_.each(name, function(p, n) { this.setPartial(n, p); }, this);
+	// 		return this;
+	// 	}
+	//
+	// 	if (!_.isString(name) && name !== "")
+	// 		throw new Error("Expecting non-empty string for partial name.");
+	//
+	// 	if (partial != null && !utils.isSubClass(View, partial))
+	// 		throw new Error("Expecting View subclass for partial.");
+	//
+	// 	var p = this._getPartial(name);
+	// 	if (partial == null) delete p.view;
+	// 	else p.view = partial;
+	// 	p.dep.changed();
+	//
+	// 	return this;
+	// },
+	//
+	// // ensures a partial's dependency exists
+	// _getPartial: function(name) {
+	// 	if (this._partials[name] == null)
+	// 		this._partials[name] = { dep: new Trackr.Dependency() };
+	//
+	// 	return this._partials[name];
+	// },
+	//
+	// // looks through parents for partial
+	// findPartial: function(name, options) {
+	// 	options = options || {};
+	// 	var c = this, p;
+	//
+	// 	while (c != null) {
+	// 		if (c._getPartial != null) {
+	// 			p = c._getPartial(name);
+	// 			p.dep.depend();
+	// 			if (options.local || p.view != null) return p.view;
+	// 		}
+	//
+	// 		c = c.parent;
+	// 	}
+	// },
+	//
+	// // generates a new component from a View subclass or partial's name
+	// renderPartial: function(klass, data, ctx, options) {
+	// 	var comps, name;
+	//
+	// 	// look up partial with template object
+	// 	if (typeof klass === "object" && klass.type === NODE_TYPE.PARTIAL) {
+	// 		name = klass.value;
+	// 		klass = this.findPartial(name, { local: klass.local });
+	// 	}
+	//
+	// 	// look up the partial by name
+	// 	if (typeof klass === "string") {
+	// 		name = klass;
+	// 		klass = this.findPartial(klass);
+	// 	}
+	//
+	// 	// class must be a view
+	// 	if (!utils.isSubClass(View, klass)) return null;
+	//
+	// 	// accept with context
+	// 	if (!Context.isContext(ctx) && ctx != null && options == null) {
+	// 		options = ctx;
+	// 		ctx = null;
+	// 	}
+	//
+	// 	// normalize context
+	// 	if (ctx == null) ctx = this;
+	//
+	// 	// create it non-reactively
+	// 	var component = Trackr.nonreactive(function() {
+	// 		return new klass(data, ctx, options);
+	// 	});
+	//
+	// 	// add it to the list
+	// 	if (name) {
+	// 		comps = this._components;
+	// 		if (comps[name] == null) comps[name] = [];
+	// 		comps[name].push(component);
+	//
+	// 		// auto remove when the partial is "stopped"
+	// 		component.once("stop", function() {
+	// 			comps[name] = _.without(comps[name], component);
+	// 		});
+	// 	}
+	//
+	// 	return component;
+	// },
 
 	// returns first rendered partial by name
 	getComponent: function(name) {
@@ -297,37 +351,6 @@ _.extend(View.prototype, Events, {
 		return null;
 	}
 
-});
-
-// quick access to the top model data
-Object.defineProperty(View.prototype, "data", {
-	configurable: true,
-	enumerable: true,
-	get: function() {
-		this.model._dep.depend();
-		return this.model.data;
-	},
-	set: function(val) {
-		this.model.set(val);
-	}
-});
-
-// chainable methods to proxy to model
-[ "set", "registerProxy" ]
-.forEach(function(method) {
-	View.prototype[method] = function() {
-		this.model[method].apply(this.model, arguments);
-		return this;
-	};
-});
-
-// methods to proxy to model which don't return this
-[ "get", "getLocal", "getProxyByValue", "getModelAtOffset",
-  "getRootModel", "findModel", "getAllModels"
-].forEach(function(method) {
-	View.prototype[method] = function() {
-		return this.model[method].apply(this.model, arguments);
-	};
 });
 
 // proxy a few computation methods

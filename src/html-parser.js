@@ -31,11 +31,7 @@ function render(node) {
 }
 
 module.exports = function(html) {
-	var tree = parse(html);
-
-	if (_.isArray(tree)) {
-		return tree.map(render);
-	} else {
-		return render(tree);
-	}
+	var tree = parse("<div>" + html + "</div>");
+	if (_.isArray(tree)) tree = tree[0];
+	return tree.children.map(render);
 };

@@ -3,7 +3,7 @@ var NODE_TYPE = require("./types");
 var parse = require("./m+xml").parse;
 var utils = require("./utils");
 var View = require("./view");
-var Model = require("./model");
+var Context = require("./context");
 var Section = require("./section");
 var idom = require('incremental-dom');
 var NodeRange = require("./node-range");
@@ -11,7 +11,12 @@ var ihtml = require("./html-parser");
 
 var Mustache =
 module.exports = View.extend({
-	constructor: function(data, options) {
+	constructor: function(data, parent, options) {
+		if (!Context.isContext(parent)) {
+			options = parent;
+			parent = null;
+		}
+
 		options = options || {};
 
 		// add template
@@ -22,17 +27,20 @@ module.exports = View.extend({
 		this.decorate(_.extend({}, options.decorators, _.result(this, "decorators")));
 
 		// initiate like a normal view
-		View.call(this, data, options);
+		View.call(this, data, parent, options);
 	},
 
 	// parses and sets the root template
 	setTemplate: function(template) {
 		if (_.isString(template)) template = parse(template);
 
-		if (!_.isObject(template) || template.type !== NODE_TYPE.ROOT)
+		if (!_.isObject(template) || template.type !== NODE_TYPE.COMPONENT) {
 			throw new Error("Expecting string or parsed template.");
+		}
 
 		this._template = template;
+		this.trigger("template", template);
+
 		return this;
 	},
 
@@ -217,15 +225,12 @@ module.exports = View.extend({
 				// }
 
 			case NODE_TYPE.TEXT:
-				// return document.createTextNode(utils.decodeEntities(template.value));
 				idom.text(utils.decodeEntities(template.value));
 				break;
 
 			case NODE_TYPE.HTML:
 				ihtml(template.value);
 				break;
-
-				// return new DOMRange(utils.parseHTML(template.value));
 
 			case NODE_TYPE.XCOMMENT:
 				// return document.createComment(template.value);
@@ -234,31 +239,27 @@ module.exports = View.extend({
 				var tnode = idom.text("");
 
 				this.autorun(function() {
-					var value = view.get(template.value);
-
-					if (typeof value !== "string") {
-						value = value != null ? value.toString() : "";
-					}
-
-					tnode.data = value;
+					tnode.data = utils.toString(view.query(template.value));
 				});
 
 				break;
 
 			case NODE_TYPE.TRIPLE:
 				var range = new NodeRange();
+				range.moveTo(view._range);
 
 				this.autorun(function(comp) {
-					var value = utils.toString(view.get(template.value));
+					var value = utils.toString(view.query(template.value));
 
 					if (comp.firstRun) {
 						range.append(ihtml(value));
-						range.refreshPosition();
 					} else {
 						idom.patch(range, function() {
 							ihtml(value);
 						});
 					}
+				}).onStop(function() {
+					range.detach().empty();
 				});
 
 				break;

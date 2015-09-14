@@ -1,21 +1,23 @@
 module.exports = {
 	ROOT              : 1,
+	VIEW              : 2,
 
 	// XML/HTML
-	HTML              : 2,
-	TEXT              : 3,
-	ELEMENT           : 4,
-	ATTRIBUTE         : 5,
-	XCOMMENT          : 6,
+	HTML              : 3,
+	TEXT              : 4,
+	ELEMENT           : 5,
+	ATTRIBUTE         : 6,
+	XCOMMENT          : 7,
 
 	// Mustache
-	INTERPOLATOR      : 7,
-	TRIPLE            : 8,
-	SECTION           : 9,
-	INVERTED          : 10,
-	PARTIAL           : 11,
-	MCOMMENT          : 12,
+	INTERPOLATOR      : 8,
+	TRIPLE            : 9,
+	SECTION           : 10,
+	INVERTED          : 11,
+	PARTIAL           : 12,
+	MCOMMENT          : 13,
 
 	// MISC
-	LITERAL           : 13
+	LITERAL           : 14,
+	SCRIPT            : 15
 };

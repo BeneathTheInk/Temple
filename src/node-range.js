@@ -1,13 +1,17 @@
 var _ = require("underscore");
 var utils = require("./utils");
+var assignProps = require("assign-props");
 
 function NodeRange(parent, before) {
 	this.children = this.childNodes = [];
-	this.placeholderNode = document.createTextNode("");
+	this.placeholderNode = document.createComment(_.uniqueId("$"));
 	this.moveTo(parent, before);
 }
 
 module.exports = NodeRange;
+NodeRange.isNodeRange = function(o) {
+	return o instanceof NodeRange;
+};
 
 _.extend(NodeRange.prototype, {
 	nodeType: Node.ELEMENT_NODE,
@@ -38,7 +42,10 @@ _.extend(NodeRange.prototype, {
 			if (before === child || before.previousSibling === child) return child;
 
 			index = this.children.indexOf(before);
-			if (index < 0) throw new Error("Element to place before is not a child of this range.");
+			if (index < 0) {
+				console.log(before);
+				throw new Error("Element to place before is not a child of this range.");
+			}
 		}
 
 		// do special things if child is already a child of this parent
@@ -63,6 +70,7 @@ _.extend(NodeRange.prototype, {
 	},
 
 	removeChild: function(child) {
+		console.trace();
 		var index = this.children.indexOf(child);
 		if (!~index) return;
 
@@ -110,7 +118,8 @@ _.extend(NodeRange.prototype, {
 
 	refreshPosition: function() {
 		var c = this.lastChild;
-		return this.moveTo(c.parentNode, c);
+		if (c != null) this.moveTo(c.parentNode, c);
+		return this;
 	}
 });
 

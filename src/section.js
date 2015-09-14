@@ -1,6 +1,6 @@
 var _ = require("underscore");
 var Trackr = require("trackr");
-var Model = require("./model");
+var Context = require("./model");
 var View = require("./view");
 
 module.exports = View.extend({
@@ -38,8 +38,8 @@ module.exports = View.extend({
 		this.removeRow(key);
 
 		// convert data to model
-		if (!Model.isModel(data)) {
-			data = new Model(data, this.model);
+		if (!Context.isContext(data)) {
+			data = this.append(data);
 		}
 
 		// create a new row
@@ -84,7 +84,7 @@ module.exports = View.extend({
 			model, proxy, keys;
 
 		val = this.get(this._path);
-		model = new Model(val, this.model);
+		model = this.append(val);
 		proxy = model.getProxyByValue(val);
 		inverted = this.isInverted();
 		isList = model.callProxyMethod(proxy, val, "isList");
@@ -126,7 +126,7 @@ module.exports = View.extend({
 
 						row = this.getRow(key);
 						rmodel = row != null ? row.model :
-							new Model(null, new Model({ $key: key }, this.model));
+							this.append({ $key: key }).append(null);
 
 						this._row_deps[key] = this.autorun(function() {
 							rmodel.set(model.callProxyMethod(proxy, val, "get", key));

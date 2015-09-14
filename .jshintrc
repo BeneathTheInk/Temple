@@ -4,5 +4,6 @@
 	"undef": true,
 	"unused": true,
 	"devel": true,
-	"browserify": true
+	"browserify": true,
+	"esnext": true
 }
