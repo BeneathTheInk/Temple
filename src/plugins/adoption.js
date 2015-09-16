@@ -16,24 +16,29 @@ function adopt(view, parent, before) {
 	if (view.adoptedParent) view.adoptedParent.disown(view.adoptedParent);
 	view.adoptedParent = this;
 
-	// make sure it is an independent
-	view.detach();
-
 	// hook navbar data up to this data
-	view.getRootModel().parent = this.model;
+	var oldRoot = view.getRootModel();
+	oldRoot.parent = this.model;
 
-	// render when not in loading mode
-	var onRender;
-	this.on("render", onRender = function(comp) {
-		if (comp.firstRun) view.paint(parent, before);
-		comp.onInvalidate(function() {
-			if (comp.stopped) view.detach();
-		});
+	// render immediately if parent is mounted
+	if (this.comp) view.paint(parent, before);
+
+	// render when parent renders
+	var onMount;
+	this.on("mount:after", onMount = function() {
+		view.paint(parent, before);
+	});
+
+	var onStop;
+	this.on("stop", onStop = function() {
+		view.detach();
 	});
 
 	this._adopted.push({
-		render: onRender,
-		view: view
+		stop: onStop,
+		mount: onMount,
+		view: view,
+		root: oldRoot
 	});
 
 	return view;
@@ -50,8 +55,18 @@ function disown(view) {
 		}
 	})) return;
 
+	// remove form the DOM
+	view.detach();
+
+	// remove event listeners
+	this.off("mount:after", this._adopted[index].mount);
+	this.off("stop", this._adopted[index].stop);
+
+	// reset the data model
+	this._adopted[index].root.parent = null;
+
+	// remove references
 	if (view.adoptedParent === this) delete view.adoptedParent;
-	this.off("render", this._adopted[index].render);
 	this._adopted.splice(index, 1);
 
 	return view;

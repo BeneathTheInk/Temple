@@ -7,6 +7,8 @@ module.exports = function() {
 };
 
 function ref(d, key) {
+	var self = this;
+
 	// don't overwrite
 	if (this.refs[key] != null) {
 		console.warn("Multiple elements with reference '%s'.", key);
@@ -18,7 +20,7 @@ function ref(d, key) {
 
 	// remove the reference when the element disappears
 	d.comp.onInvalidate(function() {
-		delete this.refs[key];
+		delete self.refs[key];
 	});
 }
 
