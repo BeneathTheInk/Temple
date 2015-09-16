@@ -1,0 +1,3 @@
+[submodule "src/incremental-dom"]
+	path = src/incremental-dom
+	url = git@github.com:google/incremental-dom.git

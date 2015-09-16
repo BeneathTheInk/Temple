@@ -1,29 +1,28 @@
-var _ = require("underscore");
+import * as _  from "underscore";
 
 // like underscore's result, but pass arguments through
-exports.result = function(object, property) {
+export function result(object, property) {
 	var value = object == null ? void 0 : object[property];
 	return _.isFunction(value) ? value.apply(object, Array.prototype.slice.call(arguments, 2)) : value;
-};
+}
 
 // tests value as pojo (plain old javascript object)
-exports.isPlainObject = require("is-plain-object");
+export var isPlainObject = require("is-plain-object");
 
 // tests function as a subclass of a parent function
 // here, a class is technically a subclass of itself
-exports.isSubClass = function(parent, fn) {
+export function isSubClass(parent, fn) {
 	return fn === parent || (fn != null && fn.prototype instanceof parent);
-};
+}
 
 // like jQuery's empty(), removes all children
-var emptyNode =
-exports.emptyNode = function(node) {
+export function emptyNode(node) {
 	while (node.lastChild) node.removeChild(node.lastChild);
 	return node;
-};
+}
 
 // inserts an array nodes into a parent
-exports.insertNodes = function(nodes, parent, before) {
+export function insertNodes(nodes, parent, before) {
 	var node, next, i;
 
 	// we do it backwards so nodes don't get moved if they don't need to
@@ -35,10 +34,10 @@ exports.insertNodes = function(nodes, parent, before) {
 			parent.insertBefore(node, next);
 		}
 	}
-};
+}
 
 // cleans html, then converts html entities to unicode
-exports.decodeEntities = (function() {
+export var decodeEntities = (function() {
 	if (typeof document === "undefined") return;
 
 	// this prevents any overhead from creating the object each time
@@ -58,15 +57,15 @@ exports.decodeEntities = (function() {
 })();
 
 // convert html into DOM nodes
-exports.toString = function(value) {
+export function toString(value) {
 	if (typeof value !== "string") {
 		value = value != null ? value.toString() : "";
 	}
 
 	return value;
-};
+}
 
-var matches = exports.matches = function(node, selector) {
+export function matches(node, selector) {
 	if (_.isArray(selector)) return selector.some(function(s) {
 		return matches(node, s);
 	});
@@ -84,4 +83,4 @@ var matches = exports.matches = function(node, selector) {
 	}
 
 	return false;
-};
+}

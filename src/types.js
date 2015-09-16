@@ -1,23 +1,22 @@
-module.exports = {
-	ROOT              : 1,
-	VIEW              : 2,
+// Base
+export var ROOT = 1;
+export var VIEW = 2;
 
-	// XML/HTML
-	HTML              : 3,
-	TEXT              : 4,
-	ELEMENT           : 5,
-	ATTRIBUTE         : 6,
-	XCOMMENT          : 7,
+// XML/HTML
+export var HTML = 3;
+export var TEXT = 4;
+export var ELEMENT = 5;
+export var ATTRIBUTE = 6;
+export var XCOMMENT = 7;
 
-	// Mustache
-	INTERPOLATOR      : 8,
-	TRIPLE            : 9,
-	SECTION           : 10,
-	INVERTED          : 11,
-	PARTIAL           : 12,
-	MCOMMENT          : 13,
+// Mustache
+export var INTERPOLATOR = 8;
+export var TRIPLE = 9;
+export var SECTION = 10;
+export var INVERTED = 11;
+export var PARTIAL = 12;
+export var MCOMMENT = 13;
 
-	// MISC
-	LITERAL           : 14,
-	SCRIPT            : 15
-};
+// MISC
+export var LITERAL = 14;
+export var SCRIPT = 15;

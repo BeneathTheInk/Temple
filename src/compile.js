@@ -1,36 +1,5 @@
-var _ = require("underscore");
-var NODE_TYPE = require("./types");
-var parse = require("./m+xml").parse;
-
-var buffer, indent;
-
-function reset(i) {
-	buffer = [];
-	indent = i == null ? 0 : i;
-}
-
-function write(line) {
-	if (line) line = _.times(indent, () => "\t").join("") + line;
-	buffer.push(line);
-}
-
-var renderers = {
-	[NODE_TYPE.ELEMENT]: function(tpl) {
-		write(`elementOpen(${JSON.stringify(tpl.name)});`);
-		indent++;
-		render(tpl.children);
-		indent--;
-		write(`elementClose(${JSON.stringify(tpl.name)});`);
-	},
-	[NODE_TYPE.TEXT]: function(tpl) {
-		write(`text(${JSON.stringify(tpl.value)});`);
-	}
-};
-
-function render(tpl, key) {
-	if (Array.isArray(tpl)) tpl.forEach(render);
-	if (_.has(renderers, tpl.type)) renderers[tpl.type](tpl, key);
-}
+import * as NODE_TYPE from "./types";
+import { parse } from "./m+xml";
 
 export default function compile(tpl) {
 	if (typeof tpl === "string") tpl = parse(tpl);
@@ -39,21 +8,25 @@ export default function compile(tpl) {
 		if (tpl.type === NODE_TYPE.ROOT) {
 			return tpl.views.map(compile).join("\n");
 		} else if (tpl.type === NODE_TYPE.VIEW) {
-			reset(2);
+			let props = [];
 			let scripts = [];
-
-			render(tpl.children.filter(function(c) {
+			let nodes = tpl.children.filter(function(c) {
 				if (c.type !== NODE_TYPE.SCRIPT) return true;
 				scripts.push(c.value);
-			}));
+			});
+
+			if (scripts.length) {
+				props.push(`initialize: function() {${scripts.join("\n")}}`);
+			}
+
+			if (tpl.attributes.extends) {
+				props.push(`extends: ${JSON.stringify(tpl.attributes.extends)}`);
+			}
+
+			props.push(`template: ${JSON.stringify(nodes)}`);
 
 			return `Temple.register(${JSON.stringify(tpl.name)}, {
-	initialize: function() {
-${scripts.join("\n")}
-	},
-	render: function() {
-${buffer.join("\n")}
-	}
+${props.map(p => "\t" + p).join(",\n")}
 });`;
 		}
 	}

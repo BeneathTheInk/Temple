@@ -1,12 +1,14 @@
-var _ = require("underscore");
-var View = require("./view");
-var Trackr = require("trackr");
+import * as _ from "underscore";
+import View from "./view";
+import Trackr from "trackr";
 
 var deps = {};
 var views = {};
+var natives = {};
 
 function getNativePrototype(tag) {
-	return Object.getPrototypeOf(document.createElement(tag));
+	if (natives[tag]) return natives[tag];
+	return (natives[tag] = Object.getPrototypeOf(document.createElement(tag)));
 }
 
 export function add(name, props) {

@@ -1,16 +1,19 @@
-var _ = require("underscore");
-var Trackr = require("trackr");
-var parse = require("./m+xml").parse;
-var NODE_TYPE = require("./types");
+// var _ = require("underscore");
+// var Trackr = require("trackr");
+// var parse = require("./m+xml").parse;
+// var NODE_TYPE = require("./types");
 
 import compile from "./compile";
-import { add as register, get, create } from "./register";
+import { add as register, get, create } from "./globals";
+import { registerProxy } from "./proxies";
 
-export { compile, register, get, create };
+export { compile, register, get, create, registerProxy };
 
 export function render(tpl) {
 	/* jshint -W054 */
-	(new Function("Temple", compile(tpl)))(module.exports);
+	var r = compile(tpl);
+	console.log(r);
+	(new Function("Temple", r))(module.exports);
 }
 
 // // properties that Node.js and the browser can handle

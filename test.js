@@ -9,9 +9,23 @@ document.body.appendChild(script);
 // });
 
 var Temple = require("./");
+import { Map as ReactiveMap } from "trackr-objects";
 
 Temple.render(`
 <my-component>
+	<script>
+	this.helpers({
+		fartName: function() {
+			return this.get("name") + "fart";
+		}
+	});
+	</script>
+
+	<h1>Hello {{ fartName }}!</h1>
+	{{# foo }}<x-test />{{/ foo }}
+</my-component>
+
+<x-test extends="button" on-click="alert, 'a test.'">
 	<script>
 	this.use("actions");
 	this.addAction({
@@ -21,14 +35,16 @@ Temple.render(`
 	});
 	</script>
 
-	<h1>Hello {{ name }}!</h1>
-	{{> test }}
-</my-component>
-
-<x-test blah="false" on-click="alert, 'a test.'">This is a test.</x-test>
+	This is a {{ ../name }}.
+</x-test>
 `);
 
-window.tpl = Temple.create("my-component", { name: "World" }).paint("body");
+var data = window.data = new ReactiveMap({
+	name: "Bob",
+	foo: new ReactiveMap({ name: "Deep" })
+});
+
+window.tpl = Temple.create("my-component", data).paint("body");
 
 //
 // // window.tpl = Temple.render("<h1>Hello {{ name }}!</h1>{{{ poop }}}", {

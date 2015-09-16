@@ -4,12 +4,16 @@ var _ = require("underscore");
 // var utils = require("./utils");
 var parse = require("./m+xml").parse;
 var Events = require("backbone-events-standalone");
-var assignProps = require("assign-props");
+
+import assignProps from "assign-props";
+import { getValue } from "./proxies";
 
 var Context =
 module.exports = function Context(data, parent, options) {
+	options = options || {};
 	this._dep = new Trackr.Dependency();
 	if (Context.isContext(parent)) this.parent = parent;
+	if (options.transparent) this._transparent = true;
 	this.set(data, options);
 };
 
@@ -44,13 +48,24 @@ _.extend(Context.prototype, Events, {
 		return context;
 	},
 
-	// an array of contexts in the current stack, with the root as the first
+	// gets the first non-transparent context on the stack
+	getTopContext: function() {
+		let context = this;
+
+		while (context) {
+			if (!context._transparent) return context;
+			context = context.parent;
+		}
+	},
+
+	// an array of all non-transparent contexts in the current stack, with the root as the first
 	getAllContexts: function() {
-		var contexts = [ this ],
+		var contexts = [],
 			context = this;
 
-		while (context.parent) {
-			contexts.unshift(context = context.parent);
+		while (context) {
+			if (!context._transparent) contexts.unshift(context);
+			context = context.parent;
 		}
 
 		return contexts;
@@ -62,32 +77,49 @@ _.extend(Context.prototype, Events, {
 		if (!_.isNumber(index) || isNaN(index)) index = 0;
 		if (index < 0) return this.getAllContexts()[~index];
 
-		var context = this;
+		let context = this.getTopContext();
 
-		while (index && context) {
+		while (index) {
 			context = context.parent;
-			index--;
+			if (!context) break;
+			if (!context._transparent) index--;
 		}
 
 		return context;
 	},
 
-	// gets the last context in the stack
+	// gets the last non-transparent context in the stack
 	getRootContext: function() {
-		var context = this;
-		while (context.parent != null) context = context.parent;
-		return context;
+		let context = this, root;
+
+		while (context) {
+			if (!context._transparent) root = context;
+			context = context.parent;
+		}
+
+		return root;
 	},
 
-	// returns the first context which passes the function
+	// returns the first non-transparent context which passes the function
 	findContext: function(fn) {
 		var index = 0,
 			context = this;
 
-		while (context != null) {
-			if (fn.call(this, context, index++)) return context;
+		while (context) {
+			if (!context._transparent && fn.call(this, context, index++)) {
+				return context;
+			}
+
 			context = context.parent;
 		}
+	},
+
+	find: function(fn) {
+		let res = this.findContext(function(ctx, index) {
+			return fn.call(this, ctx.data, index);
+		});
+
+		return res ? res.data : void 0;
 	},
 
 	// returns the value at path, but only looks in the data on this context
@@ -102,11 +134,11 @@ _.extend(Context.prototype, Events, {
 		if (options.reactive !== false) this._dep.depend();
 
 		return _.reduce(path.parts, function(target, part) {
-			target = self._get(target, part.key);
+			target = getValue(target, part.key);
 
 			_.each(part.children, function(k) {
 				if (_.isObject(k)) k = self.get(k);
-				target = self._get(target, k);
+				target = getValue(target, k);
 			});
 
 			return target;
@@ -114,12 +146,14 @@ _.extend(Context.prototype, Events, {
 	},
 
 	// retrieves value with path query
-	query: function(paths) {
-		var self = this;
-
+	query: function(paths, options) {
+		options = options || null;
 		if (typeof paths === "string") paths = parse(paths, { startRule: "pathQuery" });
 		if (!_.isArray(paths)) paths = paths != null ? [ paths ] : [];
 		if (!paths.length) paths.push({ type: "all", parts: [] });
+
+		let self = this;
+		let fnCtx = this._getFnCtx();
 
 		return _.reduce(paths, function(result, path) {
 			var context = self;
@@ -131,25 +165,38 @@ _.extend(Context.prototype, Events, {
 			} else if (path.type === "parent") {
 				context = self.getContextAtOffset(path.distance);
 			} else if (path.type === "all") {
+				if (!path.parts.length) context = self.getTopContext();
 				scope = false;
+			} else if (path.type === "local") {
+				context = self.getTopContext();
 			}
 
 			if (context == null) return;
 
 			while (_.isUndefined(val) && context != null) {
-				val = context.get(path);
+				val = context.get(path, options);
 				context = context.parent;
 				if (scope) break;
 			}
 
-			if (_.isFunction(val)) val = val.call(self.data, result, self);
+			if (_.isFunction(val)) {
+				val = val.call(fnCtx.data, result, fnCtx);
+			}
 
 			return val;
 		}, void 0);
 	},
 
-	_get: function(target, key) {
-		return target == null ? void 0 : target[key];
+	// determine function context based on transparency
+	_getFnCtx: function() {
+		let ctx = this;
+
+		while (ctx) {
+			if (!ctx._transparent) return ctx;
+			ctx = ctx.parent;
+		}
+
+		return null;
 	}
 
 });
