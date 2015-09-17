@@ -8,18 +8,13 @@
 	});
 }
 
-start = ws nodes:(elementNode ws)* {
+start = ws nodes:((scriptNode / elementNode) ws)* {
 	var comps = _.pluck(nodes, 0).map(function(node) {
-		return {
-			name: node.name,
-			type: NODE_TYPE.VIEW,
-			attributes: node.attributes.reduce(function(as, attr) {
-				var args = _.pluck(attr.arguments, "value");
-				as[attr.name] = attr.value == null ? true : args.length === 1 ? args[0] : args;
-				return as;
-			}, {}),
-			children: node.children
-		};
+		if (node.type === NODE_TYPE.ELEMENT) {
+			node.type = NODE_TYPE.VIEW;
+		}
+
+		return node;
 	});
 
 	if (comps.length === 1) {

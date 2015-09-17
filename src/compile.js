@@ -5,28 +5,39 @@ export default function compile(tpl) {
 	if (typeof tpl === "string") tpl = parse(tpl);
 
 	if (tpl != null) {
-		if (tpl.type === NODE_TYPE.ROOT) {
-			return tpl.views.map(compile).join("\n");
-		} else if (tpl.type === NODE_TYPE.VIEW) {
-			let props = [];
-			let scripts = [];
-			let nodes = tpl.children.filter(function(c) {
-				if (c.type !== NODE_TYPE.SCRIPT) return true;
-				scripts.push(c.value);
-			});
+		switch(tpl.type) {
+			case NODE_TYPE.ROOT:
+				return tpl.views.map(compile).join("\n");
 
-			if (scripts.length) {
-				props.push(`initialize: function() {${scripts.join("\n")}}`);
-			}
+			case NODE_TYPE.SCRIPT:
+				return tpl.value;
 
-			if (tpl.attributes.extends) {
-				props.push(`extends: ${JSON.stringify(tpl.attributes.extends)}`);
-			}
+			case NODE_TYPE.VIEW:
+				let props = [];
+				let scripts = [];
+				let attrs = tpl.attributes;
+				let nodes = tpl.children.filter(function(c) {
+					if (c.type !== NODE_TYPE.SCRIPT) return true;
+					scripts.push(c.value);
+				});
 
-			props.push(`template: ${JSON.stringify(nodes)}`);
+				if (scripts.length) {
+					props.push(`initialize: function() {
+var init = this.super.initialize.bind(this);
+${scripts.join("\n")}
+}`);
+				}
 
-			return `Temple.register(${JSON.stringify(tpl.name)}, {
-${props.map(p => "\t" + p).join(",\n")}
+				attrs = attrs.filter(function(a, i) {
+					if (a.name !== "extends") return true;
+					props.push(`extends: ${JSON.stringify(a.value)}`);
+				});
+
+				props.push(`attributes: ${JSON.stringify(attrs)}`);
+				props.push(`template: ${JSON.stringify(nodes)}`);
+
+				return `Temple.register(${JSON.stringify(tpl.name)}, {
+	${props.map(p => "\t" + p).join(",\n")}
 });`;
 		}
 	}

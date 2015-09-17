@@ -127,26 +127,26 @@ module.exports = Context.extend({
 		});
 
 		// the autorun computation
-		var comp = this.comp = Trackr.autorun(function(comp) {
+		this.comp = Trackr.autorun(function(comp) {
 			self.render(comp);
-			self.trigger("render", comp);
+			self.trigger("render");
 
 			// auto clean up
 			comp.onInvalidate(function() {
 				// remaining invalidate events
-				self.trigger("invalidate", comp);
+				self.trigger("invalidate");
 
 				// detect if the computation stopped
 				if (comp.stopped) {
-					self.trigger("stop", comp);
 					delete self.comp;
+					self.trigger("stop");
 				}
 			});
 		});
 
 		// remaining mount events happen after the first render
 		Trackr.nonreactive(function() {
-			self.trigger("mount:after", comp);
+			self.trigger("mount:after");
 		});
 
 		return this;
@@ -156,8 +156,13 @@ module.exports = Context.extend({
 		if (this._template == null)
 			throw new Error("Expected a template to be set before rendering.");
 
-		let vrender = () => render.incremental(this._template, this._helpersContext);
+		console.log("rendering", this.tagName);
+
 		let ictx = getContext();
+		let vrender = () => {
+			render.attributes(this.el, this.attributes, this);
+			render.incremental(this._template, this._helpersContext);
+		};
 
 		if (ictx) {
 			let walker = ictx.walker;
@@ -222,23 +227,24 @@ module.exports = Context.extend({
 
 	// finds all decorators, locally and in parent
 	findDecorators: function(name) {
-		var decorators = [],
-			c = this, k, d;
+		let res = [];
+		let c = this;
 
 		while (c != null) {
-			if (c._decorators != null && _.isArray(c._decorators[name])) {
-				for (k in c._decorators[name]) {
-					d = c._decorators[name][k];
-					if (!_.findWhere(decorators, { callback: d.callback })) {
-						decorators.push(_.extend({ context: c }, d));
+			let decs = c._decorators;
+
+			if (decs != null && _.isArray(decs[name])) {
+				for (let d of decs[name]) {
+					if (!_.findWhere(res, { callback: d.callback })) {
+						res.push(_.extend({ context: c }, d));
 					}
 				}
 			}
 
-			c = c.parentRange;
+			c = c.parent;
 		}
 
-		return decorators;
+		return res;
 	},
 
 	// removes a decorator

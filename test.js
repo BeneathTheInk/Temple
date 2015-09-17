@@ -10,6 +10,7 @@ document.body.appendChild(script);
 
 var Temple = require("./");
 var ReactiveMap = require("trackr-objects").Map;
+window.ReactiveVar = require("trackr-objects").Variable;
 
 Temple.render(`
 <my-component>
@@ -21,36 +22,36 @@ Temple.render(`
 	});
 	</script>
 
-	<h1>Hello {{ fartName }}!</h1>
-	{{# foo }}<x-test />{{/ foo }}
+	<h1 style="color: {{ color }};">Hello {{ fartName }}!</h1>
+	{{> click-counter }}
 </my-component>
 
-<x-test extends="button" on-click="alert, 'a test.'">
+<click-counter extends="button" on-click="bump-count">
 	<script>
 	this.use("actions");
-	this.addAction({
-		alert: function(e, msg) {
-			alert(msg);
+	var count = new ReactiveVar(0);
+
+	this.helpers({
+		getCount: count.get.bind(count)
+	});
+
+	this.actions({
+		"bump-count": function(e) {
+			e.original.preventDefault();
+			count.set(count.get() + 1);
 		}
 	});
 	</script>
 
-	This is a {{ ../name }}.
-</x-test>
+	I have been clicked {{ getCount }} times.
+</click-counter>
+
+<click-counter-2 extends="click-counter">Clicked x{{ getCount }}</click-counter-2>
 `);
 
 var data = window.data = new ReactiveMap({
 	name: "Bob",
-	foo: new ReactiveMap({ name: "Deep" })
+	color: "blue"
 });
 
 window.tpl = Temple.create("my-component", data).paint("body");
-
-//
-// // window.tpl = Temple.render("<h1>Hello {{ name }}!</h1>{{{ poop }}}", {
-// // 	name: "World",
-// // 	poop: function() {
-// // 		return "poop";
-// // 	},
-// // 	test: "foo"
-// // }).paint("body");

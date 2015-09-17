@@ -15,14 +15,14 @@ var decorators = {};
 
 // the plugin
 module.exports = function() {
-	this.addAction = addAction;
+	this.actions = this.addAction = addAction;
 	this.addActionOnce = addActionOnce;
 	this.removeAction = removeAction;
 	this.fireAction = fireAction;
 	this.decorate(decorators);
 
-	var initActions = _.result(this, "actions");
-	if (initActions != null) this.addAction(initActions);
+	// var initActions = _.result(this, "actions");
+	// if (initActions != null) this.addAction(initActions);
 };
 
 eventNames.forEach(function(event) {
@@ -35,15 +35,15 @@ eventNames.forEach(function(event) {
 			var action = new Action(key);
 			action.original = e;
 			action.target = action.node = node;
-			action.context = action.model = decor.model;
+			action.context = decor.context;
 			action.view = decor.view;
 
 			// find the first parent with the fire method
 			var fireOn = self;
 			while (typeof fireOn.fireAction !== "function") {
 				// if it has no parent, we can't do anything
-				if (fireOn.parentRange == null) return;
-				fireOn = fireOn.parentRange;
+				if (fireOn.parent == null) return;
+				fireOn = fireOn.parent;
 			}
 
 			// fire the action
@@ -151,13 +151,13 @@ function fireAction(action) {
 		}, this);
 	}
 
-	if (action.bubbles && this.parentRange != null) {
+	if (action.bubbles && this.parent != null) {
 		// find the first parent with the fire method
-		var fireOn = this.parentRange;
+		var fireOn = this.parent;
 		while (typeof fireOn.fireAction !== "function") {
 			// if it has no parent, we can't do anything
-			if (fireOn.parentRange == null) return;
-			fireOn = fireOn.parentRange;
+			if (fireOn.parent == null) return;
+			fireOn = fireOn.parent;
 		}
 
 		fireOn.fireAction.apply(fireOn, args);

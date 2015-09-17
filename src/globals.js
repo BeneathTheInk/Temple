@@ -13,10 +13,29 @@ function getNativePrototype(tag) {
 
 export function add(name, props) {
 	props = _.extend({ tagName: name }, props);
-	var V = views[name] = View.extend(props);
+	let _View = View;
+	let _extends;
 
-	var proto = Object.create(props.extends ?
-		getNativePrototype(props.extends) :
+	if (props.extends) {
+		if (_.has(views, props.extends)) {
+			_View = views[props.extends];
+			_extends = _View.prototype.extends;
+			delete props.extends;
+		} else {
+			_extends = props.extends;
+		}
+	}
+
+	// merge attribute properties
+	if (props.attributes && _View !== View && _View.prototype.attributes) {
+		props.attributes = _View.prototype.attributes.concat(props.attributes);
+	}
+
+	let V = views[name] = _View.extend(props);
+	V.prototype.super = _View.prototype;
+
+	let proto = Object.create(_extends ?
+		getNativePrototype(_extends) :
 		HTMLElement.prototype
 	);
 

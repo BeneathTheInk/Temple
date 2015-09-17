@@ -100,7 +100,7 @@ gulp.task("browser-dist-min", [ "browser-dist" ], function() {
 		.pipe(gulp.dest("dist/"));
 });
 
-gulp.task("browser-dev", function buildScripts() {
+gulp.task("browser-dev", [ "compile" ], function buildScripts() {
 	var errors = errorHandler(true);
 
 	return js.bundle()
@@ -109,3 +109,5 @@ gulp.task("browser-dev", function buildScripts() {
 		.pipe(source("temple.dev.js"))
 		.pipe(gulp.dest('dist/'));
 });
+
+gulp.task("default", [ "compile", "browser-dist", "browser-dist-min", "browser-dev" ]);
