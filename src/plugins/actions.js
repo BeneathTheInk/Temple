@@ -1,5 +1,5 @@
-var _ = require("underscore"),
-	Mustache = require("../");
+import * as _ from "underscore";
+var Mustache = require("../");
 
 // generate decorators
 var eventNames = [

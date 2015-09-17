@@ -5,12 +5,12 @@ import * as _ from "underscore";
 import { get as getView } from "./globals";
 import Context from "./context";
 
-export function idom(template, ctx, key) {
+export function incremental(template, ctx, key) {
 	let Partial;
 
 	if (_.isArray(template)) {
 		template.forEach(function(t, i) {
-			idom(t, ctx, i);
+			incremental(t, ctx, i);
 		});
 		return;
 	}
@@ -27,7 +27,7 @@ export function idom(template, ctx, key) {
 			}
 			else {
 				elementOpen(template.name, key);
-				idom(template.children, ctx);
+				incremental(template.children, ctx);
 				elementClose(template.name);
 			}
 			break;
@@ -44,7 +44,7 @@ export function idom(template, ctx, key) {
 		case NODE_TYPE.SECTION:
 			let val = ctx.query(template.value);
 			let newctx = new Context(val, ctx);
-			idom(template.children, newctx);
+			incremental(template.children, newctx);
 			break;
 	}
 

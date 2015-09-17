@@ -9,7 +9,7 @@ document.body.appendChild(script);
 // });
 
 var Temple = require("./");
-import { Map as ReactiveMap } from "trackr-objects";
+var ReactiveMap = require("trackr-objects").Map;
 
 Temple.render(`
 <my-component>

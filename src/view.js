@@ -156,7 +156,7 @@ module.exports = Context.extend({
 		if (this._template == null)
 			throw new Error("Expected a template to be set before rendering.");
 
-		let vrender = () => render.idom(this._template, this._helpersContext);
+		let vrender = () => render.incremental(this._template, this._helpersContext);
 		let ictx = getContext();
 
 		if (ictx) {
