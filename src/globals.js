@@ -1,5 +1,5 @@
 import * as _ from "underscore";
-import View from "./view";
+import Mustache from "./mustache";
 import Trackr from "trackr";
 
 var deps = {};
@@ -13,7 +13,7 @@ function getNativePrototype(tag) {
 
 export function add(name, props) {
 	props = _.extend({ tagName: name }, props);
-	let _View = View;
+	let _View = Mustache;
 	let _extends;
 
 	if (props.extends) {
@@ -26,13 +26,7 @@ export function add(name, props) {
 		}
 	}
 
-	// merge attribute properties
-	if (props.attributes && _View !== View && _View.prototype.attributes) {
-		props.attributes = _View.prototype.attributes.concat(props.attributes);
-	}
-
 	let V = views[name] = _View.extend(props);
-	V.prototype.super = _View.prototype;
 
 	let proto = Object.create(_extends ?
 		getNativePrototype(_extends) :

@@ -1,15 +1,12 @@
-var _ = require("underscore");
-var NODE_TYPE = require("./types");
-var parse = require("./m+xml").parse;
-var utils = require("./utils");
-var View = require("./view");
-var Context = require("./context");
-var Section = require("./section");
-var idom = require('incremental-dom');
-var NodeRange = require("./node-range");
-var ihtml = require("./html-parser");
+import * as _ from "underscore";
+import View from "./view";
+import { Map as ReactiveMap } from "trackr-objects";
+import Context from "./context";
+import * as render from "./render";
+import { parse } from "./m+xml";
+import * as NODE_TYPE from "./types";
+import Trackr from "trackr";
 
-var Mustache =
 module.exports = View.extend({
 	constructor: function(data, parent, options) {
 		if (!Context.isContext(parent)) {
@@ -18,28 +15,70 @@ module.exports = View.extend({
 		}
 
 		options = options || {};
+		//
+		// // add template
+		// var template = options.template || _.result(this, "template");
+		// if (template != null) this.setTemplate(template);
 
-		// add template
-		var template = options.template || _.result(this, "template");
-		if (template != null) this.setTemplate(template);
+		var tag = _.result(this, "tagName");
+		if (!tag) throw new Error("Missing tag name.");
+		this.el = document.createElement(this.extends || tag, this.extends ? tag : null);
+
+		this._helpers = new ReactiveMap();
+		this._helpersContext = new Context(this._helpers, this, { transparent: true });
 
 		// add decorators
 		this.decorate(_.extend({}, options.decorators, _.result(this, "decorators")));
 
-		// initiate like a normal view
+		// super
 		View.call(this, data, parent, options);
 	},
 
-	// parses and sets the root template
-	setTemplate: function(template) {
-		if (_.isString(template)) template = parse(template);
+	_mount: function() {
+		render.patch(this.el, () => this.render(this._helpersContext));
+	},
 
-		if (!_.isObject(template) || template.type !== NODE_TYPE.COMPONENT) {
-			throw new Error("Expecting string or parsed template.");
+	// attach + mount
+	attach: function(parent, before) {
+		if (typeof parent === "string") parent = document.querySelector(parent);
+		if (parent == null) throw new Error("Expecting a valid DOM element to attach in.");
+		if (typeof before === "string") {
+			before = parent.querySelector ?
+				parent.querySelector(before) :
+				document.querySelector(before);
 		}
 
-		this._template = template;
-		this.trigger("template", template);
+		parent.insertBefore(this.el, before);
+		this.trigger("attach", this.el);
+
+		return this;
+	},
+
+	paint: function(parent, before) {
+		this.attach(parent, before);
+		this.mount();
+		return this;
+	},
+
+	// stop and remove dom
+	detach: function() {
+		this.stop();
+		if (this.el && this.el.parentNode) {
+			this.el.parentNode.removeChild(this.el);
+		}
+		return this;
+	},
+
+	helpers: function(obj) {
+		for (let k of _.keys(obj)) {
+			let v = obj[k];
+
+			if (v == null) this._helpers.delete(k);
+			else if (typeof v === "function") this._helpers.set(k, v);
+			else {
+				throw new Error("Expecting function for helper.");
+			}
+		}
 
 		return this;
 	},
@@ -71,25 +110,75 @@ module.exports = View.extend({
 		return this;
 	},
 
+	renderDecorator: function(el, name, options) {
+		options = options || {};
+		let view = this;
+
+		// look up decorator by name
+		let decorators = view.findDecorators(name);
+
+		// render as attribute if no decorators
+		if (!decorators.length) {
+			if (typeof options.string === "function") el.setAttribute(name, options.string());
+			return;
+		}
+
+		// render each decorator
+		decorators.forEach(function(d) {
+			let _comp = Trackr.currentComputation;
+
+			// defer computation because we cannot have unknown changes happening to the DOM
+			_.defer(function() {
+				let dcomp = Trackr.autorun(function(comp) {
+					// assemble the arguments!
+					var args = [ {
+						owner: d.context,
+						target: el,
+						view: view,
+						comp: comp,
+						options: d.options
+					} ];
+
+					// render arguments based on options
+					if (d.options && d.options.parse === "string") {
+						if (typeof options.string === "function") args.push(options.string());
+					} else if (d.options == null || d.options.parse !== false) {
+						if (typeof options["arguments"] === "function") args = args.concat(options["arguments"]());
+					}
+
+					// execute the callback
+					d.callback.apply(d.context, args);
+				});
+
+				// clean up
+				if (_comp) {
+					if (_comp.stopped || _comp.invalidated) dcomp.stop();
+					else _comp.onInvalidate(() => dcomp.stop());
+				}
+			});
+		});
+	},
+
 	// finds all decorators, locally and in parent
 	findDecorators: function(name) {
-		var decorators = [],
-			c = this, k, d;
+		let res = [];
+		let c = this;
 
 		while (c != null) {
-			if (c._decorators != null && _.isArray(c._decorators[name])) {
-				for (k in c._decorators[name]) {
-					d = c._decorators[name][k];
-					if (!_.findWhere(decorators, { callback: d.callback })) {
-						decorators.push(_.extend({ context: c }, d));
+			let decs = c._decorators;
+
+			if (decs != null && _.isArray(decs[name])) {
+				for (let d of decs[name]) {
+					if (!_.findWhere(res, { callback: d.callback })) {
+						res.push(_.extend({ context: c }, d));
 					}
 				}
 			}
 
-			c = c.parentRange;
+			c = c.parent;
 		}
 
-		return decorators;
+		return res;
 	},
 
 	// removes a decorator
@@ -123,299 +212,5 @@ module.exports = View.extend({
 		}
 
 		return this;
-	},
-
-	// special partial setter that converts strings into mustache Views
-	setPartial: function(name, partial) {
-		if (_.isObject(name)) return View.prototype.setPartial.call(this, name);
-
-		if (_.isString(partial)) partial = parse(partial);
-		if (_.isObject(partial) && partial.type === NODE_TYPE.ROOT) partial = Mustache.extend({ template: partial });
-		if (partial != null && !utils.isSubClass(View, partial))
-			throw new Error("Expecting string template, parsed template, View subclass or function for partial.");
-
-		return View.prototype.setPartial.call(this, name, partial);
-	},
-
-	// the main render function called by mount
-	render: function() {
-		if (this._template == null)
-			throw new Error("Expected a template to be set before rendering.");
-
-		var self = this;
-
-		idom.patch(this._range, function() {
-			self.renderTemplate(self._template);
-		});
-
-		// var toMount;
-		// this.setMembers(this.renderTemplate(this._template, null, toMount = []));
-		// _.invoke(toMount, "mount");
-	},
-
-	// converts a template into an array of elements and DOMRanges
-	renderTemplate: function(template, view) {
-		if (view == null) view = this;
-		var self = this;
-
-		if (_.isArray(template)) {
-			template.forEach(function(t) {
-				self.renderTemplate(t, view);
-			});
-			return;
-		}
-
-		switch(template.type) {
-			case NODE_TYPE.ROOT:
-				this.renderTemplate(template.children, view);
-				break;
-
-			case NODE_TYPE.ELEMENT:
-				idom.elementOpen(template.name, "");
-				this.renderTemplate(template.children, view);
-				idom.elementClose(template.name);
-				break;
-
-				// var part = this.renderPartial(template.name, view);
-				// var obj;
-				//
-				// if (part != null) {
-				// 	part.addData(obj = $track({}));
-				//
-				// 	template.attributes.forEach(function(attr) {
-				// 		self.autorun(function(c) {
-				// 			var val = this.renderArguments(attr.arguments, view);
-				// 			if (val.length === 1) val = val[0];
-				// 			else if (!val.length) val = void 0;
-				//
-				// 			if (c.firstRun) obj.defineProperty(attr.name, val);
-				// 			else obj[attr.name] = val;
-				// 		});
-				// 	});
-				//
-				// 	toMount.push(part);
-				// 	return part;
-				// }
-				//
-				// else {
-				// 	var el = document.createElement(template.name);
-				//
-				// 	template.attributes.forEach(function(attr) {
-				// 		if (this.renderDecorations(el, attr, view)) return;
-				//
-				// 		this.autorun(function() {
-				// 			el.setAttribute(attr.name, this.renderTemplateAsString(attr.children, view));
-				// 		});
-				// 	}, this);
-				//
-				// 	var children = this.renderTemplate(template.children, view, toMount),
-				// 		child, i;
-				//
-				// 	for (i in children) {
-				// 		child = children[i];
-				// 		if (child instanceof DOMRange) {
-				// 			child.parentRange = view; // fake the parent
-				// 			child.attach(el);
-				// 		} else {
-				// 			el.appendChild(child);
-				// 		}
-				// 	}
-				//
-				// 	return el;
-				// }
-
-			case NODE_TYPE.TEXT:
-				idom.text(utils.decodeEntities(template.value));
-				break;
-
-			case NODE_TYPE.HTML:
-				ihtml(template.value);
-				break;
-
-			case NODE_TYPE.XCOMMENT:
-				// return document.createComment(template.value);
-
-			case NODE_TYPE.INTERPOLATOR:
-				var tnode = idom.text("");
-
-				this.autorun(function() {
-					tnode.data = utils.toString(view.query(template.value));
-				});
-
-				break;
-
-			case NODE_TYPE.TRIPLE:
-				var range = new NodeRange();
-				range.moveTo(view._range);
-
-				this.autorun(function(comp) {
-					var value = utils.toString(view.query(template.value));
-
-					if (comp.firstRun) {
-						range.append(ihtml(value));
-					} else {
-						idom.patch(range, function() {
-							ihtml(value);
-						});
-					}
-				}).onStop(function() {
-					range.detach().empty();
-				});
-
-				break;
-
-			case NODE_TYPE.INVERTED:
-			case NODE_TYPE.SECTION:
-				// var section = new Section(view.model)
-				// 	.invert(template.type === NODE_TYPE.INVERTED)
-				// 	.setPath(template.value)
-				// 	.onRow(function() {
-				// 		var _toMount;
-				// 		this.setMembers(self.renderTemplate(template.children, this, _toMount = []));
-				// 		_.invoke(_toMount, "mount");
-				// 	});
-				//
-				// toMount.push(section);
-				// return section;
-
-			case NODE_TYPE.PARTIAL:
-				// var partial = this.renderPartial(template.value, view);
-				// if (partial) toMount.push(partial);
-				// return partial;
-		}
-	},
-
-	// converts a template into a string
-	renderTemplateAsString: function(template, ctx) {
-		if (ctx == null) ctx = this;
-		if (ctx instanceof View) ctx = ctx.model;
-		var self = this, val;
-
-		if (_.isArray(template)) return template.map(function(t) {
-			return self.renderTemplateAsString(t, ctx);
-		}).filter(function(b) { return b != null; }).join("");
-
-		switch(template.type) {
-			case NODE_TYPE.ROOT:
-				return this.renderTemplateAsString(template.children, ctx);
-
-			case NODE_TYPE.TEXT:
-				return template.value;
-
-			case NODE_TYPE.INTERPOLATOR:
-			case NODE_TYPE.TRIPLE:
-				val = ctx.get(template.value);
-				return val != null ? val.toString() : "";
-
-			case NODE_TYPE.SECTION:
-			case NODE_TYPE.INVERTED:
-				var inverted, model, isEmpty, makeRow, proxy, isList;
-
-				inverted = template.type === NODE_TYPE.INVERTED;
-				val = ctx.get(template.value);
-				model = new Model(val, ctx);
-				proxy = model.getProxyByValue(val);
-				isList = model.callProxyMethod(proxy, val, "isList");
-				isEmpty = Section.isEmpty(model, proxy);
-
-				makeRow = function(i) {
-					var data;
-
-					if (i == null) {
-						data = model;
-					} else {
-						data = model.callProxyMethod(proxy, val, "get", i);
-						data = new Model(data, new Model({ $key: i }, ctx));
-					}
-
-					return self.renderTemplateAsString(template.children, data);
-				};
-
-				if (!(isEmpty ^ inverted)) {
-					return isList && !inverted ?
-						model.callProxyMethod(proxy, val, "keys").map(makeRow).join("") :
-						makeRow();
-				}
-		}
-	},
-
-	// converts an argument template into an array of values
-	renderArguments: function(arg, ctx) {
-		if (ctx == null) ctx = this;
-		if (ctx instanceof View) ctx = ctx.model;
-		var self = this;
-
-		if (_.isArray(arg)) return arg.map(function(a) {
-			return self.renderArguments(a, ctx);
-		}).filter(function(b) { return b != null; });
-
-		switch(arg.type) {
-			case NODE_TYPE.INTERPOLATOR:
-				return ctx.get(arg.value);
-
-			case NODE_TYPE.LITERAL:
-				return arg.value;
-		}
-	},
-
-	// renders decorations on an element by template
-	renderDecorations: function(el, attr, ctx) {
-		var self = this;
-
-		// look up decorator by name
-		var decorators = this.findDecorators(attr.name);
-		if (!decorators.length) return;
-
-		// normalize the context
-		if (ctx == null) ctx = this;
-		if (ctx instanceof View) ctx = ctx.model;
-
-		// a wrapper computation to ez-clean the rest
-		return this.autorun(function(_comp) {
-			decorators.forEach(function(d) {
-				if (d.options && d.options.defer) _.defer(execDecorator);
-				else execDecorator();
-
-				function execDecorator() {
-					var dcomp = self.autorun(function(comp) {
-						// assemble the arguments!
-						var args = [ {
-							target: el,
-							model: ctx,
-							view: self,
-							template: attr,
-							comp: comp,
-							options: d.options
-						} ];
-
-						// render arguments based on options
-						if (d.options && d.options.parse === "string") {
-							args.push(self.renderTemplateAsString(attr.children, ctx));
-						} else if (d.options == null || d.options.parse !== false) {
-							args = args.concat(self.renderArguments(attr.arguments, ctx));
-						}
-
-						// execute the callback
-						d.callback.apply(d.context || self, args);
-					});
-
-					// clean up
-					_comp.onInvalidate(function() {
-						dcomp.stop();
-					});
-				}
-			});
-		});
 	}
-
-}, {
-
-	render: function(template, data, options) {
-		options = _.extend({}, options || {}, {
-			template: template
-		});
-
-		return new Mustache(data || null, options);
-	}
-
 });

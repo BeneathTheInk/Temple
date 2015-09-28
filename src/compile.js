@@ -1,46 +1,259 @@
+import * as _ from "underscore";
 import * as NODE_TYPE from "./types";
 import { parse } from "./m+xml";
+import { toString, hash } from "./utils";
 
-export default function compile(tpl) {
-	if (typeof tpl === "string") tpl = parse(tpl);
+var common = {
+	idom: "var idom = Temple.idom;",
+	utils: "var utils = Temple.utils;",
+	proxies: "var proxies = Temple.proxies;",
+	context: "var Context = Temple.Context;"
+};
 
-	if (tpl != null) {
-		switch(tpl.type) {
-			case NODE_TYPE.ROOT:
-				return tpl.views.map(compile).join("\n");
+var headers;
+var buffer;
+var tabs;
+var tabchar;
+var queries;
 
-			case NODE_TYPE.SCRIPT:
-				return tpl.value;
+function start(t) {
+	headers = [];
+	queries = [];
+	buffer = "";
+	tabs = 0;
+	tabchar = t || "  ";
+}
 
-			case NODE_TYPE.VIEW:
-				let props = [];
-				let scripts = [];
-				let attrs = tpl.attributes;
-				let nodes = tpl.children.filter(function(c) {
-					if (c.type !== NODE_TYPE.SCRIPT) return true;
-					scripts.push(c.value);
-				});
+function reset() {
+	headers = null;
+	queries = null;
+	buffer = null;
+	tabs = null;
+}
 
-				if (scripts.length) {
-					props.push(`initialize: function() {
-var init = this.super.initialize.bind(this);
-${scripts.join("\n")}
-}`);
-				}
+function write(str) {
+	for (let i = 0; i < tabs; i++) buffer += tabchar;
+	buffer += str + "\n";
+}
 
-				attrs = attrs.filter(function(a, i) {
-					if (a.name !== "extends") return true;
-					props.push(`extends: ${JSON.stringify(a.value)}`);
-				});
+function indent() { tabs++; }
+function outdent() { tabs--; }
 
-				props.push(`attributes: ${JSON.stringify(attrs)}`);
-				props.push(`template: ${JSON.stringify(nodes)}`);
+function header(h) {
+	if (!_.contains(headers, h)) headers.push(h);
+}
 
-				return `Temple.register(${JSON.stringify(tpl.name)}, {
-	${props.map(p => "\t" + p).join(",\n")}
-});`;
-		}
+function use() {
+	_.flatten(_.toArray(arguments)).forEach(function(n) {
+		let v = common[n];
+		if (v) header(toString(v));
+	});
+}
+
+function query(q) {
+	let s = JSON.stringify(q);
+	let v = ("q" + hash(s)).replace("-", "_");
+	header(`var ${v} = ${s};`);
+	return `ctx.query(${v})`;
+}
+
+function stringify(tpl) {
+	if (_.isArray(tpl)) {
+		return tpl.map((t) => stringify(t))
+			.filter(_.isString).join(" + ");
 	}
 
-	throw new Error("Expecting string or template tree.");
+	switch (tpl.type) {
+		case NODE_TYPE.TEXT:
+			return JSON.stringify(tpl.value);
+
+		case NODE_TYPE.INTERPOLATOR:
+		case NODE_TYPE.TRIPLE:
+			return `utils.toString(${query(tpl.value)})`;
+	}
+}
+
+// converts an argument template into an array of values
+function argumentify(arg) {
+	if (_.isArray(arg)) return "[ " + arg.map(a => argumentify(a)).join(", ") + " ]";
+
+	switch(arg.type) {
+		case NODE_TYPE.INTERPOLATOR:
+			return query(arg.value);
+
+		case NODE_TYPE.LITERAL:
+			return JSON.stringify(arg.value);
+	}
+}
+
+function attributes(el, attrs) {
+	attrs.forEach(function(a) {
+		write(`this.renderDecorator(${el}, ${JSON.stringify(a.name)}, {`);
+		indent();
+
+			write(`mixin: { context: ctx },`);
+			write(`string: function() { return ${stringify(a.children)}; },`);
+			write(`"arguments": function() { return ${argumentify(a.arguments)}; }`);
+
+		outdent();
+		write(`});`);
+	});
+}
+
+function open() {
+	write(`(function() {`);
+	indent();
+}
+
+function close() {
+	outdent();
+	write(`}).call(this);`);
+}
+
+var renderers = {
+	[NODE_TYPE.ROOT]: function(tpl) {
+		render(tpl.views);
+	},
+
+	[NODE_TYPE.SCRIPT]: function(tpl) {
+		write(tpl.value);
+	},
+
+	[NODE_TYPE.VIEW]: function(tpl) {
+		write(`Temple.register(${JSON.stringify(tpl.name)}, {`);
+		indent();
+
+			write("initialize: function() {");
+			indent();
+
+				let nodes = tpl.children.filter(function(c) {
+					if (c.type !== NODE_TYPE.SCRIPT) return true;
+					render(c);
+				});
+
+			outdent();
+			write("},");
+
+			let attrs = tpl.attributes.filter(function(a) {
+				if (a.name !== "extends") return true;
+				write(`extends: ${JSON.stringify(a.value)},`);
+			});
+
+			write("render: function(ctx) {");
+			indent();
+
+				attributes("this.el", attrs);
+				render(nodes);
+
+			outdent();
+			write("}");
+
+		outdent();
+		write("});");
+	},
+
+	[NODE_TYPE.TEXT]: function(tpl) {
+		use("idom");
+		write(`idom.text(${JSON.stringify(tpl.value)});`);
+	},
+
+	[NODE_TYPE.ELEMENT]: function(tpl) {
+		use("idom");
+
+		let tagName = JSON.stringify(tpl.name);
+		write(`if (!this.renderView(${tagName}, ctx)) {`);
+		indent();
+
+			open();
+			write(`var el = idom.elementOpen(${tagName});`);//${key ? "," + JSON.stringify(key) : ""}
+			indent();
+
+				attributes("el", tpl.attributes);
+				render(tpl.children);
+
+			outdent();
+			write(`idom.elementClose(${tagName});`);
+			close();
+
+		outdent();
+		write("}");
+	},
+
+	[NODE_TYPE.PARTIAL]: function(tpl) {
+		write(`this.renderView(${JSON.stringify(tpl.value)}, ctx);`);
+	},
+
+	[NODE_TYPE.INTERPOLATOR]: function(tpl) {
+		use("idom","utils");
+		write(`idom.text(utils.toString(${query(tpl.value)}));`);
+	},
+
+	[NODE_TYPE.TRIPLE]: function(tpl) {
+		use("idom");
+		write(`idom.html(${query(tpl.value)});`);
+	},
+
+	[NODE_TYPE.SECTION]: function(tpl) {
+		use("proxies", "context");
+
+		function renderSection(v, i) {
+			if (i) write(`var indexctx = new Context({ $index: ${i} }, prevctx, { transparent: true });`);
+			write(`var ctx = new Context(${v}, ${i ? "indexctx" : "prevctx"});`);
+			render(tpl.children);
+		}
+
+		open();
+		write(`var prevctx = ctx;`);
+		write(`var val = ${query(tpl.value)};`);
+		write(`var proxy = proxies.getByTarget(val, [ "empty", "section" ]);`);
+		let isEmpty = `Boolean(proxies.run(proxy, "empty", val))`;
+
+		if (tpl.type === NODE_TYPE.INVERTED) {
+			write(`if (${isEmpty}) {`);
+			indent();
+
+				open();
+				renderSection("val");
+				close();
+
+			outdent();
+			write(`}`);
+		} else {
+			write(`if (!${isEmpty}) {`);
+			indent();
+
+				write(`proxies.run(proxy, "section", val, (function(data, index) {`);
+				indent();
+
+					renderSection("data", "index");
+
+				outdent();
+				write(`}).bind(this));`);
+
+			outdent();
+			write(`}`);
+		}
+
+		close();
+	}
+};
+
+renderers[NODE_TYPE.INVERTED] = renderers[NODE_TYPE.SECTION];
+
+function render(tpl, key) {
+	if (tpl != null) {
+		if (typeof tpl === "string") tpl = parse(tpl);
+		if (_.isArray(tpl)) tpl.forEach(render);
+		else if (tpl.type && renderers[tpl.type]) {
+			renderers[tpl.type](tpl, key);
+		}
+	}
+}
+
+export default function compile(tpl) {
+	start();
+	render(tpl);
+	let ret = [ headers.join("\n"), buffer ].join("\n\n");
+	reset();
+	return ret;
 }

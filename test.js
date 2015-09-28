@@ -11,6 +11,7 @@ document.body.appendChild(script);
 var Temple = require("./");
 var ReactiveMap = require("trackr-objects").Map;
 window.ReactiveVar = require("trackr-objects").Variable;
+window.ReactiveList = require("trackr-objects").List;
 
 Temple.render(`
 <my-component>
@@ -23,7 +24,11 @@ Temple.render(`
 	</script>
 
 	<h1 style="color: {{ color }};">Hello {{ fartName }}!</h1>
+	{{# foo }}{{ . }}{{/ foo }}
+	<hr/>
 	{{> click-counter }}
+	<hr/>
+	{{> tyler-list }}
 </my-component>
 
 <click-counter extends="button" on-click="bump-count">
@@ -32,7 +37,9 @@ Temple.render(`
 	var count = new ReactiveVar(0);
 
 	this.helpers({
-		getCount: count.get.bind(count)
+		getCount: function() {
+			return count.get();
+		}
 	});
 
 	this.actions({
@@ -46,12 +53,58 @@ Temple.render(`
 	I have been clicked {{ getCount }} times.
 </click-counter>
 
-<click-counter-2 extends="click-counter">Clicked x{{ getCount }}</click-counter-2>
+<tyler-list>
+	<script>
+		this.use("actions");
+		var list = new ReactiveList();
+
+		this.helpers({
+			items: function() {
+				return list;
+			}
+		});
+
+		this.actions({
+			"add-item": function(e) {
+				e.original.preventDefault();
+				var input = e.target.elements[0];
+				list.push(input.value);
+				input.value = "";
+				input.focus();
+			},
+			"remove-item": function(e, index) {
+				e.original.preventDefault();
+				list.splice(index, 1);
+			},
+			clear: function(e) {
+				e.original.preventDefault();
+				list.splice(0, list.length);
+			}
+		});
+	</script>
+
+	<form on-submit="add-item">
+		<input type="text" />
+		<button type="submit">Add</button>
+		<button on-click="clear">Clear</button>
+	</form>
+
+	<ul>
+	{{# items }}
+		<li>{{ . }} <a href="#" on-click="remove-item, {{ $index }}">remove</a></li>
+	{{/ items }}
+	</ul>
+
+	{{^ items }}
+	<p><i>No Items</i></p>
+	{{/ items }}
+</tyler-list>
 `);
 
 var data = window.data = new ReactiveMap({
 	name: "Bob",
-	color: "blue"
+	color: "blue",
+	foo: [0,1,2]
 });
 
 window.tpl = Temple.create("my-component", data).paint("body");

@@ -1,6 +1,6 @@
-var _ = require("underscore");
-var parse = require("html-parse-stringify").parse;
-var idom = require("incremental-dom");
+import * as _ from "underscore";
+import { parse } from "html-parse-stringify";
+import * as idom from "./incremental-dom";
 
 function render(node) {
 	if (node.type == "text") {

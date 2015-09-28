@@ -1,4 +1,4 @@
-import * as _  from "underscore";
+import * as _	from "underscore";
 
 // like underscore's result, but pass arguments through
 export function result(object, property) {
@@ -83,4 +83,18 @@ export function matches(node, selector) {
 	}
 
 	return false;
+}
+
+export function hash(str) {
+	var h = 0, i, chr, len;
+	
+	if (str.length === 0) return h;
+
+	for (i = 0, len = str.length; i < len; i++) {
+		chr = str.charCodeAt(i);
+		h = ((h << 5) - h) + chr;
+		h |= 0; // Convert to 32bit integer
+	}
+
+	return h;
 }

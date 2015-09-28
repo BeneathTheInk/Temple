@@ -5,14 +5,17 @@
 
 import compile from "./compile";
 import { add as register, get, create } from "./globals";
-import { registerProxy } from "./proxies";
+import * as proxies from "./proxies";
+import * as idom from "./incremental-dom";
+import * as utils from "./utils";
+import Context from "./context";
 
-export { compile, register, get, create, registerProxy };
+export { compile, register, get, create, proxies, idom, utils, Context };
 
 export function render(tpl) {
 	/* jshint -W054 */
 	var r = compile(tpl);
-	// console.log(r);
+	console.log(r);
 	(new Function("Temple", r))(module.exports);
 }
 

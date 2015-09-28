@@ -1,20 +1,9 @@
-var _ = require("underscore");
-var Trackr = require("trackr");
-// var utils = require("./utils");
-var Context = require("./context");
-var Plugins = require("./plugins");
-// var NodeRange = require("./node-range");
-var merge = require("plain-merge");
-
-import * as idom from "./incremental-dom/index";
-import { getContext } from "./incremental-dom/src/context";
-import { firstChild, nextSibling, parentNode } from './incremental-dom/src/traversal';
-import { clearUnvisitedDOM } from './incremental-dom/src/alignment';
-
-import * as render from "./render";
-import { parse } from "./m+xml";
-import * as NODE_TYPE from "./types";
-import { Map as ReactiveMap } from "trackr-objects";
+import * as _ from "underscore";
+import Trackr from "trackr";
+import Context from "./context";
+import Plugins from "./plugins";
+import merge from "plain-merge";
+import { get as getView } from "./globals";
 
 var View =
 module.exports = Context.extend({
@@ -25,25 +14,7 @@ module.exports = Context.extend({
 		}
 
 		options = options || {};
-
-		// add template
-		var template = options.template || _.result(this, "template");
-		if (template != null) this.setTemplate(template);
-
-		var tag = _.result(this, "tagName");
-		if (!tag) throw new Error("Missing tag name.");
-		this.el = document.createElement(this.extends || tag, this.extends ? tag : null);
-
-		this._helpers = new ReactiveMap();
-		this._helpersContext = new Context(this._helpers, this, { transparent: true });
-
-		// add partials
-		// this._partials = {};
 		this._components = {};
-		// this.setPartial(_.extend({}, options.partials, _.result(this, "partials")));
-
-		// add decorators
-		this.decorate(_.extend({}, options.decorators, _.result(this, "decorators")));
 
 		// load initial data
 		var defaults = _.result(this, "initialState") || _.result(this, "defaults");
@@ -60,51 +31,6 @@ module.exports = Context.extend({
 
 	use: function(p) {
 		return Plugins.loadPlugin(this, p, _.toArray(arguments).slice(1));
-	},
-
-	// parses and sets the root template
-	setTemplate: function(template) {
-		if (_.isString(template)) template = parse(template);
-
-		if (!_.isObject(template) || template.type !== NODE_TYPE.COMPONENT) {
-			throw new Error("Expecting string or parsed template.");
-		}
-
-		this._template = template;
-		this.trigger("template", template);
-
-		return this;
-	},
-
-	// attach + mount
-	attach: function(parent, before) {
-		if (typeof parent === "string") parent = document.querySelector(parent);
-		if (parent == null) throw new Error("Expecting a valid DOM element to attach in.");
-		if (typeof before === "string") {
-			before = parent.querySelector ?
-				parent.querySelector(before) :
-				document.querySelector(before);
-		}
-
-		parent.insertBefore(this.el, before);
-		this.trigger("attach", this.el);
-
-		return this;
-	},
-
-	paint: function(parent, before) {
-		this.attach(parent, before);
-		this.mount();
-		return this;
-	},
-
-	// stop and remove dom
-	detach: function() {
-		this.stop();
-		if (this.el && this.el.parentNode) {
-			this.el.parentNode.removeChild(this.el);
-		}
-		return this;
 	},
 
 	autorun: function(fn, options) {
@@ -128,7 +54,7 @@ module.exports = Context.extend({
 
 		// the autorun computation
 		this.comp = Trackr.autorun(function(comp) {
-			self.render(comp);
+			self._mount(comp);
 			self.trigger("render");
 
 			// auto clean up
@@ -152,226 +78,21 @@ module.exports = Context.extend({
 		return this;
 	},
 
-	render: function() {
-		if (this._template == null)
-			throw new Error("Expected a template to be set before rendering.");
-
-		console.log("rendering", this.tagName);
-
-		let ictx = getContext();
-		let vrender = () => {
-			render.attributes(this.el, this.attributes, this);
-			render.incremental(this._template, this._helpersContext);
-		};
-
-		if (ictx) {
-			let walker = ictx.walker;
-			walker.getCurrentParent().insertBefore(this.el, walker.currentNode);
-			walker.currentNode = this.el;
-
-			firstChild();
-			vrender();
-			parentNode();
-			clearUnvisitedDOM(this.el);
-			nextSibling();
-		} else {
-			idom.patch(this.el, vrender);
-		}
-	},
+	_mount: function() {},
 
 	stop: function() {
 		if (this.comp) this.comp.stop();
 		return this;
 	},
 
-	helpers: function(obj) {
-		for (let k of _.keys(obj)) {
-			let v = obj[k];
-
-			if (v == null) this._helpers.delete(k);
-			else if (typeof v === "function") this._helpers.set(k, v);
-			else {
-				throw new Error("Expecting function for helper.");
-			}
+	renderView: function(name, ctx) {
+		let View = getView(name);
+		if (View) {
+			let v = new View(null, ctx, { transparent: true });
+			v.mount();
+			return v;
 		}
-
-		return this;
 	},
-
-	// creates a decorator
-	decorate: function(name, fn, options) {
-		if (typeof name === "object" && fn == null) {
-			_.each(name, function(fn, n) {
-				if (_.isArray(fn)) this.decorate(n, fn[0], fn[1]);
-				else this.decorate(n, fn, options);
-			}, this);
-			return this;
-		}
-
-		if (typeof name !== "string" || name === "") throw new Error("Expecting non-empty string for decorator name.");
-		if (typeof fn !== "function") throw new Error("Expecting function for decorator.");
-
-		if (this._decorators == null) this._decorators = {};
-		if (this._decorators[name] == null) this._decorators[name] = [];
-		var decorators = this._decorators[name];
-
-		if (!_.findWhere(decorators, { callback: fn })) {
-			decorators.push({
-				callback: fn,
-				options: options || {}
-			});
-		}
-
-		return this;
-	},
-
-	// finds all decorators, locally and in parent
-	findDecorators: function(name) {
-		let res = [];
-		let c = this;
-
-		while (c != null) {
-			let decs = c._decorators;
-
-			if (decs != null && _.isArray(decs[name])) {
-				for (let d of decs[name]) {
-					if (!_.findWhere(res, { callback: d.callback })) {
-						res.push(_.extend({ context: c }, d));
-					}
-				}
-			}
-
-			c = c.parent;
-		}
-
-		return res;
-	},
-
-	// removes a decorator
-	stopDecorating: function(name, fn) {
-		if (typeof name === "function" && fn == null) {
-			fn = name;
-			name = null;
-		}
-
-		if (this._decorators == null || (name == null && fn == null)) {
-			this._decorators = {};
-		}
-
-		else if (fn == null) {
-			delete this._decorators[name];
-		}
-
-		else if (name == null) {
-			_.each(this._decorators, function(d, n) {
-				this._decorators[n] = _.filter(d, function(_d) {
-					return _d.callback !== fn;
-				});
-			}, this);
-		}
-
-		else {
-			var d = this._decorators[name];
-			this._decorators[name] = _.filter(d, function(_d) {
-				return _d.callback !== fn;
-			});
-		}
-
-		return this;
-	},
-
-	// // sets partial by name
-	// setPartial: function(name, partial) {
-	// 	if (_.isObject(name) && partial == null) {
-	// 		_.each(name, function(p, n) { this.setPartial(n, p); }, this);
-	// 		return this;
-	// 	}
-	//
-	// 	if (!_.isString(name) && name !== "")
-	// 		throw new Error("Expecting non-empty string for partial name.");
-	//
-	// 	if (partial != null && !utils.isSubClass(View, partial))
-	// 		throw new Error("Expecting View subclass for partial.");
-	//
-	// 	var p = this._getPartial(name);
-	// 	if (partial == null) delete p.view;
-	// 	else p.view = partial;
-	// 	p.dep.changed();
-	//
-	// 	return this;
-	// },
-	//
-	// // ensures a partial's dependency exists
-	// _getPartial: function(name) {
-	// 	if (this._partials[name] == null)
-	// 		this._partials[name] = { dep: new Trackr.Dependency() };
-	//
-	// 	return this._partials[name];
-	// },
-	//
-	// // looks through parents for partial
-	// findPartial: function(name, options) {
-	// 	options = options || {};
-	// 	var c = this, p;
-	//
-	// 	while (c != null) {
-	// 		if (c._getPartial != null) {
-	// 			p = c._getPartial(name);
-	// 			p.dep.depend();
-	// 			if (options.local || p.view != null) return p.view;
-	// 		}
-	//
-	// 		c = c.parent;
-	// 	}
-	// },
-	//
-	// // generates a new component from a View subclass or partial's name
-	// renderPartial: function(klass, data, ctx, options) {
-	// 	var comps, name;
-	//
-	// 	// look up partial with template object
-	// 	if (typeof klass === "object" && klass.type === NODE_TYPE.PARTIAL) {
-	// 		name = klass.value;
-	// 		klass = this.findPartial(name, { local: klass.local });
-	// 	}
-	//
-	// 	// look up the partial by name
-	// 	if (typeof klass === "string") {
-	// 		name = klass;
-	// 		klass = this.findPartial(klass);
-	// 	}
-	//
-	// 	// class must be a view
-	// 	if (!utils.isSubClass(View, klass)) return null;
-	//
-	// 	// accept with context
-	// 	if (!Context.isContext(ctx) && ctx != null && options == null) {
-	// 		options = ctx;
-	// 		ctx = null;
-	// 	}
-	//
-	// 	// normalize context
-	// 	if (ctx == null) ctx = this;
-	//
-	// 	// create it non-reactively
-	// 	var component = Trackr.nonreactive(function() {
-	// 		return new klass(data, ctx, options);
-	// 	});
-	//
-	// 	// add it to the list
-	// 	if (name) {
-	// 		comps = this._components;
-	// 		if (comps[name] == null) comps[name] = [];
-	// 		comps[name].push(component);
-	//
-	// 		// auto remove when the partial is "stopped"
-	// 		component.once("stop", function() {
-	// 			comps[name] = _.without(comps[name], component);
-	// 		});
-	// 	}
-	//
-	// 	return component;
-	// },
 
 	// returns first rendered partial by name
 	getComponent: function(name) {

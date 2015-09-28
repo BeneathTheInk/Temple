@@ -10,10 +10,22 @@ import { getValue } from "./proxies";
 
 var Context =
 module.exports = function Context(data, parent, options) {
+	if (!Context.isContext(parent)) {
+		if (options == null) options = parent;
+		parent = null;
+	}
+
 	options = options || {};
+
+	// main value dependency
 	this._dep = new Trackr.Dependency();
-	if (Context.isContext(parent)) this.parent = parent;
-	if (options.transparent) this._transparent = true;
+
+	// a reference to the parent context
+	this.parent = parent;
+
+	// a boolean for the context's transparency
+	assignProps(this, "_transparent", Boolean(options.transparent));
+
 	this.set(data, options);
 };
 
@@ -153,7 +165,7 @@ _.extend(Context.prototype, Events, {
 		if (!paths.length) paths.push({ type: "all", parts: [] });
 
 		let self = this;
-		let fnCtx = this._getFnCtx();
+		let fnCtx = this.getTopContext() || null;
 
 		return _.reduce(paths, function(result, path) {
 			var context = self;
@@ -180,23 +192,11 @@ _.extend(Context.prototype, Events, {
 			}
 
 			if (_.isFunction(val)) {
-				val = val.call(fnCtx.data, result, fnCtx);
+				val = val.call(fnCtx && fnCtx.data, result, fnCtx);
 			}
 
 			return val;
 		}, void 0);
-	},
-
-	// determine function context based on transparency
-	_getFnCtx: function() {
-		let ctx = this;
-
-		while (ctx) {
-			if (!ctx._transparent) return ctx;
-			ctx = ctx.parent;
-		}
-
-		return null;
 	}
 
 });

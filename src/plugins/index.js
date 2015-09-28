@@ -49,3 +49,4 @@ registerPlugin("actions", require("./actions"));
 registerPlugin("twoway", require("./twoway"));
 registerPlugin("adoption", require("./adoption"));
 registerPlugin("refs", require("./refs"));
+require("./reactive-proxies.js");
