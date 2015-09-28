@@ -2,10 +2,10 @@ import * as _ from "underscore";
 import View from "./view";
 import { Map as ReactiveMap } from "trackr-objects";
 import Context from "./context";
-import * as render from "./render";
-import { parse } from "./m+xml";
-import * as NODE_TYPE from "./types";
-import Trackr from "trackr";
+import { patch } from "./idom";
+// import { parse } from "./m+xml";
+// import * as NODE_TYPE from "./types";
+// import Trackr from "trackr";
 
 module.exports = View.extend({
 	constructor: function(data, parent, options) {
@@ -35,7 +35,7 @@ module.exports = View.extend({
 	},
 
 	_mount: function() {
-		render.patch(this.el, () => this.render(this._helpersContext));
+		patch(this.el, () => this.render(this._helpersContext));
 	},
 
 	// attach + mount
@@ -108,55 +108,6 @@ module.exports = View.extend({
 		}
 
 		return this;
-	},
-
-	renderDecorator: function(el, name, options) {
-		options = options || {};
-		let view = this;
-
-		// look up decorator by name
-		let decorators = view.findDecorators(name);
-
-		// render as attribute if no decorators
-		if (!decorators.length) {
-			if (typeof options.string === "function") el.setAttribute(name, options.string());
-			return;
-		}
-
-		// render each decorator
-		decorators.forEach(function(d) {
-			let _comp = Trackr.currentComputation;
-
-			// defer computation because we cannot have unknown changes happening to the DOM
-			_.defer(function() {
-				let dcomp = Trackr.autorun(function(comp) {
-					// assemble the arguments!
-					var args = [ {
-						owner: d.context,
-						target: el,
-						view: view,
-						comp: comp,
-						options: d.options
-					} ];
-
-					// render arguments based on options
-					if (d.options && d.options.parse === "string") {
-						if (typeof options.string === "function") args.push(options.string());
-					} else if (d.options == null || d.options.parse !== false) {
-						if (typeof options["arguments"] === "function") args = args.concat(options["arguments"]());
-					}
-
-					// execute the callback
-					d.callback.apply(d.context, args);
-				});
-
-				// clean up
-				if (_comp) {
-					if (_comp.stopped || _comp.invalidated) dcomp.stop();
-					else _comp.onInvalidate(() => dcomp.stop());
-				}
-			});
-		});
 	},
 
 	// finds all decorators, locally and in parent

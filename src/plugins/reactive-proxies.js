@@ -1,5 +1,5 @@
 import { Map as ReactiveMap, Variable as ReactiveVar, List as ReactiveList } from "trackr-objects";
-import { autopatch } from "../render";
+// import { autopatch } from "../render";
 import { runWithTarget, register } from "../proxies";
 
 register({

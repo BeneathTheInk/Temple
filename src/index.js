@@ -6,7 +6,7 @@
 import compile from "./compile";
 import { add as register, get, create } from "./globals";
 import * as proxies from "./proxies";
-import * as idom from "./incremental-dom";
+import * as idom from "./idom";
 import * as utils from "./utils";
 import Context from "./context";
 

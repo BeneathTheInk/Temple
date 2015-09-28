@@ -86,9 +86,11 @@ function argumentify(arg) {
 	}
 }
 
-function attributes(el, attrs) {
+function attributes(attrs) {
+	use("idom");
+
 	attrs.forEach(function(a) {
-		write(`this.renderDecorator(${el}, ${JSON.stringify(a.name)}, {`);
+		write(`idom.decorate(this, ${JSON.stringify(a.name)}, {`);
 		indent();
 
 			write(`mixin: { context: ctx },`);
@@ -142,7 +144,7 @@ var renderers = {
 			write("render: function(ctx) {");
 			indent();
 
-				attributes("this.el", attrs);
+				attributes(attrs);
 				render(nodes);
 
 			outdent();
@@ -164,16 +166,14 @@ var renderers = {
 		write(`if (!this.renderView(${tagName}, ctx)) {`);
 		indent();
 
-			open();
-			write(`var el = idom.elementOpen(${tagName});`);//${key ? "," + JSON.stringify(key) : ""}
+			write(`idom.elementOpen(${tagName});`);//${key ? "," + JSON.stringify(key) : ""}
 			indent();
 
-				attributes("el", tpl.attributes);
+				attributes(tpl.attributes);
 				render(tpl.children);
 
 			outdent();
 			write(`idom.elementClose(${tagName});`);
-			close();
 
 		outdent();
 		write("}");
