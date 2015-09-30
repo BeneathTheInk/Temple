@@ -38,6 +38,58 @@ export class ASTNode {
 		return new SourceNode(this._location.start.line, this._location.start.column, file, chunk);
 	}
 
+	start(data) {
+		this._writer = {
+			chunks: [],
+			data: data
+		};
+
+		return this;
+	}
+
+	indent() {
+		var d = this._writer.data;
+		if (typeof d.indent !== "number") d.indent = 0;
+		d.indent++;
+		return this;
+	}
+
+	outdent() {
+		var d = this._writer.data;
+		if (typeof d.indent !== "number") d.indent = 0;
+		if (d.indent > 0) d.indent--;
+		return this;
+	}
+
+	write(chunk) {
+		let tabs = "";
+		let tabchar = this._writer.data.tabchar;
+		let indent = this._writer.data.indent || 0;
+		if (tabchar == null) tabchar = "  ";
+
+		for (let i = 0; i < indent; i++) tabs += tabchar;
+		this.push([].concat(tabs, chunk, "\n"));
+
+		return this;
+	}
+
+	push(chunk) {
+		this._writer.chunks.push(chunk);
+		return this;
+	}
+
+	use() {
+		use.apply(null, [ this._writer.data ].concat(_.toArray(arguments)));
+		return this;
+	}
+
+	end(chunk) {
+		if (chunk) this.write(chunk);
+		var w = this._writer;
+		delete this._writer;
+		return this._sn(w.data.originalFilename, w.chunks);
+	}
+
 	compile(data) {
 		// throw new Error("Not implemented.");
 		return this._sn(data.originalFilename);
@@ -65,8 +117,13 @@ export class Root extends ASTNode {
 		data.headers = [];
 		var output = this._sn(data.originalFilename);
 		output.add(_.invoke(this._children, "compile", data));
-		output.prepend(data.headers);
-		data.headers = oheads;
+		output = output.join("\n");
+
+		if (data.headers.length) {
+			output.prepend("\n\n").prepend(data.headers);
+			data.headers = oheads;
+		}
+
 		return output;
 	}
 }
@@ -82,24 +139,27 @@ export class View extends ASTNode {
 	}
 
 	compile(data) {
-		var output = this._sn(data.originalFilename)
-			.add(`Temple.register(${JSON.stringify(this._name)}, {\n`)
-			.add("initialize: function() {\n")
-			.add(_.invoke(this._scripts, "compile", data))
-			.add("},\n");
+		this.start(data);
+
+		this.write(`Temple.register(${JSON.stringify(this._name)}, {`);
+		this.indent();
+
+			this.write("initialize: function() {").indent();
+			this.push(_.invoke(this._scripts, "compile", data));
+			this.outdent().write("},");
 
 		if (this._extends) {
-			output.add(`extends: ${JSON.stringify(this._extends)},\n`);
+			this.write(`extends: ${JSON.stringify(this._extends)},`);
 		}
 
-		output.add("render: function(ctx) {\n")
-			.add(_.invoke(this._attributes, "compile", data))
-			.add(_.invoke(this._children, "compile", data))
-			.add("}\n");
+		this.write("render: function(ctx) {").indent();
+		this.push(_.invoke(this._attributes, "compile", data));
+		this.push(_.invoke(this._children, "compile", data));
+		this.outdent().write("}");
 
-		output.add("});\n\n");
+		this.outdent().write("});");
 
-		return output;
+		return this.end();
 	}
 }
 
@@ -110,8 +170,10 @@ export class Text extends ASTNode {
 	}
 
 	compile(data) {
-		use(data, "idom");
-		return this._sn(data.originalFilename, [ "idom.text(", JSON.stringify(this._value), ");\n" ]);
+		this.start(data);
+		this.use("idom");
+		this.write(`idom.text(${JSON.stringify(this._value)});`);
+		return this.end();
 	}
 
 	compileString(data) {
@@ -146,18 +208,26 @@ export class Element extends ASTNode {
 	}
 
 	compile(data) {
-		use(data, "idom");
+		this.start(data);
+		this.use("idom");
+
 		let tagName = JSON.stringify(this._name);
-		let output = this._sn(data.originalFilename);
+		let isViewName = this._name.indexOf("-") > -1;
 
-		output.add(`if (!this.renderView(${tagName}, ctx)) {\n`);
-		output.add(`idom.elementOpen(${tagName});\n`);//${key ? "," + JSON.stringify(key) : ""}
-		output.add(_.invoke(this._attributes, "compile", data));
-		output.add(_.invoke(this._children, "compile", data));
-		output.add(`idom.elementClose(${tagName});\n`);
-		output.add("}\n");
+		if (isViewName) {
+			this.write(`if (!this.renderView(${tagName}, ctx)) {`).indent();
+		}
 
-		return output;
+		this.write(`idom.elementOpen(${tagName});`);//${key ? "," + JSON.stringify(key) : ""}
+		this.push(_.invoke(this._attributes, "compile", data));
+		this.push(_.invoke(this._children, "compile", data));
+		this.write(`idom.elementClose(${tagName});`);
+
+		if (isViewName) {
+			this.outdent().write("}");
+		}
+
+		return this.end();
 	}
 }
 
@@ -171,22 +241,29 @@ export class Attribute extends ASTNode {
 	}
 
 	compile(data) {
-		use(data, "idom");
-		var output = this._sn(data.originalFilename);
+		this.start(data);
+		this.use("idom");
 
-		output.add(`idom.decorate(this, ${JSON.stringify(this._key)}, {\n`);
-		output.add(`mixin: { context: ctx },\n`);
-		output.add(`string: function() { return `);
+		this.write(`idom.decorate(this, ${JSON.stringify(this._key)}, {`).indent();
+		this.write(`mixin: { context: ctx },`);
+
 		var str = _.invoke(this._children, "compileString", data);
-		output.add(this._sn(data.originalFilename, str).join(" + "));
-		output.add(`; },\n`);
-		output.add(`"arguments": function() { return [ `);
-		var args = _.invoke(this._arguments, "compileArguments", data);
-		output.add(this._sn(data.originalFilename, args).join(", "));
-		output.add(` ]; }\n`);
-		output.add(`});\n`);
+		this.write([
+			`string: function() { return `,
+			this._sn(data.originalFilename, str).join(" + "),
+			`; },`
+		]);
 
-		return output;
+		var args = _.invoke(this._arguments, "compileArguments", data);
+		this.write([
+			`"arguments": function() { return [ `,
+			this._sn(data.originalFilename, args).join(", "),
+			` ]; }`
+		]);
+
+		this.outdent().write(`});`);
+
+		return this.end();
 	}
 }
 
@@ -210,39 +287,40 @@ export class Section extends ASTNode {
 	}
 
 	compile(data) {
-		use(data, "proxies", "context");
+		this.start(data);
+		this.use("proxies", "context");
+
 		let self = this;
-		let output = this._sn(data.originalFilename);
 
 		function renderSection(v, i) {
-			if (i) output.add(`var indexctx = new Context({ $index: ${i} }, prevctx, { transparent: true });\n`);
-			output.add(`var ctx = new Context(${v}, ${i ? "indexctx" : "prevctx"});\n`);
-			output.add(_.invoke(self._children, "compile", data));
+			if (i) self.write(`var indexctx = new Context({ $index: ${i} }, prevctx, { transparent: true });`);
+			self.write(`var ctx = new Context(${v}, ${i ? "indexctx" : "prevctx"});`);
+			self.push(_.invoke(self._children, "compile", data));
 		}
 
-		output.add("(function(){\n");
-		output.add("var prevctx = ctx;\n");
-		output.add(`var val = ${query(data, this._query)};\n`);
-		output.add(`var proxy = proxies.getByTarget(val, [ "empty", "section" ]);\n`);
+		this.write("(function(){").indent();
+		this.write("var prevctx = ctx;");
+		this.write(`var val = ${query(data, this._query)};`);
+		this.write(`var proxy = proxies.getByTarget(val, [ "empty", "section" ]);`);
 		let isEmpty = `Boolean(proxies.run(proxy, "empty", val))`;
 
 		if (this._inverted) {
-			output.add(`if (${isEmpty}) {\n`);
-			output.add("(function(){\n");
+			this.write(`if (${isEmpty}) {`).indent();
+			this.write("(function(){").indent();
 			renderSection("val");
-			output.add("}).call(this);\n");
-			output.add("}\n");
+			this.outdent().write("}).call(this);");
+			this.outdent().write("}");
 		} else {
-			output.add(`if (!${isEmpty}) {\n`);
-			output.add(`proxies.run(proxy, "section", val, (function(data, index) {\n`);
+			this.write(`if (!${isEmpty}) {`).indent();
+			this.write(`proxies.run(proxy, "section", val, (function(data, index) {`).indent();
 			renderSection("data", "index");
-			output.add(`}).bind(this));\n`);
-			output.add(`}\n`);
+			this.outdent().write(`}).bind(this));`);
+			this.outdent().write(`}`);
 		}
 
-		output.add("}).call(this);\n");
+		this.outdent().write("}).call(this);");
 
-		return output;
+		return this.end();
 	}
 }
 
@@ -256,11 +334,12 @@ export class Interpolator extends ASTNode {
 	query(data) { return query(data, this._query); }
 
 	compile(data) {
-		use(data, "idom");
+		this.start(data);
+		this.use("idom");
 		var src, q = this.query(data);
-		if (this._escaped) src = `idom.html(${q});\n`;
-		else src = `idom.text(utils.toString(${q}));\n`;
-		return this._sn(data.originalFilename, src);
+		if (this._escaped) src = `idom.html(${q});`;
+		else src = `idom.text(utils.toString(${q}));`;
+		return this.end(src);
 	}
 
 	compileString(data) {

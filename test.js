@@ -65,11 +65,18 @@ myComponent.helpers({
 <tyler-list>
 	<script>
 		this.use("actions");
+		this.use("refs");
+		this.use("twoway");
+
 		var list = new ReactiveList();
+		var temp = new ReactiveVar();
 
 		this.helpers({
 			items: function() {
 				return list;
+			},
+			getLength: function() {
+				return list.length;
 			}
 		});
 
@@ -77,9 +84,13 @@ myComponent.helpers({
 			"add-item": function(e) {
 				e.original.preventDefault();
 				var input = e.target.elements[0];
-				list.push(input.value);
-				input.value = "";
-				input.focus();
+				var val = input.value;
+				if (val) {
+					list.push(val);
+					input.value = "";
+					temp.set("");
+					input.focus();
+				}
 			},
 			"remove-item": function(e, index) {
 				e.original.preventDefault();
@@ -90,12 +101,26 @@ myComponent.helpers({
 				list.splice(0, list.length);
 			}
 		});
+
+		this.twoway("item", function() {
+			return "";
+		}, function(val) {
+			temp.set(val);
+		});
+
+		this.decorate("enable-clear", function(d) {
+			d.target.disabled = !list.length;
+		});
+
+		this.decorate("enable-add", function(d) {
+			d.target.disabled = !temp.get();
+		});
 	</script>
 
 	<form on-submit="add-item">
-		<input type="text" />
-		<button type="submit">Add</button>
-		<button on-click="clear">Clear</button>
+		<input type="text" bind-to="item" />
+		<button ref="add-btn" type="submit" enable-add>Add</button>
+		<button on-click="clear" enable-clear>Clear</button>
 	</form>
 
 	<ul>

@@ -1,12 +1,16 @@
-var _ = require("underscore");
+import { register } from "./";
 
-module.exports = function() {
+export function plugin() {
+	this.use("decorators");
 	this.refs = {};
-	this.decorate("ref", ref);
-	this.findByRef = findByRef;
-};
+	this.decorate("ref", decorator);
+	this.findByRef = find;
+}
 
-function ref(d, key) {
+export default plugin;
+register("refs", plugin);
+
+export function decorator(d, key) {
 	var self = this;
 
 	// don't overwrite
@@ -24,7 +28,7 @@ function ref(d, key) {
 	});
 }
 
-function findByRef(key) {
+export function find(key) {
 	var tpls = [ this ],
 		tpl;
 

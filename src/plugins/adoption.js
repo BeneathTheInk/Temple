@@ -1,12 +1,16 @@
-var Mustache = require("../");
+import View from "../view";
+import { register } from "./";
 
-module.exports = function() {
+export function plugin() {
 	this.adopt = adopt;
 	this.disown = disown;
-};
+}
 
-function adopt(view, parent, before) {
-	if (!(view instanceof Mustache.View)) {
+export default plugin;
+register("adoption", plugin);
+
+export function adopt(view, parent, before) {
+	if (!(view instanceof View)) {
 		throw new Error("Expecting instanceof Temple View.");
 	}
 
@@ -16,7 +20,7 @@ function adopt(view, parent, before) {
 	if (view.adoptedParent) view.adoptedParent.disown(view.adoptedParent);
 	view.adoptedParent = this;
 
-	// hook navbar data up to this data
+	// hook child data up to this data
 	var oldRoot = view.getRootModel();
 	oldRoot.parent = this.model;
 
@@ -44,7 +48,7 @@ function adopt(view, parent, before) {
 	return view;
 }
 
-function disown(view) {
+export function disown(view) {
 	if (this._adopted == null) return;
 
 	var index;

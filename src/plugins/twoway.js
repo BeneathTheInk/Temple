@@ -1,14 +1,18 @@
-var _ = require("underscore");
+import * as _ from "underscore";
+import { register } from "./";
+import { getPropertyFromClass } from "../utils";
 
 var value_types = [ "radio", "option" ];
 
-module.exports = function(options) {
+export function plugin(options) {
+	this.use("decorators");
+
 	options = options || {};
 
 	// add methods
-	this.addFormBinding = addFormBinding;
-	this.getFormBinding = getFormBinding;
-	this.removeFormBinding = removeFormBinding;
+	this.twoway = this.addFormBinding = add;
+	this.getFormBinding = get;
+	this.removeFormBinding = remove;
 
 	// add main binding decorator
 	this.decorate("bind-to", function bindTo(d, id, lazy) {
@@ -18,26 +22,31 @@ module.exports = function(options) {
 		var el = d.target,
 			type = getType(el),
 			self = this,
-			onChange;
+			onChange, value;
 
 		// detect changes to the input's value
 		if (typeof fbind.change === "function") {
 			onChange = function(e) {
-				fbind.change.call(self, getNodeValue(el, type), d.model, e);
+				var nvalue = getNodeValue(el, type);
+				if (_.isEqual(value, nvalue)) return;
+				fbind.change.call(self, nvalue, d.context, e);
+				value = nvalue;
 			};
 
 			el.addEventListener("change", onChange);
+			el.addEventListener("paste", onChange);
 			if (!(options.lazy || lazy)) el.addEventListener("keyup", onChange);
 
 			d.comp.onInvalidate(function() {
 				el.removeEventListener("change", onChange);
+				el.removeEventListener("paste", onChange);
 				el.removeEventListener("keyup", onChange);
 			});
 		}
 
 		// reactively set the value on the input
 		var c = this.autorun(function() {
-			setNodeValue(el, fbind.get.call(self, d.model), type);
+			setNodeValue(el, fbind.get.call(self, d.context), type);
 		});
 
 		// setNodeValue relies on the children elements
@@ -60,15 +69,20 @@ module.exports = function(options) {
 		el.value = strval;
 	}, { parse: "string" });
 
-	// add initial form bindings
-	var initialBinds = _.result(this, "twoway");
-	if (_.isObject(initialBinds)) this.addFormBinding(initialBinds);
-};
+	// copy inherited bindings
+	if (typeof this !== "function") {
+		let bindings = getPropertyFromClass(this, "_formBindings");
+		this._formBindings = _.extend(this._formBindings || {}, bindings);
+	}
+}
 
-function addFormBinding(id, getter, onChange) {
+export default plugin;
+register("twoway", plugin);
+
+export function add(id, getter, onChange) {
 	if (_.isObject(id)) {
 		_.each(id, function(v, k) {
-			addFormBinding.call(this, k, v);
+			add.call(this, k, v);
 		}, this);
 		return this;
 	}
@@ -93,7 +107,7 @@ function addFormBinding(id, getter, onChange) {
 	return this;
 }
 
-function getFormBinding(id) {
+export function get(id) {
 	if (typeof id !== "string") return;
 	var c = this, bindings;
 
@@ -104,7 +118,7 @@ function getFormBinding(id) {
 	}
 }
 
-function removeFormBinding(id) {
+export function remove(id) {
 	var exists = this._formBindings[id] != null;
 	delete this._formBindings[id];
 	return exists;

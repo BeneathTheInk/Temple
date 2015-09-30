@@ -56,7 +56,7 @@ export function get(name) {
 import "./decorators";
 import "./helpers";
 import "./actions";
-// import "./twoway";
-// import "./adoption";
-// import "./refs";
+import "./twoway";
+import "./adoption";
+import "./refs";
 import "./reactive-proxies.js";

@@ -1,40 +1,10 @@
 import * as _	from "underscore";
 import merge from "plain-merge";
 
-// like underscore's result, but pass arguments through
-export function result(object, property) {
-	var value = object == null ? void 0 : object[property];
-	return _.isFunction(value) ? value.apply(object, Array.prototype.slice.call(arguments, 2)) : value;
-}
-
-// tests value as pojo (plain old javascript object)
-export var isPlainObject = require("is-plain-object");
-
-// tests function as a subclass of a parent function
-// here, a class is technically a subclass of itself
-export function isSubClass(parent, fn) {
-	return fn === parent || (fn != null && fn.prototype instanceof parent);
-}
-
 // like jQuery's empty(), removes all children
 export function emptyNode(node) {
 	while (node.lastChild) node.removeChild(node.lastChild);
 	return node;
-}
-
-// inserts an array nodes into a parent
-export function insertNodes(nodes, parent, before) {
-	var node, next, i;
-
-	// we do it backwards so nodes don't get moved if they don't need to
-	for (i = nodes.length - 1; i >= 0; i--) {
-		node = nodes[i];
-		next = nodes[i + 1] || before;
-
-		if (node.nextSibling !== before) {
-			parent.insertBefore(node, next);
-		}
-	}
 }
 
 // cleans html, then converts html entities to unicode
