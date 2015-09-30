@@ -27,6 +27,7 @@ export function add(name, props) {
 	}
 
 	let V = views[name] = _View.extend(props);
+	V.prototype.super = _View.prototype;
 
 	let proto = Object.create(_extends ?
 		getNativePrototype(_extends) :

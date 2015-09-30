@@ -1,25 +1,11 @@
 import * as _ from "underscore";
 import { SourceNode } from "source-map";
-import { toString, hash } from "./utils";
-
-var deps = {
-	idom: "var idom = Temple.idom;\n",
-	utils: "var utils = Temple.utils;\n",
-	proxies: "var proxies = Temple.proxies;\n",
-	context: "var Context = Temple.Context;\n"
-};
+import { hash } from "./utils";
 
 function header(data, h) {
 	if (_.isArray(data.headers) && !_.contains(data.headers, h)) {
 		data.headers.push(h);
 	}
-}
-
-function use(data) {
-	_.flatten(_.toArray(arguments).slice(1)).forEach(function(n) {
-		let v = deps[n];
-		if (v) header(data, toString(v));
-	});
 }
 
 function query(data, q) {
@@ -35,7 +21,14 @@ export class ASTNode {
 	}
 
 	_sn(file, chunk) {
-		return new SourceNode(this._location.start.line, this._location.start.column, file, chunk);
+		let loc = this._location, line, column;
+
+		if (loc) {
+			line = loc.start.line;
+			column = loc.start.column;
+		}
+
+		return new SourceNode(line, column, file, chunk);
 	}
 
 	start(data) {
@@ -75,11 +68,6 @@ export class ASTNode {
 
 	push(chunk) {
 		this._writer.chunks.push(chunk);
-		return this;
-	}
-
-	use() {
-		use.apply(null, [ this._writer.data ].concat(_.toArray(arguments)));
 		return this;
 	}
 
@@ -129,11 +117,12 @@ export class Root extends ASTNode {
 }
 
 export class View extends ASTNode {
-	constructor(location, name, exts, attrs, scripts, children) {
+	constructor(location, name, exts, attrs, partials, scripts, children) {
 		super(location);
 		this._name = name;
 		this._extends = exts;
 		this._attributes = attrs;
+		this._partials = partials;
 		this._scripts = scripts;
 		this._children = children;
 	}
@@ -144,16 +133,26 @@ export class View extends ASTNode {
 		this.write(`Temple.register(${JSON.stringify(this._name)}, {`);
 		this.indent();
 
+		if (this._scripts.length) {
 			this.write("initialize: function() {").indent();
+			this.write("var $super = this.super.initialize.bind(this);");
 			this.push(_.invoke(this._scripts, "compile", data));
 			this.outdent().write("},");
+		}
+
+		if (this._partials.length) {
+			this.write("partials: {").indent();
+			var p = _.invoke(this._partials, "compile", data);
+			this.push(this._sn(data.originalFilename, p).join(",\n"));
+			this.outdent().write("},");
+		}
 
 		if (this._extends) {
 			this.write(`extends: ${JSON.stringify(this._extends)},`);
 		}
 
 		this.write("render: function(ctx) {").indent();
-		this.push(_.invoke(this._attributes, "compile", data));
+		this.push(_.invoke(this._attributes, "compile", _.defaults({ element: "this.el" }, data)));
 		this.push(_.invoke(this._children, "compile", data));
 		this.outdent().write("}");
 
@@ -171,8 +170,7 @@ export class Text extends ASTNode {
 
 	compile(data) {
 		this.start(data);
-		this.use("idom");
-		this.write(`idom.text(${JSON.stringify(this._value)});`);
+		this.write(`Temple.idom.text(${JSON.stringify(this._value)});`);
 		return this.end();
 	}
 
@@ -209,7 +207,6 @@ export class Element extends ASTNode {
 
 	compile(data) {
 		this.start(data);
-		this.use("idom");
 
 		let tagName = JSON.stringify(this._name);
 		let isViewName = this._name.indexOf("-") > -1;
@@ -218,10 +215,10 @@ export class Element extends ASTNode {
 			this.write(`if (!this.renderView(${tagName}, ctx)) {`).indent();
 		}
 
-		this.write(`idom.elementOpen(${tagName});`);//${key ? "," + JSON.stringify(key) : ""}
+		this.write(`Temple.idom.elementOpen(${tagName});`);//${key ? "," + JSON.stringify(key) : ""}
 		this.push(_.invoke(this._attributes, "compile", data));
 		this.push(_.invoke(this._children, "compile", data));
-		this.write(`idom.elementClose(${tagName});`);
+		this.write(`Temple.idom.elementClose(${tagName});`);
 
 		if (isViewName) {
 			this.outdent().write("}");
@@ -242,19 +239,19 @@ export class Attribute extends ASTNode {
 
 	compile(data) {
 		this.start(data);
-		this.use("idom");
 
-		this.write(`idom.decorate(this, ${JSON.stringify(this._key)}, {`).indent();
+		let el = data.element ? data.element + ", " : "";
+		this.write(`this.renderDecorator(this, ${JSON.stringify(this._key)}, ${el}{`).indent();
 		this.write(`mixin: { context: ctx },`);
 
-		var str = _.invoke(this._children, "compileString", data);
+		let str = _.invoke(this._children, "compileString", data);
 		this.write([
 			`string: function() { return `,
 			this._sn(data.originalFilename, str).join(" + "),
 			`; },`
 		]);
 
-		var args = _.invoke(this._arguments, "compileArguments", data);
+		let args = _.invoke(this._arguments, "compileArguments", data);
 		this.write([
 			`"arguments": function() { return [ `,
 			this._sn(data.originalFilename, args).join(", "),
@@ -288,21 +285,20 @@ export class Section extends ASTNode {
 
 	compile(data) {
 		this.start(data);
-		this.use("proxies", "context");
 
 		let self = this;
 
 		function renderSection(v, i) {
-			if (i) self.write(`var indexctx = new Context({ $index: ${i} }, prevctx, { transparent: true });`);
-			self.write(`var ctx = new Context(${v}, ${i ? "indexctx" : "prevctx"});`);
+			if (i) self.write(`var indexctx = new Temple.Context({ $index: ${i} }, prevctx, { transparent: true });`);
+			self.write(`var ctx = new Temple.Context(${v}, ${i ? "indexctx" : "prevctx"});`);
 			self.push(_.invoke(self._children, "compile", data));
 		}
 
 		this.write("(function(){").indent();
 		this.write("var prevctx = ctx;");
 		this.write(`var val = ${query(data, this._query)};`);
-		this.write(`var proxy = proxies.getByTarget(val, [ "empty", "section" ]);`);
-		let isEmpty = `Boolean(proxies.run(proxy, "empty", val))`;
+		this.write(`var proxy = Temple.proxies.getByTarget(val, [ "empty", "section" ]);`);
+		let isEmpty = `Boolean(Temple.proxies.run(proxy, "empty", val))`;
 
 		if (this._inverted) {
 			this.write(`if (${isEmpty}) {`).indent();
@@ -312,7 +308,7 @@ export class Section extends ASTNode {
 			this.outdent().write("}");
 		} else {
 			this.write(`if (!${isEmpty}) {`).indent();
-			this.write(`proxies.run(proxy, "section", val, (function(data, index) {`).indent();
+			this.write(`Temple.proxies.run(proxy, "section", val, (function(data, index) {`).indent();
 			renderSection("data", "index");
 			this.outdent().write(`}).bind(this));`);
 			this.outdent().write(`}`);
@@ -335,16 +331,14 @@ export class Interpolator extends ASTNode {
 
 	compile(data) {
 		this.start(data);
-		this.use("idom");
 		var src, q = this.query(data);
-		if (this._escaped) src = `idom.html(${q});`;
-		else src = `idom.text(utils.toString(${q}));`;
+		if (this._escaped) src = `Temple.idom.html(${q});`;
+		else src = `Temple.idom.text(utils.toString(${q}));`;
 		return this.end(src);
 	}
 
 	compileString(data) {
-		use(data, "utils");
-		return this._sn(data.originalFilename, `utils.toString(${this.query(data)})`);
+		return this._sn(data.originalFilename, `Temple.utils.toString(${this.query(data)})`);
 	}
 
 	compileArguments(data) {
@@ -367,7 +361,7 @@ export class MustacheComment extends ASTNode {
 	}
 }
 
-export class Partial extends ASTNode {
+export class PartialQuery extends ASTNode {
 	constructor(location, local, value) {
 		super(location);
 		this._local = local;
@@ -375,6 +369,24 @@ export class Partial extends ASTNode {
 	}
 
 	compile(data) {
-		return this._sn(data.originalFilename, [ "this.renderView(", JSON.stringify(this._value), ", ctx);" ]);
+		return this._sn(data.originalFilename, [ "this.renderPartial(", JSON.stringify(this._value), ", ctx);" ]);
+	}
+}
+
+export class Partial extends ASTNode {
+	constructor(location, name, children) {
+		super(location);
+		this._name = name;
+		this._children = children;
+	}
+
+	compile(data) {
+		this.start(data);
+
+		this.write(`${JSON.stringify(this._name)}: function(ctx) {`).indent();
+		this.write(_.invoke(this._children, "compile", data));
+		this.outdent().write("}");
+
+		return this.end();
 	}
 }

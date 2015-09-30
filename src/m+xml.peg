@@ -23,7 +23,6 @@ html = nodes:
 	/ doubleStache
 	/ tripleStache
 	/ commentNode
-	/ scriptNode
 	/ elementNode
 	/ textNode )* { return _.compact(nodes); }
 
@@ -52,7 +51,7 @@ scriptContent
 
 viewKey = ws k:$([a-z0-9]i+ "-" [a-z0-9\-]i+) ws { return k; }
 viewNode
-	= "<" starttag:viewKey attributes:(attribute)* ">" nodes:html "</" endtag:viewKey ">" {
+	= "<" starttag:viewKey attributes:(attribute)* ">" nodes:viewRootNodes "</" endtag:viewKey ">" {
 		starttag = starttag.toLowerCase();
 		endtag = endtag.toLowerCase();
 
@@ -67,17 +66,35 @@ viewNode
 		});
 
 		var scripts = [];
+		var partials = [];
 		nodes = nodes.filter(function(n) {
 			if (n instanceof ast.Script) {
 				scripts.push(n);
 				return false;
 			}
 
+			if (n instanceof ast.Partial) {
+				partials.push(n);
+				return false;
+			}
+
 			return true;
 		});
 
-		return new ast.View(location(), starttag, exts, attributes, scripts, nodes);
+		return new ast.View(location(), starttag, exts, attributes, partials, scripts, nodes);
 	}
+
+viewRootNodes = nodes:
+	( section
+	/ partial
+	/ commentStache
+	/ partialStache
+	/ doubleStache
+	/ tripleStache
+	/ commentNode
+	/ scriptNode
+	/ elementNode
+	/ textNode )* { return _.compact(nodes); }
 
 // Element Nodes
 elementNode
@@ -142,12 +159,21 @@ attrArg = ws val:
 
 // mustache section
 section
-	= "{{" type:[#\^] startpath:pathQueryWithRaw "}}" nodes:html "{{/" endpath:$(escape / [^}])* "}}" {
+	= "{{" type:[#\^] startpath:pathQueryWithRaw "}}" nodes:html "{{/" endpath:stacheKey "}}" {
 		if (options.strict && startpath.raw !== endpath) {
 			throw new Error("Section tag mismatch: " + startpath.raw + " !== " + endpath);
 		}
 
 		return new ast.Section(location(), type === "^", startpath.result, nodes);
+	}
+
+partial
+	= "{{%" startkey:stacheKey "}}" nodes:html "{{/" endkey:stacheKey "}}" {
+		if (options.strict && startkey !== endkey) {
+			throw new Error("Section tag mismatch: " + startkey + " !== " + endkey);
+		}
+
+		return new ast.Partial(location(), startkey, nodes);
 	}
 
 // Mustache staches without the prefixes
@@ -169,21 +195,23 @@ tripleStache
 	}
 
 commentStache
-	= "{{!" value:(escape / [^}])* "}}" {
-		return new ast.MustacheComment(location(), value.join("").trim());
+	= "{{!" value:stacheKey "}}" {
+		return new ast.MustacheComment(location(), value);
 	}
 
 partialStache
-	=  "{{" m:[$>] value:(escape / [^}])* "}}" {
-		return new ast.Partial(location(), m === "$", value.join("").trim());
+	=  "{{" m:[$>] value:stacheKey "}}" {
+		return new ast.PartialQuery(location(), m === "$", value);
 	}
+
+stacheKey = v:$(escape / [^}])* { return v.trim(); }
 
 /*
 Paths
 */
 pathQuery = l:path r:("|" path)* { return [].concat(l, _.pluck(r, 1)); }
 
-pathQueryWithRaw = m:pathQuery { return { raw: text(), result: m } }
+pathQueryWithRaw = m:pathQuery { return { raw: text().trim(), result: m } }
 
 path
 	= ws p:pathPrefix? c:pathCore ws {

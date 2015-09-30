@@ -64,7 +64,7 @@ gulp.task("compile", [ "copy-scripts" ], function() {
 		.pipe(plumber({ errorHandler: errors }))
 		.pipe(peg({
 			optimize: "size",
-			allowedStartRules: [ "start", "attrValue", "attrArguments", "pathQuery", "path" ]
+			allowedStartRules: [ "start", "attrValue", "attrArguments", "pathQuery", "path", "html" ]
 		}))
 		.pipe(gulp.dest("lib/"));
 

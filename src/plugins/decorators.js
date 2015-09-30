@@ -6,10 +6,10 @@ import { getPropertyFromClass } from "../utils";
 import { register } from "./";
 
 export function plugin() {
-	this.renderDecorator = render;
 	this.decorate = add;
 	this.stopDecorating = remove;
 	this.findDecorators = find;
+	this.renderDecorator = render;
 
 	// copy inherited decorators
 	if (typeof this !== "function") {
@@ -21,10 +21,18 @@ export function plugin() {
 export default plugin;
 register("decorators", plugin);
 
-export function render(view, name, options) {
+export function render(view, name, el, options) {
+	if (el && el.nodeType !== document.ELEMENT_NODE) {
+		options = el;
+		el = null;
+	}
+
 	options = options || {};
-	let ictx = getContext();
-	let el = ictx && ictx.walker.getCurrentParent();
+
+	if (el == null) {
+		let ictx = getContext();
+		el = ictx && ictx.walker.getCurrentParent();
+	}
 
 	// look up decorator by name
 	let decorators = view.findDecorators(name);

@@ -23,12 +23,15 @@ Temple.render(`
 	});
 	</script>
 
+	{{> my-partial }}
+	<hr />
+	<click-counter-2>x{{ getCount }}</click-counter-2>
+	<hr />
+	<tyler-list />
+
+	{{% my-partial }}
 	<h1 style="color: {{ color }};">Hello {{ fartName }}!</h1>
-	{{# foo }}{{ . }}{{/ foo }}
-	<hr/>
-	{{> click-counter }}
-	<hr/>
-	{{> tyler-list }}
+	{{/ my-partial }}
 </my-component>
 
 <script>
@@ -61,6 +64,10 @@ myComponent.helpers({
 
 	I have been clicked {{ getCount }} times.
 </click-counter>
+
+<click-counter-2 extends="click-counter">
+	<i>{{> @super }}</i>
+</click-counter-2>
 
 <tyler-list>
 	<script>

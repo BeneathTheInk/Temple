@@ -71,11 +71,15 @@ export function hash(str) {
 }
 
 export function getPropertyFromClass(obj, prop) {
-	// get all the class prototypes that make up this
 	var val;
 	let proto = Object.getPrototypeOf(obj);
+
 	while (proto) {
-		if (proto.constructor) val = merge.defaults(val, proto.constructor[prop]);
+		let orig, t = typeof prop;
+		if (t === "function") orig = prop(proto.constructor);
+		else if (t === "string" && t) orig = proto.constructor[prop];
+		else throw new Error("Expecting function or string for property.");
+		if (proto.constructor) val = merge.defaults(val, orig);
 		proto = Object.getPrototypeOf(proto);
 	}
 

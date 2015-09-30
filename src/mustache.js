@@ -86,3 +86,4 @@ Mustache.extend = function() {
 
 Mustache.use("decorators");
 Mustache.use("helpers");
+Mustache.use("partials");

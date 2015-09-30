@@ -55,6 +55,7 @@ export function get(name) {
 // load built in plugins
 import "./decorators";
 import "./helpers";
+import "./partials";
 import "./actions";
 import "./twoway";
 import "./adoption";
