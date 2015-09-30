@@ -4,7 +4,7 @@ import { getContext } from "./incremental-dom/src/context";
 import { firstChild, nextSibling, parentNode, } from './incremental-dom/src/traversal';
 import { clearUnvisitedDOM } from './incremental-dom/src/alignment';
 import { updateAttribute } from './incremental-dom/src/attributes';
-import { parseHTML } from "html-parse-stringify";
+import { parse as parseHTML } from "html-parse-stringify";
 import { render as decorate } from "./plugins/decorators";
 
 export { updateAttribute, decorate };

@@ -38,7 +38,6 @@ myComponent.helpers({
 		return ["a","test","indeed"];
 	}
 });
-console.log(myComponent.helpers);
 </script>
 
 <click-counter extends="button" on-click="bump-count">

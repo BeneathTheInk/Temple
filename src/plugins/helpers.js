@@ -4,8 +4,6 @@ import { register } from "./";
 import Context from "../context";
 
 export function plugin() {
-	console.log("here");
-
 	// add the method
 	this.helpers = helpers;
 

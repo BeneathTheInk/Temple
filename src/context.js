@@ -1,7 +1,5 @@
 var Trackr = require("trackr");
-// var track = require("trackr-objects");
 var _ = require("underscore");
-// var utils = require("./utils");
 var parse = require("./m+xml").parse;
 var Events = require("backbone-events-standalone");
 

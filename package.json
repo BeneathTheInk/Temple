@@ -1,77 +1,78 @@
 {
-	"name": "templejs",
-	"version": "0.5.16",
-	"description": "A reactive Mustache view framework.",
-	"author": "Beneath the Ink <info@beneaththeink.com>",
-	"contributors": [
-		{
-			"name": "Tyler Johnson",
-			"email": "tyler@beneaththeink.com",
-			"url": "http://github.com/tyler-johnson"
-		}
-	],
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/BeneathTheInk/temple.git"
-	},
-	"scripts": {
-		"dev": "node test/browser",
-		"test": "./node_modules/.bin/mocha test"
-	},
-	"main": "./lib/index.js",
-	"dependencies": {
-		"assign-props": "~1.1.2",
-		"backbone-events-standalone": "~0.2.7",
-		"backbone-extend-standalone": "~0.1.2",
-		"html-parse-stringify": "~1.0.2",
-		"html2idom": "0.0.5",
-		"incremental-dom": "google/incremental-dom",
-		"is-plain-object": "~2.0.1",
-		"matches-selector": "~1.0.0",
-		"plain-merge": "~1.0.1",
-		"trackr": "~2.0.0",
-		"trackr-objects": "~0.2.0",
-		"underscore": "~1.8.3"
-	},
-	"devDependencies": {
-		"babel": "~5.8.23",
-		"babelify": "~6.3.0",
-		"browserify": "~11.1.0",
-		"chai": "~3.2.0",
-		"del": "~2.0.2",
-		"grunt": "~0.4.5",
-		"grunt-browserify": "~4.0.1",
-		"grunt-contrib-clean": "~0.6.0",
-		"grunt-contrib-copy": "~0.8.0",
-		"grunt-contrib-uglify": "~0.9.2",
-		"grunt-contrib-watch": "~0.6.1",
-		"grunt-peg": "~2.0.0",
-		"grunt-wrap2000": "~0.1.0",
-		"gulp": "~3.9.0",
-		"gulp-babel": "~5.2.1",
-		"gulp-header": "~1.7.1",
-		"gulp-peg": "~0.1.2",
-		"gulp-plumber": "~1.0.1",
-		"gulp-rename": "~1.2.2",
-		"gulp-sourcemaps": "~1.6.0",
-		"gulp-uglify": "~1.4.1",
-		"merge-stream": "~1.0.0",
-		"minimist": "~1.2.0",
-		"mocha": "~2.3.2",
-		"remapify": "~2.0.3",
-		"vinyl-buffer": "~1.0.0",
-		"vinyl-source-stream": "~1.1.0",
-		"watchify": "~3.4.0"
-	},
-	"license": "MIT",
-	"keywords": [
-		"view",
-		"framework",
-		"DOM",
-		"html",
-		"binding",
-		"reactive",
-		"dependency",
-		"mustache"
-	]
+  "name": "templejs",
+  "version": "0.5.16",
+  "description": "A reactive Mustache view framework.",
+  "author": "Beneath the Ink <info@beneaththeink.com>",
+  "contributors": [
+    {
+      "name": "Tyler Johnson",
+      "email": "tyler@beneaththeink.com",
+      "url": "http://github.com/tyler-johnson"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BeneathTheInk/temple.git"
+  },
+  "scripts": {
+    "dev": "node test/browser",
+    "test": "./node_modules/.bin/mocha test"
+  },
+  "main": "./lib/index.js",
+  "dependencies": {
+    "assign-props": "~1.1.2",
+    "backbone-events-standalone": "~0.2.7",
+    "backbone-extend-standalone": "~0.1.2",
+    "html-parse-stringify": "~1.0.2",
+    "html2idom": "0.0.5",
+    "incremental-dom": "google/incremental-dom",
+    "is-plain-object": "~2.0.1",
+    "matches-selector": "~1.0.0",
+    "plain-merge": "~1.0.1",
+    "source-map": "^0.5.1",
+    "trackr": "~2.0.0",
+    "trackr-objects": "~0.2.0",
+    "underscore": "~1.8.3"
+  },
+  "devDependencies": {
+    "babel": "~5.8.23",
+    "babelify": "~6.3.0",
+    "browserify": "~11.1.0",
+    "chai": "~3.2.0",
+    "del": "~2.0.2",
+    "grunt": "~0.4.5",
+    "grunt-browserify": "~4.0.1",
+    "grunt-contrib-clean": "~0.6.0",
+    "grunt-contrib-copy": "~0.8.0",
+    "grunt-contrib-uglify": "~0.9.2",
+    "grunt-contrib-watch": "~0.6.1",
+    "grunt-peg": "~2.0.0",
+    "grunt-wrap2000": "~0.1.0",
+    "gulp": "~3.9.0",
+    "gulp-babel": "~5.2.1",
+    "gulp-header": "~1.7.1",
+    "gulp-peg": "github:nicompte/gulp-peg",
+    "gulp-plumber": "~1.0.1",
+    "gulp-rename": "~1.2.2",
+    "gulp-sourcemaps": "~1.6.0",
+    "gulp-uglify": "~1.4.1",
+    "merge-stream": "~1.0.0",
+    "minimist": "~1.2.0",
+    "mocha": "~2.3.2",
+    "remapify": "~2.0.3",
+    "vinyl-buffer": "~1.0.0",
+    "vinyl-source-stream": "~1.1.0",
+    "watchify": "~3.4.0"
+  },
+  "license": "MIT",
+  "keywords": [
+    "view",
+    "framework",
+    "DOM",
+    "html",
+    "binding",
+    "reactive",
+    "dependency",
+    "mustache"
+  ]
 }

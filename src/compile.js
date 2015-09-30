@@ -246,10 +246,22 @@ function render(tpl, key) {
 	}
 }
 
-export default function compile(tpl) {
-	start();
-	render(tpl);
-	let ret = [ headers.join("\n"), buffer ].join("\n\n");
-	reset();
-	return ret;
+export default function compile(tree, options) {
+	var src;
+	if (typeof tree === "string") {
+		src = tree;
+		tree = parse(src);
+	}
+
+	options = _.extend({
+		originalFilename: "template.js"
+	}, options);
+
+	var source = tree.compile(options);
+	if (!options.sourceMap) return source.toString();
+
+	if (src) source.setSourceContent(options.originalFilename, src);
+	var result = source.toStringWithSourceMap();
+	var map64 = new Buffer(result.map.toString(), "utf-8").toString("base64");
+	return result.code + "//# sourceMappingURL=data:application/json;charset=utf-8;base64," + map64;
 }

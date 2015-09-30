@@ -1,32 +1,16 @@
 {
-	var _ = require("underscore"),
-		NODE_TYPE = require("./types"),
-		Mustache = require("./");
+	var _ = require("underscore");
+	var ast = require("./ast");
+	var NODE_TYPE = require("./types");
+	var Mustache = require("./");
 
 	options = _.defaults(options || {}, {
 		strict: true
 	});
 }
 
-start = ws nodes:((scriptNode / elementNode) ws)* {
-	var comps = _.pluck(nodes, 0).map(function(node) {
-		if (node.type === NODE_TYPE.ELEMENT) {
-			node.type = NODE_TYPE.VIEW;
-		}
-
-		return node;
-	});
-
-	if (comps.length === 1) {
-		comps[0].version = Mustache.version;
-		return comps[0];
-	} else {
-		return {
-			type: NODE_TYPE.ROOT,
-			version: Mustache.VERSION,
-			views: comps
-		};
-	}
+start = ws nodes:((scriptNode / viewNode) ws)* {
+	return new ast.Root(location(), _.pluck(nodes, 0));
 }
 
 /*
@@ -45,53 +29,71 @@ html = nodes:
 
 // Text Node
 textNode
-	= text:[^<{]+ { return { type: NODE_TYPE.TEXT, value: text.join("") }; }
+	= text:[^<{]+ {
+		return new ast.Text(location(), text.join(""));
+	}
 
 // Comment Nodes
 commentNode
 	= "<!--" v:$(!"-->" .)* "-->" {
-		return { type: NODE_TYPE.XCOMMENT, value: v };
+		return new ast.HTMLComment(location(), v);
 	}
 
+// script elements
 scriptNode
-	= "<" ws "script" attributes:(attribute)* ">" v:$(!"</script>" .)* "</script>" {
-		return {
-			type: NODE_TYPE.SCRIPT,
-			value: v,
-			attributes: attributes
-		};
+	= "<" ws "script" attributes:(attribute)* ">" v:scriptContent "</script>" {
+		return v;
+	}
+
+scriptContent
+	= v:$(!"</script>" .)* {
+		return new ast.Script(location(), v);
+	}
+
+viewKey = ws k:$([a-z0-9]i+ "-" [a-z0-9\-]i+) ws { return k; }
+viewNode
+	= "<" starttag:viewKey attributes:(attribute)* ">" nodes:html "</" endtag:viewKey ">" {
+		starttag = starttag.toLowerCase();
+		endtag = endtag.toLowerCase();
+
+		if (starttag !== endtag) {
+			throw new Error("View tag mismatch: " + starttag + " !== " + endtag);
+		}
+
+		var exts;
+		attributes = attributes.filter(function(a) {
+			if (a._key !== "extends") return true;
+			exts = a._value;
+		});
+
+		var scripts = [];
+		nodes = nodes.filter(function(n) {
+			if (n instanceof ast.Script) {
+				scripts.push(n);
+				return false;
+			}
+
+			return true;
+		});
+
+		return new ast.View(location(), starttag, exts, attributes, scripts, nodes);
 	}
 
 // Element Nodes
 elementNode
-	= start:elementSelfClosed
-	/ start:elementStart nodes:html end:elementEnd {
-		if (start.name !== end) {
-			throw new Error("Element tag mismatch: " + start.name + " !== " + end);
-		}
-
-		start.type = NODE_TYPE.ELEMENT;
-		start.children = nodes;
-		return start;
-	}
-
-elementSelfClosed
 	= "<" tagname:key attributes:(attribute)* "/>" {
-		return {
-			name: tagname.toLowerCase(),
-			type: NODE_TYPE.ELEMENT,
-			attributes: attributes,
-			children: []
+		return new ast.Element(location(), tagname, attributes, []);
+	}
+	/ "<" starttag:key attributes:(attribute)* ">" nodes:html "</" endtag:key ">" {
+		starttag = starttag.toLowerCase();
+		endtag = endtag.toLowerCase();
+
+		if (starttag !== endtag) {
+			throw new Error("Element tag mismatch: " + starttag + " !== " + endtag);
 		}
-	}
 
-elementStart
-	= "<" tagname:key attributes:(attribute)* ">" {
-		return { name: tagname.toLowerCase(), attributes: attributes };
+		return new ast.Element(location(), starttag, attributes, nodes);
 	}
-
-elementEnd
-	= "</" tagname:key ">" { return tagname; }
 
 // Element Attribute
 attribute
@@ -102,7 +104,7 @@ attribute
 		if (value != null) {
 			// could fail on complex attributes
 			try {
-				args = parse(value,  _.extend({}, options, { startRule: "attrArguments" }));
+				args = peg$parse(value,  _.extend({}, options, { startRule: "attrArguments" }));
 			} catch(e) {
 				args = [{ type: NODE_TYPE.LITERAL, value: value }];
 			}
@@ -110,13 +112,9 @@ attribute
 			args = [];
 		}
 
-		return {
-			type: NODE_TYPE.ATTRIBUTE,
-			name: key,
-			value: value,
-			children: value != null ? parse(value, _.extend({}, options, { startRule: "attrValue" })) : [],
-			arguments: args
-		}
+		var children = value != null ? peg$parse(value, _.extend({}, options, { startRule: "attrValue" })) : [];
+
+		return new ast.Attribute(location(), key, value, children, args);
 	}
 
 attrValue = nodes:
@@ -138,75 +136,46 @@ attrArg = ws val:
 	/ null
 	/ undefined
 	/ v:$(!"," .)* { return v.trim(); } ) ws {
-		if (val != null && val.type) return val;
-		return { type: NODE_TYPE.LITERAL, value: val };
+		if (typeof val === "object" && val != null) return val;
+		return new ast.Literal(location(), val);
 	}
 
 // mustache section
 section
-	= start:sectionStart nodes:html end:sectionEnd {
-		if (options.strict && !_.isEqual(start.value.raw, end)) {
-			throw new Error("Section tag mismatch: " + start.value.raw + " !== " + end);
+	= "{{" type:[#\^] startpath:pathQueryWithRaw "}}" nodes:html "{{/" endpath:$(escape / [^}])* "}}" {
+		if (options.strict && startpath.raw !== endpath) {
+			throw new Error("Section tag mismatch: " + startpath.raw + " !== " + endpath);
 		}
 
-		start.value = start.value.result;
-		start.children = nodes;
-		return start;
+		return new ast.Section(location(), type === "^", startpath.result, nodes);
 	}
-
-sectionStart
-	= "{{" type:[#\^] value:pathQueryWithRaw "}}" {
-		return {
-			type: NODE_TYPE[type === "#" ? "SECTION" : "INVERTED"],
-			value: value
-		}
-	}
-
-sectionEnd
-	= "{{/" value:(escape / [^}])* "}}" { return value.join(""); }
 
 // Mustache staches without the prefixes
 stache
 	= value:("{{{" pathQuery "}}}" / "{{" pathQuery "}}") {
-		return {
-			type: NODE_TYPE.INTERPOLATOR,
-			value: value[1]
-		}
+		return new ast.Interpolator(location(), true, value[1]);
 	}
 
 // Mustache double stache
 doubleStache
 	= "{{" ![/#{!$>\^] m:"&"? value:pathQuery "}}" {
-		return {
-			type: m ? NODE_TYPE.TRIPLE : NODE_TYPE.INTERPOLATOR,
-			value: value
-		}
+		return new ast.Interpolator(location(), !m, value);
 	}
 
 // Mustache triple stache
 tripleStache
 	= "{{{" value:pathQuery "}}}" {
-		return {
-			type: NODE_TYPE.TRIPLE,
-			value: value
-		}
+		return new ast.Interpolator(location(), false, value);
 	}
 
 commentStache
 	= "{{!" value:(escape / [^}])* "}}" {
-		return {
-			type: NODE_TYPE.MCOMMENT,
-			value: value.join("").trim()
-		}
+		return new ast.MustacheComment(location(), value.join("").trim());
 	}
 
 partialStache
 	=  "{{" m:[$>] value:(escape / [^}])* "}}" {
-		return {
-			type: NODE_TYPE.PARTIAL,
-			value: value.join("").trim(),
-			local: m === "$"
-		}
+		return new ast.Partial(location(), m === "$", value.join("").trim());
 	}
 
 /*
@@ -220,9 +189,12 @@ path
 	= ws p:pathPrefix? c:pathCore ws {
 		if (p == null) p = { type: "all" };
 		p.parts = c;
+		return p
+	}
+	/ ws p:pathPrefix ws {
+		p.parts = [];
 		return p;
 	}
-	/ ws p:pathPrefix ws { p.parts = []; return p; }
 
 pathPrefix
 	= d:"../"+ { return { type: "parent", distance: d.length }; }
@@ -232,7 +204,7 @@ pathPrefix
 
 pathCore = l:pathPart r:("." pathPart)* { return [].concat(l, _.pluck(r, 1)); }
 
-pathPart = k:$([a-z0-9$_]i [a-z0-9:\-_$]i*) c:pathDynamic* { return { key: k, children: c } }
+pathPart = k:$([a-z0-9$_]i [a-z0-9:\-_$]i*) c:pathDynamic* { return { key: k, children: c }; }
 
 pathDynamic = "[" ws c:(integer / string / path) ws "]" { return c; }
 
@@ -257,7 +229,7 @@ undefined = ("undefined" / "void" gws (![,; \t\n\r] .)+) { return void 0; }
 /*
 Utils
 */
-key = ws k:$[a-z0-9_-]i+ ws { return k; }
+key = ws k:$[a-z0-9\-]i+ ws { return k; }
 
 ws "whitespace" = $[ \t\n\r]*
 gws "guaranteed whitespace" = $[ \t\n\r]+
