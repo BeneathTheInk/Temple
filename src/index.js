@@ -15,7 +15,7 @@ export { compile, register, get, create, proxies, idom, utils, Context };
 export function render(tpl) {
 	/* jshint -W054 */
 	var r = compile(tpl);
-	console.log(r);
+	// console.log(r);
 	(new Function("Temple", r))(module.exports);
 }
 

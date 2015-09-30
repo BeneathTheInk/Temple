@@ -1,9 +1,12 @@
-var _ = require("underscore");
+import * as _ from "underscore";
 
-var plugins =
-exports._plugins = {};
+// declare, but don't set the plugin variable
+// exports and imports are hoisted, so this cannot do anything to the value
+var plugins;
 
-exports.loadPlugin = function(tpl, plugin, args) {
+export function load(tpl, plugin, args) {
+	if (plugins == null) plugins = {};
+
 	if (_.isString(plugin)) {
 		if (plugins[plugin] == null)
 			throw new Error("No plugin exists with id '" + plugin + "'.");
@@ -24,10 +27,11 @@ exports.loadPlugin = function(tpl, plugin, args) {
 
 	plugin.apply(tpl, args);
 	return tpl;
-};
+}
 
-var registerPlugin =
-exports.registerPlugin = function(name, fn) {
+export function register(name, fn) {
+	if (plugins == null) plugins = {};
+
 	if (typeof name !== "string") {
 		throw new Error("Expecting string name for plugin.");
 	}
@@ -42,11 +46,17 @@ exports.registerPlugin = function(name, fn) {
 	}
 
 	plugins[name] = fn;
-};
+}
+
+export function get(name) {
+	return plugins && plugins[name];
+}
 
 // load built in plugins
-registerPlugin("actions", require("./actions"));
-registerPlugin("twoway", require("./twoway"));
-registerPlugin("adoption", require("./adoption"));
-registerPlugin("refs", require("./refs"));
-require("./reactive-proxies.js");
+import "./decorators";
+import "./helpers";
+import "./actions";
+// import "./twoway";
+// import "./adoption";
+// import "./refs";
+import "./reactive-proxies.js";

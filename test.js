@@ -31,6 +31,16 @@ Temple.render(`
 	{{> tyler-list }}
 </my-component>
 
+<script>
+var myComponent = Temple.get("my-component");
+myComponent.helpers({
+	foo: function() {
+		return ["a","test","indeed"];
+	}
+});
+console.log(myComponent.helpers);
+</script>
+
 <click-counter extends="button" on-click="bump-count">
 	<script>
 	this.use("actions");
@@ -103,8 +113,7 @@ Temple.render(`
 
 var data = window.data = new ReactiveMap({
 	name: "Bob",
-	color: "blue",
-	foo: [0,1,2]
+	color: "blue"
 });
 
 window.tpl = Temple.create("my-component", data).paint("body");

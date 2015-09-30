@@ -1,4 +1,5 @@
 import * as _	from "underscore";
+import merge from "plain-merge";
 
 // like underscore's result, but pass arguments through
 export function result(object, property) {
@@ -87,7 +88,7 @@ export function matches(node, selector) {
 
 export function hash(str) {
 	var h = 0, i, chr, len;
-	
+
 	if (str.length === 0) return h;
 
 	for (i = 0, len = str.length; i < len; i++) {
@@ -97,4 +98,16 @@ export function hash(str) {
 	}
 
 	return h;
+}
+
+export function getPropertyFromClass(obj, prop) {
+	// get all the class prototypes that make up this
+	var val;
+	let proto = Object.getPrototypeOf(obj);
+	while (proto) {
+		if (proto.constructor) val = merge.defaults(val, proto.constructor[prop]);
+		proto = Object.getPrototypeOf(proto);
+	}
+
+	return val;
 }

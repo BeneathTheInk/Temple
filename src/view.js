@@ -1,7 +1,6 @@
 import * as _ from "underscore";
 import Trackr from "trackr";
 import Context from "./context";
-import Plugins from "./plugins";
 import merge from "plain-merge";
 import { get as getView } from "./globals";
 
@@ -28,10 +27,6 @@ module.exports = Context.extend({
 	},
 
 	initialize: function(){},
-
-	use: function(p) {
-		return Plugins.loadPlugin(this, p, _.toArray(arguments).slice(1));
-	},
 
 	autorun: function(fn, options) {
 		let comp = Trackr.autorun(fn.bind(this), options);

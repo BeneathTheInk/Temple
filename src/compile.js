@@ -167,12 +167,8 @@ var renderers = {
 		indent();
 
 			write(`idom.elementOpen(${tagName});`);//${key ? "," + JSON.stringify(key) : ""}
-			indent();
-
-				attributes(tpl.attributes);
-				render(tpl.children);
-
-			outdent();
+			attributes(tpl.attributes);
+			render(tpl.children);
 			write(`idom.elementClose(${tagName});`);
 
 		outdent();

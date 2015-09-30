@@ -1,5 +1,6 @@
 import * as _ from "underscore";
-var Mustache = require("../");
+import { register } from "./";
+import { getPropertyFromClass } from "../utils";
 
 // generate decorators
 var eventNames = [
@@ -13,17 +14,37 @@ var eventNames = [
 var slice = Array.prototype.slice;
 var decorators = {};
 
+// Action Class
+export class Action {
+	constructor(name) {
+		this.name = name;
+		this.bubbles = true;
+	}
+
+	stopPropagation() {
+		this.bubbles = false;
+		return this;
+	}
+}
+
 // the plugin
-module.exports = function() {
-	this.actions = this.addAction = addAction;
-	this.addActionOnce = addActionOnce;
-	this.removeAction = removeAction;
-	this.fireAction = fireAction;
+export function plugin() {
+	this.use("decorators");
+	this.actions = this.addAction = add;
+	this.addActionOnce = addOnce;
+	this.removeAction = remove;
+	this.fireAction = fire;
 	this.decorate(decorators);
 
-	// var initActions = _.result(this, "actions");
-	// if (initActions != null) this.addAction(initActions);
-};
+	// copy inherited actions
+	if (typeof this !== "function") {
+		var decs = getPropertyFromClass(this, "_actions");
+		this._actions = _.extend(this._actions || {}, decs);
+	}
+}
+
+export default plugin;
+register("actions", plugin);
 
 eventNames.forEach(function(event) {
 	decorators["on-" + event] = function(decor, key) {
@@ -60,22 +81,8 @@ eventNames.forEach(function(event) {
 	};
 });
 
-// Action Class
-function Action(name) {
-	this.name = name;
-}
-
-Mustache.Action = Action;
-
-Action.prototype.bubbles = true;
-
-Action.prototype.stopPropagation = function() {
-	this.bubbles = false;
-	return this;
-};
-
 // Msutache Instance Methods
-function addAction(name, fn) {
+export function add(name, fn) {
 	if (typeof name === "object" && fn == null) {
 		_.each(name, function(fn, n) { this.addAction(n, fn); }, this);
 		return this;
@@ -91,7 +98,7 @@ function addAction(name, fn) {
 	return this;
 }
 
-function addActionOnce(name, fn) {
+export function addOnce(name, fn) {
 	if (typeof name === "object" && fn == null) {
 		_.each(name, function(fn, n) { this.addActionOnce(n, fn); }, this);
 		return this;
@@ -107,7 +114,7 @@ function addActionOnce(name, fn) {
 	return this;
 }
 
-function removeAction(name, fn) {
+export function remove(name, fn) {
 	if (typeof name === "function" && fn == null) {
 		fn = name;
 		name = null;
@@ -134,7 +141,7 @@ function removeAction(name, fn) {
 	return this;
 }
 
-function fireAction(action) {
+export function fire(action) {
 	if (typeof action === "string") action = new Action(action);
 	if (_.isObject(action) && !(action instanceof Action)) action = _.extend(new Action(), action);
 	if (!(action instanceof Action)) throw new Error("Expecting action name, object or instance of Action.");
