@@ -1,6 +1,5 @@
 .git*
-dist/
 test/
-Gruntfile.js
 src/
 docs/
+gulpfile.js
