@@ -60,7 +60,8 @@ export function set(name, src) {
 	return this;
 }
 
-export function find(name) {
+export function find(name, options) {
+	options = options || {};
 	let view = this;
 
 	if (view !== global) {
@@ -69,6 +70,7 @@ export function find(name) {
 				return view._partials.get(name);
 			}
 
+			if (options.local) return;
 			view = view.parent;
 		}
 	}
@@ -76,7 +78,7 @@ export function find(name) {
 	return partials.get(name);
 }
 
-export function render(name, ctx) {
-	var partial = find.call(this, name);
+export function render(name, ctx, options) {
+	var partial = find.call(this, name, options);
 	if (partial) partial.call(this, ctx);
 }

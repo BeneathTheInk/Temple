@@ -230,7 +230,7 @@ pathPrefix
 
 pathCore = l:pathPart r:("." pathPart)* { return [].concat(l, _.pluck(r, 1)); }
 
-pathPart = k:$([a-z0-9$_]i [a-z0-9:\-_$]i*) c:pathDynamic* { return { key: k, children: c }; }
+pathPart = k:$([a-z0-9@_]i [a-z0-9:\-_$@]i*) c:pathDynamic* { return { key: k, children: c }; }
 
 pathDynamic = "[" ws c:(integer / string / path) ws "]" { return c; }
 

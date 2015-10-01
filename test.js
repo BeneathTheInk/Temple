@@ -62,11 +62,19 @@ myComponent.helpers({
 	});
 	</script>
 
-	I have been clicked {{ getCount }} times.
+	{{$ content }}
+
+	{{% content }}
+	This has been clicked {{ getCount }} times.
+	{{/ content }}
 </click-counter>
 
 <click-counter-2 extends="click-counter">
-	<i>{{> @super }}</i>
+	{{> @super }}
+
+	{{% content }}
+	Clicked x{{ getCount }}
+	{{/ content }}
 </click-counter-2>
 
 <tyler-list>
@@ -132,7 +140,7 @@ myComponent.helpers({
 
 	<ul>
 	{{# items }}
-		<li>{{ . }} <a href="#" on-click="remove-item, {{ $index }}">remove</a></li>
+		<li>{{ . }} <a href="#" on-click="remove-item, {{ @index }}">remove</a></li>
 	{{/ items }}
 	</ul>
 

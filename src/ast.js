@@ -308,7 +308,7 @@ export class Section extends ASTNode {
 		let self = this;
 
 		function renderSection(v, i) {
-			if (i) self.write(`var indexctx = new Temple.Context({ $index: ${i} }, prevctx, { transparent: true });`);
+			if (i) self.write(`var indexctx = new Temple.Context({ "@index": ${i} }, prevctx, { transparent: true });`);
 			self.write(`var ctx = new Temple.Context(${v}, ${i ? "indexctx" : "prevctx"});`);
 			self.push(_.invoke(self._children, "compile", data));
 		}
@@ -393,7 +393,9 @@ export class PartialQuery extends ASTNode {
 		if (this._value === "@super") {
 			this.write(`this.super(ctx);`);
 		} else {
-			this.write(`this.renderPartial(${JSON.stringify(this._value)}, ctx);`);
+			this.write(`this.renderPartial(${JSON.stringify(this._value)}, ctx, {`).indent();
+			this.write(`local: ${JSON.stringify(this._local)}`);
+			this.outdent().write(`});`);
 		}
 
 		return this.end();
