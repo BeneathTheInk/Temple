@@ -1,7 +1,6 @@
 import * as _ from "underscore";
 import Trackr from "trackr";
-import { getContext } from "../incremental-dom/src/context";
-import { updateAttribute } from '../incremental-dom/src/attributes';
+import { updateAttribute, getContext } from "../idom";
 import { getPropertyFromClass } from "../utils";
 import { register } from "./";
 

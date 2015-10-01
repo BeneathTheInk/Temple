@@ -7,6 +7,8 @@ import Trackr from "trackr";
 export function plugin() {
 	this._components = {};
 	this.renderView = render;
+	this.addComponent = add;
+	this.removeComponent = remove;
 	this.getComponent = getOne;
 	this.getComponents = getAll;
 	this.findComponent = findOne;
@@ -25,21 +27,37 @@ export function render(name, ctx, options) {
 	let v = Trackr.nonreactive(() => new View(null, ctx, options));
 
 	// add it to the list
-	if (name) {
-		let comps = this._components;
-		if (comps[name] == null) comps[name] = [];
-		comps[name].push(v);
-
-		// auto remove when the partial is "stopped"
-		v.once("stop", function() {
-			comps[name] = _.without(comps[name], v);
-		});
-	}
-
-	// immediately mount the view
-	v.mount();
+	add.call(this, v);
 
 	return v;
+}
+
+export function add(view) {
+	if (view.tagName) {
+		let comps = this._components;
+		if (comps[view.tagName] == null) comps[view.tagName] = [];
+		comps[view.tagName].push(view);
+	}
+
+	return this;
+}
+
+export function remove(view) {
+	let comps = this._components;
+
+	if (view == null) {
+		this._components = {};
+	}
+
+	else if (typeof view == "string") {
+		delete comps[view];
+	}
+
+	else if (view.tagName) {
+		comps[view.tagName] = _.without(comps[view.tagName], view);
+	}
+
+	return this;
 }
 
 // returns first rendered partial by name
