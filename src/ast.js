@@ -213,35 +213,56 @@ export class Element extends ASTNode {
 	compile(data) {
 		this.start(data);
 
+		let self = this;
 		let tagName = JSON.stringify(this._name);
 		let hasc = this._children.length;
+		let hasa = this._attributes.length;
+
+		function writeElement(inner) {
+			if (hasc || hasa) {
+				self.write(`Temple.idom.elementOpen(${tagName});`);//${key ? "," + JSON.stringify(key) : ""}
+				inner.call(self);
+				self.write(`Temple.idom.elementClose(${tagName});`);
+			} else {
+				self.write(`Temple.idom.elementVoid(${tagName});`);
+			}
+		}
 
 		if (this._name.indexOf("-") > -1) {
 			this.write(`(function(){`).indent();
 
 			if (hasc) {
-				this.write(`function body(ctx) {`).indent();
+				this.write("function body(ctx) {").indent();
 				this.push(_.invoke(this._children, "compile", data));
-				this.outdent().write(`}`);
-				this.write(`var view = this.renderView(${tagName}, ctx, {`);
-				this.write(`partials: { "@body": body }`);
-				this.write(`});`);
-			} else {
-				this.write(`var view = this.renderView(${tagName}, ctx);`);
+				this.outdent().write("}");
 			}
 
-			this.write(`if (!view) {`).indent();
-			this.write(`Temple.idom.elementOpen(${tagName});`);//${key ? "," + JSON.stringify(key) : ""}
-			this.push(_.invoke(this._attributes, "compile", data));
-			if (hasc) this.write(`body(ctx);`);
-			this.write(`Temple.idom.elementClose(${tagName});`);
+			if (hasa) {
+				this.write("function attributes(ctx) {").indent();
+				this.push(_.invoke(this._attributes, "compile", data));
+				this.outdent().write("}");
+			}
+
+			this.write(`var self = this;`);
+			this.write(`var view = this.createComponent(${tagName}, ctx);`);
+			this.write(`if (view) {`).indent();
+			if (hasc) this.write(`view.setPartial("@body", body);`);
+			if (hasa) this.write(`view.on("render:before", attributes);`);
+			this.write(`view.mount();`);
+			this.write(`this.comp.onInvalidate(this.removeComponent.bind(this, view));`);
+			this.outdent().write(`} else {`).indent();
+			writeElement(function() {
+				if (hasa) this.write(`attributes(ctx);`);
+				if (hasc) this.write(`body(ctx);`);
+			});
 			this.outdent().write(`}`);
+
 			this.outdent().write(`}).call(this);`);
 		} else {
-			this.write(`Temple.idom.elementOpen(${tagName});`);//${key ? "," + JSON.stringify(key) : ""}
-			this.push(_.invoke(this._attributes, "compile", data));
-			this.push(_.invoke(this._children, "compile", data));
-			this.write(`Temple.idom.elementClose(${tagName});`);
+			writeElement(function() {
+				if (hasa) this.push(_.invoke(this._attributes, "compile", data));
+				if (hasc) this.push(_.invoke(this._children, "compile", data));
+			});
 		}
 
 		return this.end();

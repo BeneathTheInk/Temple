@@ -6,7 +6,7 @@ import Trackr from "trackr";
 
 export function plugin() {
 	this._components = {};
-	this.renderView = render;
+	this.createComponent = create;
 	this.addComponent = add;
 	this.removeComponent = remove;
 	this.getComponent = getOne;
@@ -18,7 +18,7 @@ export function plugin() {
 export default plugin;
 register("components", plugin);
 
-export function render(name, ctx, options) {
+export function create(name, ctx, options) {
 	let View = getView(name);
 	if (!View) return;
 
