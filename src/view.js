@@ -2,22 +2,35 @@ import * as _ from "underscore";
 import Trackr from "trackr";
 import Context from "./context";
 import merge from "plain-merge";
-import { get as getView } from "./globals";
+import { patchElement } from "./idom";
+import { load as loadPlugin } from "./plugins";
+import assignProps from "assign-props";
 
-var View =
-module.exports = Context.extend({
+var View = Context.extend({
 	constructor: function(data, parent, options) {
 		if (!Context.isContext(parent)) {
 			options = parent;
 			parent = null;
 		}
 
-		options = options || {};
-		this._components = {};
+		this.options = options = options || {};
 
 		// load initial data
 		var defaults = _.result(this, "initialState") || _.result(this, "defaults");
 		data = merge.extend({}, defaults, data);
+
+		// create element from tag name
+		let tag = _.result(this, "tagName");
+		if (!tag) throw new Error("Missing tag name.");
+		this.el = document.createElement(this.extends || tag, this.extends ? tag : null);
+		this._renderContext = this;
+
+		// load plugins that the class loaded
+		if (this.constructor._loaded_plugins) {
+			for (let fn of this.constructor._loaded_plugins) {
+				this.use(fn);
+			}
+		}
 
 		// call the context constructor
 		Context.call(this, data, parent, options);
@@ -38,6 +51,7 @@ module.exports = Context.extend({
 	// a generalized reactive workflow helper
 	mount: function() {
 		let self = this;
+		let args = arguments;
 
 		Trackr.nonreactive(function() {
 			// stop existing mount
@@ -48,9 +62,10 @@ module.exports = Context.extend({
 		});
 
 		// the autorun computation
-		this.comp = Trackr.autorun(function(comp) {
-			self._mount(comp);
-			self.trigger("render");
+		Trackr.autorun(function(comp) {
+			self.comp = comp;
+			self._mount.apply(self, args);
+			self.trigger("mount");
 
 			// auto clean up
 			comp.onInvalidate(function() {
@@ -73,87 +88,56 @@ module.exports = Context.extend({
 		return this;
 	},
 
-	_mount: function() {},
-
 	stop: function() {
 		if (this.comp) this.comp.stop();
 		return this;
 	},
 
-	renderView: function(name, ctx) {
-		let View = getView(name);
-		if (View) {
-			let v = new View(null, ctx, { transparent: true });
-			v.mount();
-			return v;
-		}
+	_mount: function() {
+		let ctx = this._renderContext;
+		let args = [ctx].concat(_.toArray(arguments));
+		patchElement(this.el, () => {
+			this.trigger("render:before", ctx);
+			this.render.apply(this, args);
+			this.trigger("render", ctx);
+			this.trigger("render:after", ctx);
+		});
 	},
 
-	// returns first rendered partial by name
-	getComponent: function(name) {
-		var comps, comp, res, n, i;
-
-		comps = this._components;
-		if (comps[name] != null && comps[name].length) return comps[name][0];
-
-		for (n in comps) {
-			for (i in comps[n]) {
-				comp = comps[n][i];
-				if (!(comp instanceof View)) continue;
-				res = comp.getComponent(name);
-				if (res != null) return res;
-			}
+	// attach + mount
+	attach: function(parent, before) {
+		if (typeof parent === "string") parent = document.querySelector(parent);
+		if (parent == null) throw new Error("Expecting a valid DOM element to attach in.");
+		if (typeof before === "string") {
+			before = parent.querySelector ?
+				parent.querySelector(before) :
+				document.querySelector(before);
 		}
 
-		return null;
+		parent.insertBefore(this.el, before);
+		this.trigger("attach", this.el);
+
+		return this;
 	},
 
-	// returns all rendered partials by name
-	getComponents: function(name) {
-		if (name == null) return _.flatten(_.values(this._components));
-
-		return _.reduce(this._components, function(m, comps, n) {
-			if (n === name) m.push.apply(m, comps);
-
-			comps.forEach(function(c) {
-				if (c instanceof View) m.push.apply(m, c.getComponents(name));
-			});
-
-			return m;
-		}, []);
+	paint: function(parent, before) {
+		this.attach(parent, before);
+		this.mount();
+		return this;
 	},
 
-	// returns rendered partials, searching children views
-	findComponents: function(name) {
-		var tpls = [ this ],
-			comps = [],
-			tpl;
-
-		while (tpls.length) {
-			tpl = tpls.shift();
-			comps = comps.concat(tpl.getComponents(name));
-			tpls.push(tpl.getComponents());
+	// stop and remove dom
+	detach: function() {
+		this.stop();
+		if (this.el && this.el.parentNode) {
+			this.el.parentNode.removeChild(this.el);
 		}
-
-		return comps;
-	},
-
-	// returns rendered partials, searching children views
-	findComponent: function(name) {
-		var tpls = [ this ],
-			tpl, comp;
-
-		while (tpls.length) {
-			tpl = tpls.shift();
-			comp = tpl.getComponent(name);
-			if (comp) return comp;
-			tpls = tpls.concat(tpl.getComponents());
-		}
-
-		return null;
+		return this;
 	}
-
 });
+
+// brand the class
+assignProps(View.prototype, "__temple", true);
 
 // proxy a few computation methods
 [ "invalidate", "onInvalidate" ].forEach(function(method) {
@@ -166,3 +150,31 @@ module.exports = Context.extend({
 		return this;
 	};
 });
+
+// plugin API
+View.use = View.prototype.use = function use(p) {
+	return loadPlugin(this, p, _.toArray(arguments).slice(1));
+};
+
+// modify extend so subclasses use the same plugins
+var subclass = View.extend;
+View.extend = function() {
+	var klass = subclass.apply(this, arguments);
+
+	if (this._loaded_plugins) {
+		for (let fn of this._loaded_plugins) {
+			klass.use(fn);
+		}
+	}
+
+	return klass;
+};
+
+// default plugins
+View.use("decorators");
+View.use("helpers");
+View.use("partials");
+View.use("components");
+
+// export view
+export default View;

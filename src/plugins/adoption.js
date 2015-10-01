@@ -1,4 +1,4 @@
-import View from "../view";
+import { isView } from "../utils";
 import { register } from "./";
 
 export function plugin() {
@@ -10,7 +10,7 @@ export default plugin;
 register("adoption", plugin);
 
 export function adopt(view, parent, before) {
-	if (!(view instanceof View)) {
+	if (!isView(view)) {
 		throw new Error("Expecting instanceof Temple View.");
 	}
 

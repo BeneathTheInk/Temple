@@ -21,18 +21,10 @@ export function plugin() {
 export default plugin;
 register("decorators", plugin);
 
-export function render(view, name, el, options) {
-	if (el && el.nodeType !== document.ELEMENT_NODE) {
-		options = el;
-		el = null;
-	}
-
+export function render(view, name, options) {
 	options = options || {};
-
-	if (el == null) {
-		let ictx = getContext();
-		el = ictx && ictx.walker.getCurrentParent();
-	}
+	let ictx = getContext();
+	let el = ictx && ictx.walker.getCurrentParent();
 
 	// look up decorator by name
 	let decorators = view.findDecorators(name);

@@ -1,6 +1,4 @@
-// import * as _ from "underscore";
 import { register } from "./";
-// import parser from "../m+xml";
 import compile from "../compile";
 import { Map as ReactiveMap } from "trackr-objects";
 import { getPropertyFromClass } from "../utils";
@@ -28,6 +26,13 @@ export function plugin() {
 
 		for (let k in partials) {
 			this._partials.set(k, partials[k]);
+		}
+
+		// apply partials from the options passed to the constructor
+		if (this.options.partials) {
+			for (let k in this.options.partials) {
+				this._partials.set(k, this.options.partials[k]);
+			}
 		}
 	}
 }
@@ -58,18 +63,12 @@ export function set(name, src) {
 export function find(name) {
 	let view = this;
 
-	if (name === "@super") {
-		if (this === global || !this.constructor) return;
-		let proto = Object.getPrototypeOf(this.constructor.prototype);
-		return proto ? proto.render : null;
-	}
-
 	if (view !== global) {
 		while (view != null) {
 			if (view._partials && view._partials.has(name)) {
 				return view._partials.get(name);
 			}
-			
+
 			view = view.parent;
 		}
 	}

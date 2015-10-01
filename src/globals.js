@@ -1,5 +1,5 @@
 import * as _ from "underscore";
-import Mustache from "./mustache";
+import View from "./view";
 import Trackr from "trackr";
 
 var deps = {};
@@ -13,7 +13,7 @@ function getNativePrototype(tag) {
 
 export function add(name, props) {
 	props = _.extend({ tagName: name }, props);
-	let _View = Mustache;
+	let _View = View;
 	let _extends;
 
 	if (props.extends) {
@@ -26,8 +26,25 @@ export function add(name, props) {
 		}
 	}
 
+	function wrap(k, f) {
+		return function() {
+			let osuper = this.super;
+			this.super = _View.prototype[k];
+			let ret = f.apply(this, arguments);
+			this.super = osuper;
+			return ret;
+		};
+	}
+
+	for (let k in props) {
+		let fn = props[k];
+		if (typeof fn !== "function") continue;
+		if (/this\.super/.test(fn.toString())) {
+			props[k] = wrap(k, fn);
+		}
+	}
+
 	let V = views[name] = _View.extend(props);
-	V.prototype.super = _View.prototype;
 
 	let proto = Object.create(_extends ?
 		getNativePrototype(_extends) :

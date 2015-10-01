@@ -1,13 +1,12 @@
-var Trackr = require("trackr");
-var _ = require("underscore");
-var parse = require("./m+xml").parse;
-var Events = require("backbone-events-standalone");
-
+import Trackr from "trackr";
+import * as _ from "underscore";
+import parser from "./m+xml";
+import * as Events from "backbone-events-standalone";
+import subclass from "backbone-extend-standalone";
 import assignProps from "assign-props";
 import { getValue } from "./proxies";
 
-var Context =
-module.exports = function Context(data, parent, options) {
+export default function Context(data, parent, options) {
 	if (!Context.isContext(parent)) {
 		if (options == null) options = parent;
 		parent = null;
@@ -25,13 +24,13 @@ module.exports = function Context(data, parent, options) {
 	assignProps(this, "_transparent", Boolean(options.transparent));
 
 	this.set(data, options);
-};
+}
 
 Context.isContext = function(o) {
 	return o instanceof Context;
 };
 
-Context.extend = require("backbone-extend-standalone");
+Context.extend = subclass;
 
 assignProps(Context.prototype, {
 	data: function() {
@@ -136,7 +135,7 @@ _.extend(Context.prototype, Events, {
 	get: function(path, options) {
 		options = options || {};
 
-		if (typeof path === "string") path = parse(path, { startRule: "path" });
+		if (typeof path === "string") path = parser.parse(path, { startRule: "path" });
 		if (path == null) path = { parts: [] };
 		if (!_.isObject(path)) throw new Error("Expecting string or object for path.");
 
@@ -158,7 +157,7 @@ _.extend(Context.prototype, Events, {
 	// retrieves value with path query
 	query: function(paths, options) {
 		options = options || null;
-		if (typeof paths === "string") paths = parse(paths, { startRule: "pathQuery" });
+		if (typeof paths === "string") paths = parser.parse(paths, { startRule: "pathQuery" });
 		if (!_.isArray(paths)) paths = paths != null ? [ paths ] : [];
 		if (!paths.length) paths.push({ type: "all", parts: [] });
 

@@ -1,5 +1,9 @@
-import * as _	from "underscore";
+import * as _ from "underscore";
 import merge from "plain-merge";
+
+export function isView(o) {
+	return Boolean(o != null && o.__temple);
+}
 
 // like jQuery's empty(), removes all children
 export function emptyNode(node) {

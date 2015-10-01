@@ -5,9 +5,8 @@ import { firstChild, nextSibling, parentNode, } from './incremental-dom/src/trav
 import { clearUnvisitedDOM } from './incremental-dom/src/alignment';
 import { updateAttribute } from './incremental-dom/src/attributes';
 import { parse as parseHTML } from "html-parse-stringify";
-import { render as decorate } from "./plugins/decorators";
 
-export { updateAttribute, decorate };
+export { updateAttribute };
 
 // export every key in idom
 (function(doExport) {

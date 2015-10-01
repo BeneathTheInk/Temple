@@ -133,9 +133,14 @@ export class View extends ASTNode {
 		this.write(`Temple.register(${JSON.stringify(this._name)}, {`);
 		this.indent();
 
-		if (this._scripts.length) {
+		if (this._scripts.length || this._attributes.length) {
 			this.write("initialize: function() {").indent();
-			this.write("var $super = this.super.initialize.bind(this);");
+			this.write("this.super.apply(this, arguments);");
+			if (this._attributes.length) {
+				this.write(`this.on("render:before", function(ctx) {`).indent();
+				this.push(_.invoke(this._attributes, "compile", data));
+				this.outdent().write(`});`);
+			}
 			this.push(_.invoke(this._scripts, "compile", data));
 			this.outdent().write("},");
 		}
@@ -152,7 +157,7 @@ export class View extends ASTNode {
 		}
 
 		this.write("render: function(ctx) {").indent();
-		this.push(_.invoke(this._attributes, "compile", _.defaults({ element: "this.el" }, data)));
+		// this.push(_.invoke(this._attributes, "compile", _.defaults({ element: "this.el" }, data)));
 		this.push(_.invoke(this._children, "compile", data));
 		this.outdent().write("}");
 
@@ -209,19 +214,34 @@ export class Element extends ASTNode {
 		this.start(data);
 
 		let tagName = JSON.stringify(this._name);
-		let isViewName = this._name.indexOf("-") > -1;
+		let hasc = this._children.length;
 
-		if (isViewName) {
-			this.write(`if (!this.renderView(${tagName}, ctx)) {`).indent();
-		}
+		if (this._name.indexOf("-") > -1) {
+			this.write(`(function(){`).indent();
 
-		this.write(`Temple.idom.elementOpen(${tagName});`);//${key ? "," + JSON.stringify(key) : ""}
-		this.push(_.invoke(this._attributes, "compile", data));
-		this.push(_.invoke(this._children, "compile", data));
-		this.write(`Temple.idom.elementClose(${tagName});`);
+			if (hasc) {
+				this.write(`function body(ctx) {`).indent();
+				this.push(_.invoke(this._children, "compile", data));
+				this.outdent().write(`}`);
+				this.write(`var view = this.renderView(${tagName}, ctx, {`);
+				this.write(`partials: { "@body": body }`);
+				this.write(`});`);
+			} else {
+				this.write(`var view = this.renderView(${tagName}, ctx);`);
+			}
 
-		if (isViewName) {
-			this.outdent().write("}");
+			this.write(`if (!view) {`).indent();
+			this.write(`Temple.idom.elementOpen(${tagName});`);//${key ? "," + JSON.stringify(key) : ""}
+			this.push(_.invoke(this._attributes, "compile", data));
+			if (hasc) this.write(`body(ctx);`);
+			this.write(`Temple.idom.elementClose(${tagName});`);
+			this.outdent().write(`}`);
+			this.outdent().write(`}).call(this);`);
+		} else {
+			this.write(`Temple.idom.elementOpen(${tagName});`);//${key ? "," + JSON.stringify(key) : ""}
+			this.push(_.invoke(this._attributes, "compile", data));
+			this.push(_.invoke(this._children, "compile", data));
+			this.write(`Temple.idom.elementClose(${tagName});`);
 		}
 
 		return this.end();
@@ -240,8 +260,7 @@ export class Attribute extends ASTNode {
 	compile(data) {
 		this.start(data);
 
-		let el = data.element ? data.element + ", " : "";
-		this.write(`this.renderDecorator(this, ${JSON.stringify(this._key)}, ${el}{`).indent();
+		this.write(`this.renderDecorator(this, ${JSON.stringify(this._key)}, {`).indent();
 		this.write(`mixin: { context: ctx },`);
 
 		let str = _.invoke(this._children, "compileString", data);
@@ -369,7 +388,15 @@ export class PartialQuery extends ASTNode {
 	}
 
 	compile(data) {
-		return this._sn(data.originalFilename, [ "this.renderPartial(", JSON.stringify(this._value), ", ctx);" ]);
+		this.start(data);
+
+		if (this._value === "@super") {
+			this.write(`this.super(ctx);`);
+		} else {
+			this.write(`this.renderPartial(${JSON.stringify(this._value)}, ctx);`);
+		}
+
+		return this.end();
 	}
 }
 
