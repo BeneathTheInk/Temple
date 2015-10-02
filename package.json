@@ -15,8 +15,8 @@
 		"url": "https://github.com/BeneathTheInk/temple.git"
 	},
 	"scripts": {
-		"dev": "node test/browser",
-		"test": "./node_modules/.bin/mocha test"
+		"test": "gulp compile && node test/index.js",
+		"test-browser": "gulp compile && browserify test/index.js --debug | browser-run"
 	},
 	"main": "./lib/index.js",
 	"dependencies": {
@@ -34,6 +34,7 @@
 	"devDependencies": {
 		"babel": "~5.8.23",
 		"babelify": "~6.3.0",
+		"browser-run": "~2.6.2",
 		"browserify": "~11.1.0",
 		"del": "~2.0.2",
 		"gulp": "~3.9.0",

@@ -1,18 +1,9 @@
-var Temple = require("../");
 var test = require("tape");
-var _ = require("underscore");
 var Trackr = require("trackr");
 var TrackrObjects = require("trackr-objects");
 var ReactiveMap = TrackrObjects.Map;
 var ReactiveList = TrackrObjects.List;
-
-function render(tpl, data) {
-	var id = _.uniqueId("view-");
-	var views = Temple.render(`<${id}>${tpl}</${id}>`);
-	var comp = new (views[id])(data);
-	comp.paint(document.createDocumentFragment());
-	return comp;
-}
+var render = require("./_utils").render;
 
 test("# Sections", function(t) {
 	t.end();
