@@ -37,13 +37,22 @@ export function render(view, name, options) {
 		return;
 	}
 
+	let invalid = false;
+	let _comp = Trackr.currentComputation;
+	let dcomps = [];
+
+	_comp.onInvalidate(function() {
+		invalid = true;
+		_.invoke(dcomps, "stop");
+	});
+
 	// render each decorator
 	decorators.forEach(function(d) {
-		let _comp = Trackr.currentComputation;
-
 		// defer computation because we cannot have unknown changes happening to the DOM
 		_.defer(function() {
-			let dcomp = Trackr.autorun(function(comp) {
+			if (invalid) return;
+
+			dcomps.push(Trackr.autorun(function(comp) {
 				// assemble the arguments!
 				var args = [ _.extend({
 					target: el,
@@ -62,13 +71,7 @@ export function render(view, name, options) {
 
 				// execute the callback
 				d.callback.apply(d.context, args);
-			});
-
-			// clean up
-			if (_comp) {
-				if (_comp.stopped || _comp.invalidated) dcomp.stop();
-				else _comp.onInvalidate(() => dcomp.stop());
-			}
+			}));
 		});
 	});
 
