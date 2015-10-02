@@ -54,15 +54,17 @@ export class ASTNode {
 		return this;
 	}
 
-	write(chunk) {
+	tabs() {
 		let tabs = "";
 		let tabchar = this._writer.data.tabchar;
 		let indent = this._writer.data.indent || 0;
 		if (tabchar == null) tabchar = "  ";
-
 		for (let i = 0; i < indent; i++) tabs += tabchar;
-		this.push([].concat(tabs, chunk, "\n"));
+		return tabs;
+	}
 
+	write(chunk) {
+		this.push([].concat(this.tabs(), chunk, "\n"));
 		return this;
 	}
 
@@ -164,7 +166,6 @@ export class View extends ASTNode {
 		}
 
 		this.write("render: function(ctx) {").indent();
-		// this.push(_.invoke(this._attributes, "compile", _.defaults({ element: "this.el" }, data)));
 		this.push(_.invoke(this._children, "compile", data));
 		this.outdent().write("}");
 
@@ -333,15 +334,43 @@ export class Section extends ASTNode {
 	compile(data) {
 		this.start(data);
 
+		this.write("(function(){").indent();
+
+		this.compileSection(data, function() {
+			this.push(_.invoke(this._children, "compile", data));
+		});
+
+		this.outdent().write("}).call(this);");
+
+		return this.end();
+	}
+
+	compileString(data) {
+		this.start(data);
+
+		this.push("(function() {\n").indent();
+		this.write(`var result = "";`);
+
+		this.compileSection(data, function() {
+			let children = _.invoke(this._children, "compileString", data);
+			this.write([ "result += ", this._sn(data.originalFilename, children).join(" + "), ";" ]);
+		});
+
+		this.write("return result;");
+		this.outdent().push(this.tabs() + "}).call(this)");
+
+		return this.end();
+	}
+
+	compileSection(data, handle) {
 		let self = this;
 
 		function renderSection(v, i) {
 			if (i) self.write(`var indexctx = new Temple.Context({ "@index": ${i} }, prevctx, { transparent: true });`);
 			self.write(`var ctx = new Temple.Context(${v}, ${i ? "indexctx" : "prevctx"});`);
-			self.push(_.invoke(self._children, "compile", data));
+			handle.call(self);
 		}
 
-		this.write("(function(){").indent();
 		this.write("var prevctx = ctx;");
 		this.write(`var val = ${query(data, this._query)};`);
 		this.write(`var proxy = Temple.proxies.getByTarget(val, [ "empty", "section" ]);`);
@@ -360,10 +389,6 @@ export class Section extends ASTNode {
 			this.outdent().write(`}).bind(this));`);
 			this.outdent().write(`}`);
 		}
-
-		this.outdent().write("}).call(this);");
-
-		return this.end();
 	}
 }
 
