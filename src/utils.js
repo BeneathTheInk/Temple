@@ -83,7 +83,7 @@ export function getPropertyFromClass(obj, prop) {
 		if (t === "function") orig = prop(proto.constructor);
 		else if (t === "string" && t) orig = proto.constructor[prop];
 		else throw new Error("Expecting function or string for property.");
-		if (proto.constructor) val = merge.defaults(val, orig);
+		val = merge.defaults(val, orig);
 		proto = Object.getPrototypeOf(proto);
 	}
 
