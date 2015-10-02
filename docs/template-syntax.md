@@ -12,9 +12,8 @@ Temple.create("my-template").paint(document.body);
 - [Templates](#templates)
 - [HTML](#html)
 - [Variables](#variables)
-- Sections
+- [Sections](#sections)
 - Partials
-- [Views](#views)
 - [Embedded JavaScript](#embeddedjavascript)
 
 ## Templates
@@ -102,10 +101,8 @@ Elements can also contain attributes.
 Use variables to retrieve and display information from the current context. Variables can only be used in two places, inline with the HTML nodes or as part of an attribute value.
 
 ```html
-<name-card>
-	<h1 style="color: {{ color }};">
-		My name is {{ name }}.
-	</h1>
+<name-card style="color: {{ color }};">
+	My name is {{ name }}.
 </name-card>
 ```
 
@@ -121,7 +118,7 @@ By default, variable results are escaped before being printed in the DOM. To pri
 
 The path within the variable is used to look up information in the context stack, returning the first value that isn't undefined. Similar to Mustache variables, if the value is function it is executed in current context, and its returned value is used instead.
 
-Separate path parts with a `.` and create dynamic paths with brackets, just like in JavaScript.
+Separate path parts with a period and create dynamic paths with brackets, just like in JavaScript.
 
 ```html
 <my-template>
@@ -130,7 +127,15 @@ Separate path parts with a `.` and create dynamic paths with brackets, just like
 </my-template>
 ```
 
-Variable results can also be filtered through other variables with the pipe `|` character. If the value at the path isn't a function, its value is directly returned, overriding anything returned previously.
+You can print the value in current context with a single period.
+
+```html
+<my-template>
+	{{ . }}
+</my-template>
+```
+
+Variable results can also be filtered through other variables with the pipe `|` character. This works similarly to other template languages with the concept of a filters, the result of each path is passed as the input for the next value. If the value at the path isn't a function, its value is directly returned, overriding anything returned previously. The below filter is the same as running `f(g(h()))` in JavaScript.
 
 ```html
 <my-template>
@@ -138,8 +143,58 @@ Variable results can also be filtered through other variables with the pipe `|` 
 </my-template>
 ```
 
-The above is the same as running `f(g(h()))`.
+## Sections
 
+The section tag allows for parts of the template to be rendered one or more times, depending on the value of the path in the section tag. A section tag has an opening and closing tag, whose paths much match.
+
+```html
+<scoped-view>
+	{{# data }}
+		scoped to data
+		{{ foo.bar }}
+	{{/ data }}
+</scoped-view>
+```
+
+These work just like Mustache sections. If the value is `null`, `undefined`, `false` or any other value that JavaScript considers false, the content will not be rendered.
+
+```html
+<hello-world>
+	Hello{{# name }} {{ . }}{{/ name }}!
+</hello-world>
+```
+
+Use the inverted section tag to display content when the value is falsey.
+
+```html
+<scoped-view>
+	{{^ data }}
+		displayed when there is no data
+	{{/ data }}
+</scoped-view>
+```
+
+If the value at the section path is a non-empty list, the section is rendered for each item in the list. The context of the block will be set to the current item for each iteration. In this way we can loop over collections.
+
+```html
+<todo-list>
+	<ul>
+	{{# items }}
+		<li>{{ . }}</li>
+	{{/ items }}
+	</ul>
+</todo-list>
+```
+
+Just like variables, sections can be specified in attributes. Sections will not work on attributes that are used as decorators.
+
+```html
+<my-template class="container {{^large}}container-small{{/large}}">
+	<div style="{{#styles}}{{key}}: {{value}}; {{/styles}}">
+		An element with dynamic styles.
+	</div>
+</my-template>
+```
 
 ## Views
 
