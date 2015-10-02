@@ -7,9 +7,13 @@
 	});
 }
 
-start = ws nodes:((scriptNode / viewNode) ws)* {
-	return new ast.Root(location(), _.pluck(nodes, 0));
-}
+start = ws nodes:(
+	( scriptNode
+	/ viewNode
+	/ commentStache
+	/ commentNode ) ws)* {
+		return new ast.Root(location(), _.pluck(nodes, 0));
+	}
 
 /*
 HTML

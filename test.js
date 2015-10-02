@@ -14,6 +14,7 @@ window.ReactiveVar = require("trackr-objects").Variable;
 window.ReactiveList = require("trackr-objects").List;
 
 Temple.render(`
+<!-- my component -->
 <my-component>
 	<script>
 	this.helpers({
