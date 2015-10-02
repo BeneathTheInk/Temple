@@ -103,14 +103,20 @@ export class Root extends ASTNode {
 	compile(data) {
 		var oheads = data.headers;
 		data.headers = [];
-		var output = this._sn(data.originalFilename);
-		output.add(_.invoke(this._children, "compile", data));
-		output = output.join("\n");
 
-		if (data.headers.length) {
-			output.prepend("\n\n").prepend(data.headers);
-			data.headers = oheads;
+		this.start(data);
+		header(data, "var Views = {};\n");
+		this.push(_.invoke(this._children, "compile", data));
+
+		if (data.exports === "common") {
+			this.write("module.exports = Views;");
+		} else {
+			this.write("return Views;");
 		}
+
+		let output = this.end();
+		if (data.headers.length) output.prepend("\n").prepend(data.headers);
+		data.headers = oheads;
 
 		return output;
 	}
@@ -129,8 +135,9 @@ export class View extends ASTNode {
 
 	compile(data) {
 		this.start(data);
+		var safename = JSON.stringify(this._name);
 
-		this.write(`Temple.register(${JSON.stringify(this._name)}, {`);
+		this.write(`Views[${safename}] = Temple.register(${safename}, {`);
 		this.indent();
 
 		if (this._scripts.length || this._attributes.length) {
@@ -161,7 +168,7 @@ export class View extends ASTNode {
 		this.push(_.invoke(this._children, "compile", data));
 		this.outdent().write("}");
 
-		this.outdent().write("});");
+		this.outdent().write("});\n");
 
 		return this.end();
 	}

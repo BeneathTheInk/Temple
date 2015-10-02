@@ -22,6 +22,10 @@ export function register(proxy) {
 	if (!has(proxy)) proxies.unshift(proxy);
 }
 
+export function remove(proxy) {
+	proxies = _.without(proxies, proxy);
+}
+
 export function has(proxy) {
 	return _.contains(proxies, proxy);
 }

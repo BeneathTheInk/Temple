@@ -5,13 +5,14 @@ import * as idom from "./idom";
 import * as utils from "./utils";
 import Context from "./context";
 import parser from "./m+xml";
-import { set as registerPartial } from "./m+xml";
+import { set as registerPartial } from "./plugins/partials";
+import * as AST from "./ast";
 
 export var parse = parser.parse.bind(parser);
 
 export {
 	register, get, create,
-	compile, idom,
+	compile, idom, AST,
 	proxies, utils, Context,
 	registerPartial
 };
@@ -19,6 +20,6 @@ export {
 export function render(tpl, options) {
 	/* jshint -W054 */
 	var r = compile(tpl, options);
-	console.log(r);
-	(new Function("Temple", r))(module.exports);
+	// console.log(r);
+	return (new Function("Temple", r))(module.exports);
 }
