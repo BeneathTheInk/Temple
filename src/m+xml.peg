@@ -42,12 +42,10 @@ commentNode
 
 // script elements
 scriptNode
-	= "<" ws "script" attributes:(attribute)* ">" v:scriptContent "</script>" {
-		return v;
+	= "<" ws "script" attributes:(attribute)* ">" v:$(!"</script>" .)* "</script>" {
+		return new ast.Script(location(), v);
 	}
-
-scriptContent
-	= v:$(!"</script>" .)* {
+	/ "<" ws "$script" attributes:(attribute)* ">" v:$(!"</$script>" .)* "</$script>" {
 		return new ast.Script(location(), v);
 	}
 
