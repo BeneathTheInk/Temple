@@ -179,19 +179,19 @@ partial
 // Mustache staches without the prefixes
 stache
 	= value:("{{{" pathQuery "}}}" / "{{" pathQuery "}}") {
-		return new ast.Interpolator(location(), true, value[1]);
+		return new ast.Interpolator(location(), false, value[1]);
 	}
 
 // Mustache double stache
 doubleStache
 	= "{{" ![/#{!$>\^] m:"&"? value:pathQuery "}}" {
-		return new ast.Interpolator(location(), !m, value);
+		return new ast.Interpolator(location(), Boolean(m), value);
 	}
 
 // Mustache triple stache
 tripleStache
 	= "{{{" value:pathQuery "}}}" {
-		return new ast.Interpolator(location(), false, value);
+		return new ast.Interpolator(location(), true, value);
 	}
 
 commentStache

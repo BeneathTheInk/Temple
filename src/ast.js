@@ -393,9 +393,9 @@ export class Section extends ASTNode {
 }
 
 export class Interpolator extends ASTNode {
-	constructor(location, escaped, query) {
+	constructor(location, unescaped, query) {
 		super(location);
-		this._escaped = escaped;
+		this._unescaped = unescaped;
 		this._query = query;
 	}
 
@@ -404,8 +404,8 @@ export class Interpolator extends ASTNode {
 	compile(data) {
 		this.start(data);
 		var src, q = this.query(data);
-		if (this._escaped) src = `Temple.idom.html(${q});`;
-		else src = `Temple.idom.text(utils.toString(${q}));`;
+		if (this._unescaped) src = `Temple.idom.html(${q});`;
+		else src = `Temple.idom.text(Temple.utils.toString(${q}));`;
 		return this.end(src);
 	}
 
