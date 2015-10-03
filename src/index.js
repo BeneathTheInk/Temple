@@ -1,3 +1,5 @@
+require("webcomponents.js/CustomElements.js");
+
 import compile from "./compile";
 import { add as register, get, create } from "./globals";
 import * as proxies from "./proxies";

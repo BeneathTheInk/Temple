@@ -1,6 +1,6 @@
 {
 	"name": "templejs",
-	"version": "0.5.16",
+	"version": "0.6.0-alpha",
 	"description": "A reactive Mustache view framework.",
 	"author": "Beneath the Ink <info@beneaththeink.com>",
 	"contributors": [
@@ -29,7 +29,8 @@
 		"source-map": "~0.5.1",
 		"trackr": "~2.0.0",
 		"trackr-objects": "~0.3.0",
-		"underscore": "~1.8.3"
+		"underscore": "~1.8.3",
+		"webcomponents.js": "~0.7.2"
 	},
 	"devDependencies": {
 		"babel": "~5.8.23",
