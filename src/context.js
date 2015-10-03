@@ -1,6 +1,6 @@
 import Trackr from "trackr";
 import * as _ from "underscore";
-import parser from "./m+xml";
+import { parse } from "./m+xml";
 import * as Events from "backbone-events-standalone";
 import subclass from "backbone-extend-standalone";
 import assignProps from "assign-props";
@@ -135,7 +135,7 @@ _.extend(Context.prototype, Events, {
 	get: function(path, options) {
 		options = options || {};
 
-		if (typeof path === "string") path = parser.parse(path, { startRule: "path" });
+		if (typeof path === "string") path = parse(path, { startRule: "path" });
 		if (path == null) path = { parts: [] };
 		if (!_.isObject(path)) throw new Error("Expecting string or object for path.");
 
@@ -157,7 +157,7 @@ _.extend(Context.prototype, Events, {
 	// retrieves value with path query
 	query: function(paths, options) {
 		options = options || null;
-		if (typeof paths === "string") paths = parser.parse(paths, { startRule: "pathQuery" });
+		if (typeof paths === "string") paths = parse(paths, { startRule: "pathQuery" });
 		if (!_.isArray(paths)) paths = paths != null ? [ paths ] : [];
 		if (!paths.length) paths.push({ type: "all", parts: [] });
 

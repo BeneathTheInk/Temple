@@ -2,6 +2,8 @@ import * as _ from "underscore";
 import { parse } from "./m+xml";
 import { SourceNode } from "source-map";
 
+var url = "sourceMappingURL=data:application/json;charset=utf-8;base64,";
+
 export default function compile(tree, options) {
 	options = _.extend({
 		originalFilename: "template.js"
@@ -20,5 +22,5 @@ export default function compile(tree, options) {
 	if (src) source.setSourceContent(options.originalFilename, src);
 	let result = source.toStringWithSourceMap();
 	let map64 = new Buffer(result.map.toString(), "utf-8").toString("base64");
-	return result.code + "//# sourceMappingURL=data:application/json;charset=utf-8;base64," + map64;
+	return result.code + "//# " + url + map64;
 }

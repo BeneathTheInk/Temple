@@ -22,7 +22,7 @@ gulp.task("clean", function() {
 
 function errorHandler(crash) {
 	return function(e) {
-		console.error(e.messageFormatted || e.message);
+		console.error(e.messageFormatted || e.stack || e.message);
 		if (crash) return process.exit(1);
 		this.emit('end');
 	};
@@ -33,6 +33,7 @@ gulp.task("copy-scripts", function() {
 
 	var idom = gulp.src([
 		"vendor/incremental-dom/**/*.js",
+		"vendor/incremental-dom/LICENSE",
 		"!vendor/incremental-dom/{demo,test,conf}/**",
 		"!vendor/incremental-dom/gulpfile.js"
 	])
@@ -46,29 +47,30 @@ gulp.task("copy-scripts", function() {
 	return merge(idom, scripts);
 });
 
-gulp.task("compile", [ "copy-scripts" ], function() {
-	var errors = errorHandler(true);
-
-	var es6src = gulp.src("lib/**/*.js")
-		.pipe(plumber({ errorHandler: errors }))
-		.pipe(sourcemaps.init())
-		.pipe(babel())
-		.pipe(sourcemaps.write({
-			sourceRoot: function(file) {
-				return path.relative(path.dirname(file.path), path.join(__dirname, "src"));
-			}
-		}))
-		.pipe(gulp.dest("lib/"));
-
-	var pegsrc = gulp.src("src/*.peg")
-		.pipe(plumber({ errorHandler: errors }))
+gulp.task("build-peg", function() {
+	return gulp.src("src/*.peg")
+		.pipe(plumber({ errorHandler: errorHandler(true) }))
 		.pipe(peg({
 			optimize: "size",
 			allowedStartRules: [ "start", "attrValue", "attrArguments", "pathQuery", "path", "html" ]
 		}))
 		.pipe(gulp.dest("lib/"));
+});
 
-	return merge(es6src, pegsrc);
+gulp.task("compile", [ "copy-scripts", "build-peg" ], function() {
+	var srcdir = path.join(__dirname, "src");
+
+	return gulp.src("lib/**/*.js")
+		.pipe(plumber({ errorHandler: errorHandler(true) }))
+		.pipe(sourcemaps.init())
+		.pipe(babel())
+		.pipe(sourcemaps.write({
+			sourceRoot: function(file) {
+				return path.relative(path.dirname(file.path), srcdir);
+			}
+		}))
+		.pipe(gulp.dest("lib/"));
+
 });
 
 var js = browserify("lib/index.js", {
@@ -79,7 +81,7 @@ var js = browserify("lib/index.js", {
 	fullPaths: true
 });
 
-gulp.task("browser-dist", [ "compile" ], function() {
+gulp.task("browser", [ "compile" ], function() {
 	var errors = errorHandler(true);
 
 	return js.bundle()
@@ -93,7 +95,7 @@ gulp.task("browser-dist", [ "compile" ], function() {
 		.pipe(gulp.dest('dist/'));
 });
 
-gulp.task("browser-dist-min", [ "browser-dist" ], function() {
+gulp.task("browser-min", [ "browser" ], function() {
 	return gulp.src("dist/temple.js")
 		.pipe(plumber({ errorHandler: errorHandler(true) }))
 		.pipe(sourcemaps.init({ loadMaps: true }))
@@ -104,4 +106,4 @@ gulp.task("browser-dist-min", [ "browser-dist" ], function() {
 		.pipe(gulp.dest("dist/"));
 });
 
-gulp.task("default", [ "compile", "browser-dist", "browser-dist-min" ]);
+gulp.task("default", [ "compile", "browser", "browser-min" ]);
