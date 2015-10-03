@@ -1,8 +1,8 @@
 var Temple = require("../");
 var test = require("tape");
 
-test("# Parser", function(t) {
-	t.end();
+test("=== Parser ===", function(_t) {
+	var test = _t.test;
 
 	test("parses basic view", function(t) {
 		t.plan(3);
@@ -37,160 +37,162 @@ test("# Parser", function(t) {
 		t.equal(attr._value, "container", "attribute has the correct value");
 	});
 
-	test.skip("parses mustache variables", function(t) {
-		var template = Temple.parse("{{ hello }}{{{ world }}}{{& unescaped }}");
+	// test.skip("parses mustache variables", function(t) {
+	// 	var template = Temple.parse("{{ hello }}{{{ world }}}{{& unescaped }}");
+	//
+	// 	expect(template).to.deep.equal({
+	// 		type: NODE_TYPE.ROOT,
+	// 		version: Temple.VERSION,
+	// 		children: [{
+	// 			type: NODE_TYPE.INTERPOLATOR,
+	// 			value: [{ parts: [{ children: [], key: "hello" }], type: "all" }]
+	// 		},{
+	// 			type: NODE_TYPE.TRIPLE,
+	// 			value: [{ parts: [{ children: [], key: "world" }], type: "all" }]
+	// 		},{
+	// 			type: NODE_TYPE.TRIPLE,
+	// 			value: [{ parts: [{ children: [], key: "unescaped" }], type: "all" }]
+	// 		}]
+	// 	});
+	// });
+	//
+	// test.skip("parses mustache sections", function(t) {
+	// 	var template = Temple.parse("{{#good}}Hello{{/good}}{{^bad}}World{{/bad}}");
+	//
+	// 	expect(template).to.deep.equal({
+	// 		type: NODE_TYPE.ROOT,
+	// 		version: Temple.VERSION,
+	// 		children: [{
+	// 			type: NODE_TYPE.SECTION,
+	// 			value: [{ parts: [{ children: [], key: "good" }], type: "all" }],
+	// 			children: [{
+	// 				type: NODE_TYPE.TEXT,
+	// 				value: "Hello"
+	// 			}]
+	// 		},{
+	// 			type: NODE_TYPE.INVERTED,
+	// 			value: [{ parts: [{ children: [], key: "bad" }], type: "all" }],
+	// 			children: [{
+	// 				type: NODE_TYPE.TEXT,
+	// 				value: "World"
+	// 			}]
+	// 		}]
+	// 	});
+	// });
+	//
+	// test.skip("parses mustache partials", function(t) {
+	// 	var template = Temple.parse("{{>partial}}");
+	//
+	// 	expect(template).to.deep.equal({
+	// 		type: NODE_TYPE.ROOT,
+	// 		version: Temple.VERSION,
+	// 		children: [{
+	// 			type: NODE_TYPE.PARTIAL,
+	// 			value: "partial",
+	// 			local: false
+	// 		}]
+	// 	});
+	// });
+	//
+	// test.skip("parses comments", function(t) {
+	// 	var template = Temple.parse("<!-- comment --><div></div>");
+	//
+	// 	expect(template).to.deep.equal({
+	// 		type: NODE_TYPE.ROOT,
+	// 		version: Temple.VERSION,
+	// 		children: [{
+	// 			type: NODE_TYPE.XCOMMENT,
+	// 			value: " comment "
+	// 		},{
+	// 			type: NODE_TYPE.ELEMENT,
+	// 			name: "div",
+	// 			attributes: [],
+	// 			children: []
+	// 		}]
+	// 	});
+	// });
+	//
+	// test.skip("parses deeply", function(t) {
+	// 	var template = Temple.parse("<div>{{ var }}</div>");
+	//
+	// 	expect(template).to.deep.equal({
+	// 		type: NODE_TYPE.ROOT,
+	// 		version: Temple.VERSION,
+	// 		children: [{
+	// 			type: NODE_TYPE.ELEMENT,
+	// 			name: "div",
+	// 			attributes: [],
+	// 			children: [{
+	// 				type: NODE_TYPE.INTERPOLATOR,
+	// 				value: [{ parts: [{ children: [], key: "var" }], type: "all" }]
+	// 			}]
+	// 		}]
+	// 	});
+	// });
+	//
+	// test.skip("parses mustache attributes", function(t) {
+	// 	var template = Temple.parse("<div class=\"{{# foo }}myclass{{/ foo }}\"></div>");
+	//
+	// 	expect(template).to.deep.equal({
+	// 		type: NODE_TYPE.ROOT,
+	// 		version: Temple.VERSION,
+	// 		children: [{
+	// 			type: NODE_TYPE.ELEMENT,
+	// 			name: "div",
+	// 			attributes: [{
+	// 				type: NODE_TYPE.ATTRIBUTE,
+	// 				name: "class",
+	// 				value: "{{# foo }}myclass{{/ foo }}",
+	// 				children: [{
+	// 					type: NODE_TYPE.SECTION,
+	// 					value: [{ parts: [{ children: [], key: "foo" }], type: "all" }],
+	// 					children: [{
+	// 						type: NODE_TYPE.TEXT,
+	// 						value: "myclass"
+	// 					}]
+	// 				}],
+	// 				arguments: [{
+	// 					type: NODE_TYPE.LITERAL,
+	// 					value: "{{# foo }}myclass{{/ foo }}"
+	// 				}]
+	// 			}],
+	// 			children: []
+	// 		}]
+	// 	});
+	// });
+	//
+	// test.skip("parses attributes with slashes and mustache", function(t) {
+	// 	var template = Temple.parse("<div class=\"{{ foo }}/{{ bar }}\"></div>");
+	//
+	// 	expect(template).to.deep.equal({
+	// 		type: NODE_TYPE.ROOT,
+	// 		version: Temple.VERSION,
+	// 		children: [{
+	// 			type: NODE_TYPE.ELEMENT,
+	// 			name: "div",
+	// 			attributes: [{
+	// 				type: NODE_TYPE.ATTRIBUTE,
+	// 				name: "class",
+	// 				value: "{{ foo }}/{{ bar }}",
+	// 				children: [{
+	// 					type: NODE_TYPE.INTERPOLATOR,
+	// 					value: [{ parts: [{ children: [], key: "foo" }], type: "all" }]
+	// 				},{
+	// 					type: NODE_TYPE.TEXT,
+	// 					value: "/"
+	// 				},{
+	// 					type: NODE_TYPE.INTERPOLATOR,
+	// 					value: [{ parts: [{ children: [], key: "bar" }], type: "all" }]
+	// 				}],
+	// 				arguments: [{
+	// 					type: NODE_TYPE.LITERAL,
+	// 					value: "{{ foo }}/{{ bar }}"
+	// 				}]
+	// 			}],
+	// 			children: []
+	// 		}]
+	// 	});
+	// });
 
-		expect(template).to.deep.equal({
-			type: NODE_TYPE.ROOT,
-			version: Temple.VERSION,
-			children: [{
-				type: NODE_TYPE.INTERPOLATOR,
-				value: [{ parts: [{ children: [], key: "hello" }], type: "all" }]
-			},{
-				type: NODE_TYPE.TRIPLE,
-				value: [{ parts: [{ children: [], key: "world" }], type: "all" }]
-			},{
-				type: NODE_TYPE.TRIPLE,
-				value: [{ parts: [{ children: [], key: "unescaped" }], type: "all" }]
-			}]
-		});
-	});
-
-	test.skip("parses mustache sections", function(t) {
-		var template = Temple.parse("{{#good}}Hello{{/good}}{{^bad}}World{{/bad}}");
-
-		expect(template).to.deep.equal({
-			type: NODE_TYPE.ROOT,
-			version: Temple.VERSION,
-			children: [{
-				type: NODE_TYPE.SECTION,
-				value: [{ parts: [{ children: [], key: "good" }], type: "all" }],
-				children: [{
-					type: NODE_TYPE.TEXT,
-					value: "Hello"
-				}]
-			},{
-				type: NODE_TYPE.INVERTED,
-				value: [{ parts: [{ children: [], key: "bad" }], type: "all" }],
-				children: [{
-					type: NODE_TYPE.TEXT,
-					value: "World"
-				}]
-			}]
-		});
-	});
-
-	test.skip("parses mustache partials", function(t) {
-		var template = Temple.parse("{{>partial}}");
-
-		expect(template).to.deep.equal({
-			type: NODE_TYPE.ROOT,
-			version: Temple.VERSION,
-			children: [{
-				type: NODE_TYPE.PARTIAL,
-				value: "partial",
-				local: false
-			}]
-		});
-	});
-
-	test.skip("parses comments", function(t) {
-		var template = Temple.parse("<!-- comment --><div></div>");
-
-		expect(template).to.deep.equal({
-			type: NODE_TYPE.ROOT,
-			version: Temple.VERSION,
-			children: [{
-				type: NODE_TYPE.XCOMMENT,
-				value: " comment "
-			},{
-				type: NODE_TYPE.ELEMENT,
-				name: "div",
-				attributes: [],
-				children: []
-			}]
-		});
-	});
-
-	test.skip("parses deeply", function(t) {
-		var template = Temple.parse("<div>{{ var }}</div>");
-
-		expect(template).to.deep.equal({
-			type: NODE_TYPE.ROOT,
-			version: Temple.VERSION,
-			children: [{
-				type: NODE_TYPE.ELEMENT,
-				name: "div",
-				attributes: [],
-				children: [{
-					type: NODE_TYPE.INTERPOLATOR,
-					value: [{ parts: [{ children: [], key: "var" }], type: "all" }]
-				}]
-			}]
-		});
-	});
-
-	test.skip("parses mustache attributes", function(t) {
-		var template = Temple.parse("<div class=\"{{# foo }}myclass{{/ foo }}\"></div>");
-
-		expect(template).to.deep.equal({
-			type: NODE_TYPE.ROOT,
-			version: Temple.VERSION,
-			children: [{
-				type: NODE_TYPE.ELEMENT,
-				name: "div",
-				attributes: [{
-					type: NODE_TYPE.ATTRIBUTE,
-					name: "class",
-					value: "{{# foo }}myclass{{/ foo }}",
-					children: [{
-						type: NODE_TYPE.SECTION,
-						value: [{ parts: [{ children: [], key: "foo" }], type: "all" }],
-						children: [{
-							type: NODE_TYPE.TEXT,
-							value: "myclass"
-						}]
-					}],
-					arguments: [{
-						type: NODE_TYPE.LITERAL,
-						value: "{{# foo }}myclass{{/ foo }}"
-					}]
-				}],
-				children: []
-			}]
-		});
-	});
-
-	test.skip("parses attributes with slashes and mustache", function(t) {
-		var template = Temple.parse("<div class=\"{{ foo }}/{{ bar }}\"></div>");
-
-		expect(template).to.deep.equal({
-			type: NODE_TYPE.ROOT,
-			version: Temple.VERSION,
-			children: [{
-				type: NODE_TYPE.ELEMENT,
-				name: "div",
-				attributes: [{
-					type: NODE_TYPE.ATTRIBUTE,
-					name: "class",
-					value: "{{ foo }}/{{ bar }}",
-					children: [{
-						type: NODE_TYPE.INTERPOLATOR,
-						value: [{ parts: [{ children: [], key: "foo" }], type: "all" }]
-					},{
-						type: NODE_TYPE.TEXT,
-						value: "/"
-					},{
-						type: NODE_TYPE.INTERPOLATOR,
-						value: [{ parts: [{ children: [], key: "bar" }], type: "all" }]
-					}],
-					arguments: [{
-						type: NODE_TYPE.LITERAL,
-						value: "{{ foo }}/{{ bar }}"
-					}]
-				}],
-				children: []
-			}]
-		});
-	});
+	_t.end();
 });

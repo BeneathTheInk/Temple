@@ -4,8 +4,8 @@ var Trackr = require("trackr");
 var TrackrObjects = require("trackr-objects");
 var ReactiveMap = TrackrObjects.Map;
 
-test("# Decorators", function(_t) {
-	_t.end();
+test("=== Decorators ===", function(_t) {
+	var test = _t.test;
 
 	function doc() {
 		return document.createDocumentFragment();
@@ -145,4 +145,6 @@ test("# Decorators", function(_t) {
 			view.detach();
 		}, 100);
 	});
+	
+	_t.end();
 });

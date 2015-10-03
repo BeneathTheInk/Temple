@@ -4,8 +4,8 @@ var Trackr = require("trackr");
 var TrackrObjects = require("trackr-objects");
 var ReactiveMap = TrackrObjects.Map;
 
-test("# Elements", function(_t) {
-	_t.end();
+test("=== Elements ===", function(_t) {
+	var test = _t.test;
 
 	test("renders element", function(t) {
 		t.plan(4);
@@ -110,4 +110,48 @@ test("# Elements", function(_t) {
 		t.equal(el.firstChild.getAttribute("x-attr"), "foo", "has new attribute value");
 		view.detach();
 	});
+
+	_t.end();
+});
+
+test("=== Text Nodes ===", function(_t) {
+	var test = _t.test;
+
+	test("renders text node", function(t) {
+		t.plan(3);
+		var view = render("Hello World");
+		var el = view.el;
+
+		t.equal(el.childNodes.length, 1, "has one node in view");
+		t.equal(el.firstChild.nodeType, document.TEXT_NODE, "has text node");
+		t.equal(el.firstChild.nodeValue, "Hello World", "has correct value");
+		view.detach();
+	});
+
+	test("renders text node in element", function(t) {
+		t.plan(6);
+		var view = render("<div>Hello World</div>");
+		var el = view.el;
+
+		t.equal(el.childNodes.length, 1, "has one node in view");
+		t.equal(el.firstChild.nodeType, document.ELEMENT_NODE, "has element node");
+		t.equal(el.firstChild.tagName, "DIV", "is a div");
+		t.equal(el.firstChild.childNodes.length, 1, "has one node in div");
+		t.equal(el.firstChild.firstChild.nodeType, document.TEXT_NODE, "has text node");
+		t.equal(el.firstChild.firstChild.nodeValue, "Hello World", "has correct value");
+		view.detach();
+	});
+
+	test("renders text node in section", function(t) {
+		t.plan(3);
+		var view = render("{{#section}}Hello World{{/section}}", { section: true });
+		var el = view.el;
+
+		t.equal(el.childNodes.length, 1, "has one node in view");
+		t.equal(el.firstChild.nodeType, document.TEXT_NODE, "has text node");
+		t.equal(el.firstChild.nodeValue, "Hello World", "has correct value");
+		view.detach();
+	});
+
+	_t.end();
 });

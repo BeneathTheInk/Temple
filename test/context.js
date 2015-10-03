@@ -1,8 +1,8 @@
 var Temple = require("../");
 var test = require("tape");
 
-test("# Context", function(t) {
-	t.end();
+test("=== Context ===", function(_t) {
+	var test = _t.test;
 
 	test("sets data on construction", function(t) {
 		t.plan(1);
@@ -145,4 +145,6 @@ test("# Context", function(t) {
 		t.equal(runCount, 2, "ran twice");
 		Temple.proxies.remove(proxy);
 	});
+
+	_t.end();
 });

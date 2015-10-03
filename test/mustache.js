@@ -1,12 +1,12 @@
 var test = require("tape");
+var render = require("./_utils").render;
 var Trackr = require("trackr");
 var TrackrObjects = require("trackr-objects");
 var ReactiveMap = TrackrObjects.Map;
 var ReactiveList = TrackrObjects.List;
-var render = require("./_utils").render;
 
-test("# Sections", function(t) {
-	t.end();
+test("=== Sections ===", function(_t) {
+	var test = _t.test;
 
 	test("renders section when value is true", function(t) {
 		t.plan(3);
@@ -276,10 +276,12 @@ test("# Sections", function(t) {
 		t.equal(el.firstChild.nodeValue, "Hello World", "has correct value");
 		view.detach();
 	});
+
+	_t.end();
 });
 
-test("# Inverted Sections", function(t) {
-	t.end();
+test("=== Inverted Sections ===", function(_t) {
+	var test = _t.test;
 
 	test("renders inverted section when value is false", function(t) {
 		t.plan(3);
@@ -387,4 +389,133 @@ test("# Inverted Sections", function(t) {
 		t.equal(el.firstChild.nodeValue, "Hello World", "has correct value");
 		view.detach();
 	});
+
+	_t.end();
+});
+
+test("=== Interpolators ===", function(_t) {
+	var test = _t.test;
+
+	test("renders interpolator", function(t) {
+		t.plan(3);
+		var view = render("{{ val }}", { val: "Hello World" });
+		var el = view.el;
+
+		t.equal(el.childNodes.length, 1, "has one node in view");
+		t.equal(el.firstChild.nodeType, document.TEXT_NODE, "has text node");
+		t.equal(el.firstChild.nodeValue, "Hello World", "has correct value");
+		view.detach();
+	});
+
+	test("updates when value changes", function(t) {
+		t.plan(6);
+		var data = new ReactiveMap({ val: "Hello World" });
+		var view = render("{{ val }}", data);
+		var el = view.el;
+
+		t.equal(el.childNodes.length, 1, "has one node in view");
+		t.equal(el.firstChild.nodeType, document.TEXT_NODE, "has text node");
+		t.equal(el.firstChild.nodeValue, "Hello World", "has correct value");
+
+		data.set("val", "FooBar");
+		Trackr.flush();
+
+		t.equal(el.childNodes.length, 1, "has one node in view");
+		t.equal(el.firstChild.nodeType, document.TEXT_NODE, "has text node");
+		t.equal(el.firstChild.nodeValue, "FooBar", "has correct value");
+		view.detach();
+	});
+
+	test("renders interpolator in element", function(t) {
+		t.plan(6);
+		var view = render("<div>{{ val }}</div>", { val: "Hello World" });
+		var el = view.el;
+
+		t.equal(el.childNodes.length, 1, "has one node in view");
+		t.equal(el.firstChild.nodeType, document.ELEMENT_NODE, "has element node");
+		t.equal(el.firstChild.tagName, "DIV", "is a div");
+		t.equal(el.firstChild.childNodes.length, 1, "has one node in div");
+		t.equal(el.firstChild.firstChild.nodeType, document.TEXT_NODE, "has text node");
+		t.equal(el.firstChild.firstChild.nodeValue, "Hello World", "has correct value");
+		view.detach();
+	});
+
+	test("renders interpolator in section", function(t) {
+		t.plan(3);
+		var view = render("{{#section}}{{ val }}{{/section}}", {
+			section: true,
+			val: "Hello World"
+		});
+		var el = view.el;
+
+		t.equal(el.childNodes.length, 1, "has one node in view");
+		t.equal(el.firstChild.nodeType, document.TEXT_NODE, "has text node");
+		t.equal(el.firstChild.nodeValue, "Hello World", "has correct value");
+		view.detach();
+	});
+
+	_t.end();
+});
+
+test("=== Triple Interpolators ===", function(_t) {
+	var test = _t.test;
+
+	test("renders triple interpolator", function(t) {
+		t.plan(3);
+		var view = render("{{{ val }}}", { val: "<span>" });
+		var el = view.el;
+
+		t.equal(el.childNodes.length, 1, "has one node in view");
+		t.equal(el.firstChild.nodeType, document.ELEMENT_NODE, "has element node");
+		t.equal(el.firstChild.tagName, "SPAN", "is a span");
+		view.detach();
+	});
+
+	test("updates when value changes", function(t) {
+		t.plan(8);
+		var data = new ReactiveMap({ val: "<span>" });
+		var view = render("{{{ val }}}", data);
+		var el = view.el;
+
+		t.equal(el.childNodes.length, 1, "has one node in view");
+		t.equal(el.firstChild.nodeType, document.ELEMENT_NODE, "has element node");
+		t.equal(el.firstChild.tagName, "SPAN", "is a span");
+
+		data.set("val", "<div></div>Hello World");
+		Trackr.flush();
+
+		t.equal(el.childNodes.length, 2, "has two nodes in view");
+		t.equal(el.childNodes[0].nodeType, document.ELEMENT_NODE, "has element node");
+		t.equal(el.childNodes[0].tagName, "DIV", "is a div");
+		t.equal(el.childNodes[1].nodeType, document.TEXT_NODE, "has text node");
+		t.equal(el.childNodes[1].nodeValue, "Hello World", "has correct value");
+		view.detach();
+	});
+
+	test("renders triple interpolator in element", function(t) {
+		t.plan(6);
+		var view = render("<div>{{{ val }}}</div>", { val: "<span>" });
+		var el = view.el;
+
+		t.equal(el.childNodes.length, 1, "has one node in view");
+		t.equal(el.firstChild.nodeType, document.ELEMENT_NODE, "has element node");
+		t.equal(el.firstChild.tagName, "DIV", "is a div");
+		t.equal(el.firstChild.childNodes.length, 1, "has one node in div");
+		t.equal(el.firstChild.firstChild.nodeType, document.ELEMENT_NODE, "has element node");
+		t.equal(el.firstChild.firstChild.tagName, "SPAN", "is a span");
+		view.detach();
+	});
+
+	test("renders triple interpolator in section", function(t) {
+		t.plan(3);
+		var view = render("{{#section}}{{{ val }}}{{/section}}", { section: true, val: "<span>" });
+		var el = view.el;
+
+		t.equal(el.childNodes.length, 1, "has one node in view");
+		t.equal(el.firstChild.nodeType, document.ELEMENT_NODE, "has element node");
+		t.equal(el.firstChild.tagName, "SPAN", "is a span");
+		view.detach();
+	});
+
+	_t.end();
 });
