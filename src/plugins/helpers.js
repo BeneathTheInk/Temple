@@ -25,12 +25,8 @@ export function helpers(obj) {
 
 	for (let k of _.keys(obj)) {
 		let v = obj[k];
-
 		if (v == null) delete this._helpers[k];
-		else if (typeof v === "function") this._helpers[k] = v;
-		else {
-			throw new Error("Expecting function for helper.");
-		}
+		else this._helpers[k] = v;
 	}
 
 	return this;

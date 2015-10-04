@@ -15,8 +15,11 @@
 		"url": "https://github.com/BeneathTheInk/temple.git"
 	},
 	"scripts": {
+		"lint": "jshint src/ test/",
 		"test": "gulp compile && node test/index.js",
-		"test-browser": "gulp compile && browserify test/index.js --debug | browser-run"
+		"test-browser": "gulp compile && browserify test/index.js --debug | browser-run",
+		"build": "gulp clean && gulp",
+		"prepublish": "npm run lint && npm run build"
 	},
 	"main": "./lib/index.js",
 	"dependencies": {
@@ -46,6 +49,7 @@
 		"gulp-rename": "~1.2.2",
 		"gulp-sourcemaps": "~1.6.0",
 		"gulp-uglify": "~1.4.1",
+		"jshint": "~2.8.0",
 		"merge-stream": "~1.0.0",
 		"tape": "~4.2.0",
 		"vinyl-buffer": "~1.0.0",

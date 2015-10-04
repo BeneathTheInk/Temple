@@ -110,8 +110,12 @@ export class Root extends ASTNode {
 		header(data, "var Views = {};\n");
 		this.push(_.invoke(this._children, "compile", data));
 
-		if (data.exports === "common") {
+		if (data.exports === "es6") {
+			this.write("export default Views;");
+		} else if (data.exports === "cjs") {
 			this.write("module.exports = Views;");
+		} else if (data.exports === "none") {
+			// print nothing
 		} else {
 			this.write("return Views;");
 		}
@@ -403,10 +407,22 @@ export class Interpolator extends ASTNode {
 
 	compile(data) {
 		this.start(data);
-		var src, q = this.query(data);
-		if (this._unescaped) src = `Temple.idom.html(${q});`;
-		else src = `Temple.idom.text(Temple.utils.toString(${q}));`;
-		return this.end(src);
+		var q = this.query(data);
+		if (this._unescaped) this.write(`Temple.idom.html(${q});`);
+		else {
+			this.write(`(function() {`).indent();
+			this.write(`var node = Temple.idom.text("");`);
+			this.write(`this.autorun(function() {`).indent();
+			this.write(`var data = Temple.idom.getData(node);`);
+			this.write(`var value = Temple.utils.toString(${q});`);
+ 			this.write(`if (data.text !== value) {`).indent();
+		    this.write(`node.data = data.text = value;`);
+			this.outdent().write(`}`);
+			this.outdent().write(`});`);
+			this.outdent().write(`}).call(this);`);
+		}
+
+		return this.end();
 	}
 
 	compileString(data) {

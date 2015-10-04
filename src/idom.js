@@ -4,9 +4,10 @@ import { getContext } from "./incremental-dom/src/context";
 import { firstChild, nextSibling, parentNode, } from './incremental-dom/src/traversal';
 import { clearUnvisitedDOM } from './incremental-dom/src/alignment';
 import { updateAttribute } from './incremental-dom/src/attributes';
+import { getData } from './incremental-dom/src/node_data';
 import { parse as parseHTML } from "html-parse-stringify";
 
-export { updateAttribute, getContext };
+export { updateAttribute, getContext, getData };
 
 // export every key in idom
 (function(doExport) {

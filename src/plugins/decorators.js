@@ -7,7 +7,7 @@ import { register } from "./";
 export function plugin() {
 	this.decorate = add;
 	this.stopDecorating = remove;
-	this.findDecorators = find;
+	this.findDecorator = find;
 	this.renderDecorator = render;
 
 	// copy inherited decorators
@@ -26,12 +26,14 @@ export function render(view, name, options) {
 	let el = ictx && ictx.walker.getCurrentParent();
 
 	// look up decorator by name
-	let decorators = view.findDecorators(name);
+	let d = find.call(view, name);
 
 	// render as attribute if no decorators
-	if (!decorators.length) {
+	if (!d) {
 		if (el && typeof options.string === "function") {
-			updateAttribute(el, name, options.string());
+			Trackr.autorun(function() {
+				updateAttribute(el, name, options.string());
+			});
 		}
 
 		return;
@@ -39,41 +41,42 @@ export function render(view, name, options) {
 
 	let invalid = false;
 	let _comp = Trackr.currentComputation;
-	let dcomps = [];
+	let dcomp;
 
 	_comp.onInvalidate(function() {
 		invalid = true;
-		_.invoke(dcomps, "stop");
+		if (dcomp) dcomp.stop();
 	});
 
 	// render each decorator
-	decorators.forEach(function(d) {
-		// defer computation because we cannot have unknown changes happening to the DOM
-		_.defer(function() {
-			if (invalid) return;
+	function runDecorator() {
+		if (invalid) return;
 
-			dcomps.push(Trackr.autorun(function(comp) {
-				// assemble the arguments!
-				var args = [ _.extend({
-					target: el,
-					owner: d.context,
-					view: view,
-					comp: comp,
-					options: d.options
-				}, options.mixin) ];
+		dcomp = Trackr.autorun(function(comp) {
+			// assemble the arguments!
+			var args = [ _.extend({
+				target: el,
+				owner: d.context,
+				view: view,
+				comp: comp,
+				options: d.options
+			}, options.mixin) ];
 
-				// render arguments based on options
-				if (d.options && d.options.parse === "string") {
-					if (typeof options.string === "function") args.push(options.string());
-				} else if (d.options == null || d.options.parse !== false) {
-					if (typeof options["arguments"] === "function") args = args.concat(options["arguments"]());
-				}
+			// render arguments based on options
+			if (d.options && d.options.parse === "string") {
+				if (typeof options.string === "function") args.push(options.string());
+			} else if (d.options == null || d.options.parse !== false) {
+				if (typeof options["arguments"] === "function") args = args.concat(options["arguments"]());
+			}
 
-				// execute the callback
-				d.callback.apply(d.context, args);
-			}));
+			// execute the callback
+			d.callback.apply(d.context, args);
 		});
-	});
+	}
+
+	// defer computation because we cannot have unknown changes happening to the DOM
+	if (d.options && d.options.instant) runDecorator();
+	else _.defer(runDecorator);
 
 	return true;
 }
@@ -92,69 +95,35 @@ export function add(name, fn, options) {
 	if (typeof fn !== "function") throw new Error("Expecting function for decorator.");
 
 	if (this._decorators == null) this._decorators = {};
-	if (this._decorators[name] == null) this._decorators[name] = [];
-	var decorators = this._decorators[name];
 
-	if (!_.findWhere(decorators, { callback: fn })) {
-		decorators.push({
-			callback: fn,
-			options: options || {}
-		});
-	}
+	this._decorators[name] = {
+		callback: fn,
+		options: options || {}
+	};
 
 	return this;
 }
 
-// finds all decorators, locally and in parent
+// finds first decorator
 export function find(name) {
-	let res = [];
 	let c = this;
 
 	while (c != null) {
 		let decs = c._decorators;
-
-		if (decs != null && _.isArray(decs[name])) {
-			for (let d of decs[name]) {
-				if (!_.findWhere(res, { callback: d.callback })) {
-					res.push(_.extend({ context: c }, d));
-				}
-			}
+		if (decs != null && decs[name]) {
+			return _.extend({ context: c }, decs[name]);
 		}
 
 		c = c.parent;
 	}
-
-	return res;
 }
 
 // removes a decorator
-export function remove(name, fn) {
-	if (typeof name === "function" && fn == null) {
-		fn = name;
-		name = null;
-	}
-
-	if (this._decorators == null || (name == null && fn == null)) {
+export function remove(name) {
+	if (this._decorators == null || name == null) {
 		this._decorators = {};
-	}
-
-	else if (fn == null) {
+	} else {
 		delete this._decorators[name];
-	}
-
-	else if (name == null) {
-		_.each(this._decorators, function(d, n) {
-			this._decorators[n] = _.filter(d, function(_d) {
-				return _d.callback !== fn;
-			});
-		}, this);
-	}
-
-	else {
-		var d = this._decorators[name];
-		this._decorators[name] = _.filter(d, function(_d) {
-			return _d.callback !== fn;
-		});
 	}
 
 	return this;
