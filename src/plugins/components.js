@@ -24,7 +24,7 @@ export function create(name, ctx, options) {
 
 	// create the view
 	options = _.defaults({ transparent: true }, options);
-	let v = Trackr.nonreactive(() => new View(null, ctx, options));
+	let v = Trackr.nonreactive(() => new View(ctx, options));
 
 	// add it to the list
 	add.call(this, v);
@@ -33,10 +33,11 @@ export function create(name, ctx, options) {
 }
 
 export function add(view) {
-	if (view.tagName) {
+	if (view.tagName && !view.parent) {
 		let comps = this._components;
 		if (comps[view.tagName] == null) comps[view.tagName] = [];
 		comps[view.tagName].push(view);
+		view.parent = this;
 	}
 
 	return this;
@@ -50,11 +51,17 @@ export function remove(view) {
 	}
 
 	else if (typeof view == "string") {
-		delete comps[view];
+		if (comps[view]) {
+			comps[view].forEach(function(v) {
+				if (view.parent === this) v.parent = null;
+			});
+			delete comps[view];
+		}
 	}
 
 	else if (view.tagName) {
 		comps[view.tagName] = _.without(comps[view.tagName], view);
+		if (view.parent === this) view.parent = null;
 	}
 
 	return this;

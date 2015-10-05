@@ -5,40 +5,40 @@ import merge from "plain-merge";
 import { patchElement } from "./idom";
 import { load as loadPlugin } from "./plugins";
 import assignProps from "assign-props";
+import * as Events from "backbone-events-standalone";
+import subclass from "backbone-extend-standalone";
 
-var View = Context.extend({
-	constructor: function(data, parent, options) {
-		if (!Context.isContext(parent)) {
-			options = parent;
-			parent = null;
+function View(data, options) {
+	this.options = options = options || {};
+
+	var parent;
+	if (Context.isContext(data)) {
+		parent = data;
+		data = null;
+	}
+
+	// load initial data
+	var defaults = _.result(this, "initialState") || _.result(this, "defaults");
+	data = merge.extend({}, defaults, data);
+	this.context = new Context(data, parent, options);
+
+	// create element from tag name
+	let tag = _.result(this, "tagName");
+	if (!tag) throw new Error("Missing tag name.");
+	this.el = document.createElement(this.extends || tag, this.extends ? tag : null);
+
+	// load plugins that the class loaded
+	if (this.constructor._loaded_plugins) {
+		for (let fn of this.constructor._loaded_plugins) {
+			this.use(fn);
 		}
+	}
 
-		this.options = options = options || {};
+	// initialize with options
+	this.initialize.call(this, options);
+}
 
-		// load initial data
-		var defaults = _.result(this, "initialState") || _.result(this, "defaults");
-		data = merge.extend({}, defaults, data);
-
-		// create element from tag name
-		let tag = _.result(this, "tagName");
-		if (!tag) throw new Error("Missing tag name.");
-		this.el = document.createElement(this.extends || tag, this.extends ? tag : null);
-		this._renderContext = this;
-
-		// load plugins that the class loaded
-		if (this.constructor._loaded_plugins) {
-			for (let fn of this.constructor._loaded_plugins) {
-				this.use(fn);
-			}
-		}
-
-		// call the context constructor
-		Context.call(this, data, parent, options);
-
-		// initialize with options
-		this.initialize.call(this, options);
-	},
-
+_.extend(View.prototype, Events, {
 	initialize: function(){},
 
 	autorun: function(fn, options) {
@@ -64,8 +64,7 @@ var View = Context.extend({
 		// the autorun computation
 		Trackr.autorun(function(comp) {
 			self.comp = comp;
-			self._mount.apply(self, args);
-			self.trigger("mount");
+			self.render.apply(self, args);
 
 			// auto clean up
 			comp.onInvalidate(function() {
@@ -82,6 +81,7 @@ var View = Context.extend({
 
 		// remaining mount events happen after the first render
 		Trackr.nonreactive(function() {
+			self.trigger("mount");
 			self.trigger("mount:after");
 		});
 
@@ -93,16 +93,18 @@ var View = Context.extend({
 		return this;
 	},
 
-	_mount: function() {
-		let ctx = this._renderContext;
+	render: function() {
+		let ctx = this.context;
 		let args = [ctx].concat(_.toArray(arguments));
 		patchElement(this.el, () => {
 			this.trigger("render:before", ctx);
-			this.render.apply(this, args);
+			this._render.apply(this, args);
 			this.trigger("render", ctx);
 			this.trigger("render:after", ctx);
 		});
 	},
+
+	_render: function(){},
 
 	// attach + mount
 	attach: function(parent, before) {
@@ -151,13 +153,30 @@ assignProps(View.prototype, "__temple", true);
 	};
 });
 
+// chainable methods to proxy to context
+[ "set" ]
+.forEach(function(method) {
+	View.prototype[method] = function() {
+		this.context[method].apply(this.context, arguments);
+		return this;
+	};
+});
+
+// methods to proxy to context which don't return this
+[ "get", "query", "find", "findContext", "getTopContext",
+  "getRootContext", "getContextAtOffset", "getAllContexts"
+].forEach(function(method) {
+	View.prototype[method] = function() {
+		return this.context[method].apply(this.context, arguments);
+	};
+});
+
 // plugin API
 View.use = View.prototype.use = function use(p) {
 	return loadPlugin(this, p, _.toArray(arguments).slice(1));
 };
 
 // modify extend so subclasses use the same plugins
-var subclass = View.extend;
 View.extend = function() {
 	var klass = subclass.apply(this, arguments);
 

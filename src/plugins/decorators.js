@@ -20,13 +20,13 @@ export function plugin() {
 export default plugin;
 register("decorators", plugin);
 
-export function render(view, name, options) {
+export function render(name, options) {
 	options = options || {};
 	let ictx = getContext();
 	let el = ictx && ictx.walker.getCurrentParent();
 
 	// look up decorator by name
-	let d = find.call(view, name);
+	let d = find.call(this, name);
 
 	// render as attribute if no decorators
 	if (!d) {
@@ -39,6 +39,7 @@ export function render(view, name, options) {
 		return;
 	}
 
+	let view = this;
 	let invalid = false;
 	let _comp = Trackr.currentComputation;
 	let dcomp;

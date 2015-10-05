@@ -1,6 +1,7 @@
 import * as _ from "underscore";
 import { SourceNode } from "source-map";
 import { hash } from "./utils";
+import { parse as parseHTML } from "html-parse-stringify";
 
 function header(data, h) {
 	if (_.isArray(data.headers) && !_.contains(data.headers, h)) {
@@ -40,26 +41,38 @@ export class ASTNode {
 		return this;
 	}
 
+	_normalize_indent() {
+		let d = this._writer.data;
+		if (typeof d.indent === "string") d.tabchar = d.indent;
+		if (d.indent !== false && typeof d.indent !== "number") d.indent = 0;
+	}
+
 	indent() {
-		var d = this._writer.data;
-		if (typeof d.indent !== "number") d.indent = 0;
-		d.indent++;
+		this._normalize_indent();
+		let d = this._writer.data;
+		if (d.indent) d.indent++;
 		return this;
 	}
 
 	outdent() {
-		var d = this._writer.data;
-		if (typeof d.indent !== "number") d.indent = 0;
-		if (d.indent > 0) d.indent--;
+		this._normalize_indent();
+		let d = this._writer.data;
+		if (d.indent) d.indent--;
 		return this;
 	}
 
 	tabs() {
+		this._normalize_indent();
+
 		let tabs = "";
-		let tabchar = this._writer.data.tabchar;
-		let indent = this._writer.data.indent || 0;
+		let d = this._writer.data;
+		let tabchar = d.tabchar;
 		if (tabchar == null) tabchar = "  ";
-		for (let i = 0; i < indent; i++) tabs += tabchar;
+
+		if (typeof d.indent === "number") {
+			for (let i = 0; i < d.indent; i++) tabs += tabchar;
+		}
+
 		return tabs;
 	}
 
@@ -169,7 +182,7 @@ export class View extends ASTNode {
 			this.write(`extends: ${JSON.stringify(this._extends)},`);
 		}
 
-		this.write("render: function(ctx) {").indent();
+		this.write("_render: function(ctx) {").indent();
 		this.push(_.invoke(this._children, "compile", data));
 		this.outdent().write("}");
 
@@ -293,7 +306,7 @@ export class Attribute extends ASTNode {
 	compile(data) {
 		this.start(data);
 
-		this.write(`this.renderDecorator(this, ${JSON.stringify(this._key)}, {`).indent();
+		this.write(`this.renderDecorator(${JSON.stringify(this._key)}, {`).indent();
 		this.write(`mixin: { context: ctx },`);
 
 		let str = _.invoke(this._children, "compileString", data);
@@ -485,6 +498,52 @@ export class Partial extends ASTNode {
 		this.write(_.invoke(this._children, "compile", data));
 		this.outdent().write("}");
 
+		return this.end();
+	}
+}
+
+export class HTML extends ASTNode {
+	constructor(location, value) {
+		super(location);
+		this._value = value;
+		var tree = parseHTML("<html>" + value + "</html>");
+		if (_.isArray(tree)) tree = tree[0];
+		this._tree = tree.children;
+	}
+
+	compileHTML(node) {
+		if (node.type == "text") {
+			this.write(`Temple.idom.text(${JSON.stringify(node.content)})`);
+		}
+
+		if (node.type == "tag") {
+			let argsArray = [node.name, null, null];
+
+			// convert attrs into a flat array
+			for (let attr in node.attrs) {
+				argsArray.push(attr);
+				argsArray.push(node.attrs[attr]);
+			}
+
+			let args = argsArray.map(a => JSON.stringify(a)).join(", ");
+
+			if (node.voidElement) {
+				this.write(`Temple.idom.elementVoid(${args})`);
+			} else {
+				this.write(`Temple.idom.elementOpen(${args})`);
+
+				for (var i = 0; i < node.children.length; i++) {
+					this.compileHTML(node.children[i]);
+				}
+
+				this.write(`idom.elementClose(${JSON.stringify(node.name)});`);
+			}
+		}
+	}
+
+	compile(data) {
+		this.start(data);
+		this._tree.forEach(this.compileHTML, this);
 		return this.end();
 	}
 }
