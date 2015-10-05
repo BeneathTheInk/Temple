@@ -200,7 +200,7 @@ export class Text extends ASTNode {
 
 	compile(data) {
 		this.start(data);
-		this.write(`Temple.idom.text(${JSON.stringify(this._value)});`);
+		this.write(`Temple.idom.text(Temple.utils.decodeEntities(${JSON.stringify(this._value)}));`);
 		return this.end();
 	}
 
