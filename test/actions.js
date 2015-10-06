@@ -2,6 +2,7 @@ var test = require("tape");
 var utils = require("./_utils");
 var create = utils.create;
 var createDocument = utils.createDocument;
+var Temple = require("../");
 
 function render() {
 	var view = create.apply(this, arguments);
@@ -77,64 +78,64 @@ test("=== Actions ===", function(_t) {
 		}, 150);
 	});
 
-	// test("provides action instance on fire", function() {
-	// 	render("<a on-click=\"alert\">Alert</a>");
-	// 	var seen = false;
-	//
-	// 	tpl.addAction("alert", function(e) {
-	// 		expect(this).to.equal(tpl);
-	// 		expect(e).to.be.instanceof(Temple.Action);
-	// 		expect(e.original).to.be.instanceof(Event);
-	// 		expect(e.target).to.be.instanceof(Element);
-	// 		expect(e.model).to.be.instanceof(Temple.Model);
-	// 		expect(e.view).to.be.instanceof(Temple.View);
-	// 		seen = true;
-	// 	});
-	//
-	// 	tpl.find("a").click();
-	//
-	// 	expect(seen).to.be.ok;
-	// });
-	//
-	// test("bubbles actions to parent components, even when child doesn't have the plugin", function() {
-	// 	tpl = new Temple(null, { template: "{{> child }}" });
-	// 	tpl.use("actions");
-	// 	tpl.setPartial("child", "<a on-click=\"alert\">Alert</a>");
-	// 	tpl.paint(doc);
-	//
-	// 	var seen = false;
-	// 	tpl.addAction("alert", function(a) { seen = true; });
-	//
-	// 	tpl.find("a").click();
-	//
-	// 	expect(seen).to.be.ok;
-	// });
-	//
-	// test("doesn't bubble actions to parent component if stopPropagation is called", function() {
-	// 	tpl = new Temple(null, { template: "{{> child }}" });
-	// 	tpl.use("actions");
-	//
-	// 	var seen = 0;
-	//
-	// 	tpl.setPartial("child", Temple.extend({
-	// 		initialize: function() {
-	// 			this.use("actions");
-	//
-	// 			this.addAction("alert", function(a) {
-	// 				seen++;
-	// 				a.stopPropagation();
-	// 			});
-	// 		},
-	// 		template: "<a on-click=\"alert\">Alert</a>"
-	// 	}));
-	//
-	// 	tpl.addAction("alert", function(a) { seen++; });
-	//
-	// 	tpl.paint(doc);
-	// 	tpl.find("a").click();
-	//
-	// 	expect(seen).to.equal(1);
-	// });
+	test("provides action instance on fire", function(t) {
+		t.plan(7);
+		var view = render("<a on-click=\"alert\">Alert</a>");
+		var el = view.el;
+
+		view.addAction("alert", function(e) {
+			t.equal(this, view, "called in context of view");
+			t.ok(e instanceof Temple.actions.Action, "action instance");
+			t.ok(e.original instanceof Event, "has original event instance");
+			t.equal(e.target.nodeType, document.ELEMENT_NODE, "has element node");
+			t.equal(e.target.tagName, "A", "is an anchor");
+			t.ok(e.context instanceof Temple.Context, "has the calling context");
+			t.ok(e.view instanceof Temple.View, "has the calling view");
+		});
+
+		setTimeout(function() {
+			el.querySelector("a").click();
+			view.detach();
+		}, 150);
+	});
+
+	test("bubbles actions to parent components, even when child doesn't have the plugin", function(t) {
+		t.plan(1);
+		var Child = utils.compile("<a on-click=\"alert\">Alert</a>");
+		var view = render("<" + Child.prototype.tagName + " />");
+		var el = view.el;
+
+		view.addAction("alert", function() {
+			t.pass("called the action");
+		});
+
+		setTimeout(function() {
+			el.querySelector("a").click();
+			view.detach();
+		}, 150);
+	});
+
+	test("doesn't bubble actions to parent component if stopPropagation is called", function(t) {
+		t.plan(1);
+
+		var Child = utils.compile("<a on-click=\"alert\">Alert</a>");
+		Child.use("actions");
+		Child.addAction("alert", function(e) {
+			t.pass("called the child's action");
+			e.stopPropagation();
+		});
+
+		var view = render("<" + Child.prototype.tagName + " />");
+		var el = view.el;
+		view.addAction("alert", function() {
+			t.fail("called the parent's action");
+		});
+
+		setTimeout(function() {
+			el.querySelector("a").click();
+			view.detach();
+		}, 150);
+	});
 
 	_t.end();
 });

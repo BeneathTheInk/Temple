@@ -8,6 +8,7 @@ import * as proxies from "./proxies";
 import * as idom from "./idom";
 import * as utils from "./utils";
 import Context from "./context";
+import View from "./view";
 import { parse } from "./m+xml";
 import * as AST from "./ast";
 import { Map, List, Variable } from "trackr-objects";
@@ -20,7 +21,7 @@ export {
 	register, get, create,
 	parse, compile, render, compileHTML, renderHTML,
 	idom, AST,
-	proxies, Context,
+	proxies, Context, View,
 	Map, List, Variable, utils,
 	actions, partials, decorators
 };

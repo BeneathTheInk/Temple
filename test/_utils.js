@@ -1,11 +1,16 @@
 var Temple = require("../");
 var _ = require("underscore");
 
-var create =
-exports.create = function(tpl, data, options) {
+var compile =
+exports.compile = function(tpl) {
 	var id = _.uniqueId("view-");
 	var views = Temple.render(`<${id}>${tpl}</${id}>`);
-	return new (views[id])(data, options);
+	return views[id];
+};
+
+var create =
+exports.create = function(tpl, data, options) {
+	return new (compile(tpl))(data, options);
 };
 
 var createDocument =
