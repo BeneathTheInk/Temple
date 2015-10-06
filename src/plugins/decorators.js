@@ -4,7 +4,10 @@ import { updateAttribute, getContext } from "../idom";
 import { getPropertyFromClass } from "../utils";
 import { register } from "./";
 
+var decorators = {};
+
 export function plugin() {
+	this._decorators = {};
 	this.decorate = add;
 	this.stopDecorating = remove;
 	this.findDecorator = find;
@@ -95,9 +98,8 @@ export function add(name, fn, options) {
 	if (typeof name !== "string" || name === "") throw new Error("Expecting non-empty string for decorator name.");
 	if (typeof fn !== "function") throw new Error("Expecting function for decorator.");
 
-	if (this._decorators == null) this._decorators = {};
-
-	this._decorators[name] = {
+	var decs = this._decorators ? this._decorators : decorators;
+	decs[name] = {
 		callback: fn,
 		options: options || {}
 	};
@@ -115,16 +117,21 @@ export function find(name) {
 			return _.extend({ context: c }, decs[name]);
 		}
 
-		c = c.parent;
+		c = c.parent === c ? null : c.parent;
+	}
+
+	if (decorators[name]) {
+		return _.extend({ context: global }, decorators[name]);
 	}
 }
 
 // removes a decorator
 export function remove(name) {
-	if (this._decorators == null || name == null) {
-		this._decorators = {};
-	} else {
-		delete this._decorators[name];
+	if (this._decorators) {
+		if (name == null) this._decorators = {};
+		else delete this._decorators[name];
+	} else if (name) {
+		delete decorators[name];
 	}
 
 	return this;

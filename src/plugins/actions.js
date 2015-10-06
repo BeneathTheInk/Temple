@@ -47,7 +47,7 @@ defineEvent([
 ]);
 
 export function defineEvent(event) {
-	if (_.isArray(event)) event.forEach(defineEvent);
+	if (_.isArray(event)) return event.forEach(defineEvent);
 
 	decorators["on-" + event] = function(decor, key) {
 		var self = this,

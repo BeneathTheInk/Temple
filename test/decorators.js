@@ -1,15 +1,13 @@
 var test = require("tape");
-var create = require("./_utils").create;
+var utils = require("./_utils");
+var create = utils.create;
+var doc = utils.createDocument;
 var Trackr = require("trackr");
 var TrackrObjects = require("trackr-objects");
 var ReactiveMap = TrackrObjects.Map;
 
 test("=== Decorators ===", function(_t) {
 	var test = _t.test;
-
-	function doc() {
-		return document.createDocumentFragment();
-	}
 
 	test("calls decorator when element is created", function(t) {
 		t.plan(3);
@@ -145,6 +143,6 @@ test("=== Decorators ===", function(_t) {
 			view.detach();
 		}, 100);
 	});
-	
+
 	_t.end();
 });

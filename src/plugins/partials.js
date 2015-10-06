@@ -1,5 +1,5 @@
 import { register } from "./";
-import compile from "../compile";
+import { compile } from "../compile";
 import { Map as ReactiveMap } from "trackr-objects";
 import { getPropertyFromClass } from "../utils";
 
@@ -31,7 +31,7 @@ export function plugin() {
 		// apply partials from the options passed to the constructor
 		if (this.options.partials) {
 			for (let k in this.options.partials) {
-				this._partials.set(k, this.options.partials[k]);
+				set.call(this, k, this.options.partials[k]);
 			}
 		}
 	}

@@ -14,6 +14,7 @@ import { Map, List, Variable } from "trackr-objects";
 
 import * as partials from "./plugins/partials";
 import * as actions from "./plugins/actions";
+import * as decorators from "./plugins/decorators";
 
 export {
 	register, get, create,
@@ -21,5 +22,5 @@ export {
 	idom, AST,
 	proxies, Context,
 	Map, List, Variable, utils,
-	actions, partials
+	actions, partials, decorators
 };
