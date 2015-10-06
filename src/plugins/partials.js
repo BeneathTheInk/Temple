@@ -41,7 +41,7 @@ export default plugin;
 register("partials", plugin);
 
 export function set(name, src) {
-	var p = (this === global ? partials : this._partials);
+	var p = this._partials || partials;
 
 	if (typeof src === "string") {
 		/* jshint -W054 */
@@ -64,15 +64,13 @@ export function find(name, options) {
 	options = options || {};
 	let view = this;
 
-	if (view !== global) {
-		while (view != null) {
-			if (view._partials && view._partials.has(name)) {
-				return view._partials.get(name);
-			}
-
-			if (options.local) return;
-			view = view.parent;
+	while (view != null) {
+		if (view._partials && view._partials.has(name)) {
+			return view._partials.get(name);
 		}
+
+		if (options.local) return;
+		view = view.parent === view ? null : view.parent;
 	}
 
 	return partials.get(name);

@@ -10,6 +10,7 @@
 start = ws nodes:(
 	( scriptNode
 	/ viewNode
+	/ partial
 	/ commentStache
 	/ commentNode ) ws)* {
 		return new ast.Root(location(), _.pluck(nodes, 0));

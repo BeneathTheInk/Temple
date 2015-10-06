@@ -9,14 +9,17 @@ import * as idom from "./idom";
 import * as utils from "./utils";
 import Context from "./context";
 import { parse } from "./m+xml";
-import * as partials from "./plugins/partials";
 import * as AST from "./ast";
 import { Map, List, Variable } from "trackr-objects";
+
+import * as partials from "./plugins/partials";
+import * as actions from "./plugins/actions";
 
 export {
 	register, get, create,
 	parse, compile, render, compileHTML, renderHTML,
-	idom, partials, AST,
+	idom, AST,
 	proxies, Context,
-	Map, List, Variable, utils
+	Map, List, Variable, utils,
+	actions, partials
 };

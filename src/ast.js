@@ -173,7 +173,7 @@ export class View extends ASTNode {
 
 		if (this._partials.length) {
 			this.write("partials: {").indent();
-			var p = _.invoke(this._partials, "compile", data);
+			var p = _.invoke(this._partials, "compile", _.extend({ view: true }, data));
 			this.push(this._sn(data.originalFilename, p).join(",\n"));
 			this.outdent().write("},");
 		}
@@ -494,9 +494,15 @@ export class Partial extends ASTNode {
 	compile(data) {
 		this.start(data);
 
-		this.write(`${JSON.stringify(this._name)}: function(ctx) {`).indent();
-		this.write(_.invoke(this._children, "compile", data));
-		this.outdent().write("}");
+		if (data.view) {
+			this.write(`${JSON.stringify(this._name)}: function(ctx) {`).indent();
+			this.write(_.invoke(this._children, "compile", data));
+			this.outdent().write("}");
+		} else {
+			this.write(`Temple.partials.set(${JSON.stringify(this._name)}, function(ctx) {`).indent();
+			this.write(_.invoke(this._children, "compile", data));
+			this.outdent().write("});");
+		}
 
 		return this.end();
 	}

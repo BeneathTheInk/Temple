@@ -2,15 +2,6 @@ import * as _ from "underscore";
 import { register } from "./";
 import { getPropertyFromClass } from "../utils";
 
-// generate decorators
-var eventNames = [
-	'load', 'scroll',
-	'click', 'dblclick', 'mousedown', 'mouseup', 'mouseenter', 'mouseleave',
-	'keydown', 'keypress', 'keyup',
-	'blur', 'focus', 'change', 'input', 'submit', 'reset',
-	'drag', 'dragdrop', 'dragend', 'dragenter', 'dragexit', 'dragleave', 'dragover', 'dragstart', 'drop'
-];
-
 var slice = Array.prototype.slice;
 var decorators = {};
 
@@ -46,7 +37,18 @@ export function plugin() {
 export default plugin;
 register("actions", plugin);
 
-eventNames.forEach(function(event) {
+// standard dom events
+defineEvent([
+	'load', 'scroll',
+	'click', 'dblclick', 'mousedown', 'mouseup', 'mouseenter', 'mouseleave',
+	'keydown', 'keypress', 'keyup',
+	'blur', 'focus', 'change', 'input', 'submit', 'reset',
+	'drag', 'dragdrop', 'dragend', 'dragenter', 'dragexit', 'dragleave', 'dragover', 'dragstart', 'drop'
+]);
+
+export function defineEvent(event) {
+	if (_.isArray(event)) event.forEach(defineEvent);
+
 	decorators["on-" + event] = function(decor, key) {
 		var self = this,
 			args, node;
@@ -79,7 +81,7 @@ eventNames.forEach(function(event) {
 			node.removeEventListener(event, listener);
 		});
 	};
-});
+}
 
 // Msutache Instance Methods
 export function add(name, fn) {
