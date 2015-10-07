@@ -1,6 +1,6 @@
 {
 	"name": "temple",
-	"version": "0.5.16",
+	"version": "0.6.0",
 	"description": "A modern JavaScript view framework.",
 	"repo": "BeneathTheInk/Temple",
 	"keywords": [
