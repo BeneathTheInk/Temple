@@ -39,7 +39,7 @@ export function add(name, props) {
 	for (let k in props) {
 		let fn = props[k];
 		if (typeof fn !== "function") continue;
-		if (/this\.super/.test(fn.toString())) {
+		if (/this\.super|this\["super"\]|this\['super'\]/.test(fn.toString())) {
 			props[k] = wrap(k, fn);
 		}
 	}
