@@ -29,6 +29,7 @@
 		"html-parse-stringify": "~1.0.2",
 		"matches-selector": "~1.0.0",
 		"plain-merge": "~1.0.1",
+		"raf": "~3.1.0",
 		"source-map": "~0.5.1",
 		"trackr": "~2.0.0",
 		"trackr-objects": "~0.3.0",

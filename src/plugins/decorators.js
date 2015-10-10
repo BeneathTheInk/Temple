@@ -3,6 +3,7 @@ import Trackr from "trackr";
 import { updateAttribute, getContext } from "../idom";
 import { getPropertyFromClass } from "../utils";
 import { register } from "./";
+import raf from "raf";
 
 var decorators = {};
 
@@ -43,19 +44,17 @@ export function render(name, options) {
 	}
 
 	let view = this;
-	let invalid = false;
 	let _comp = Trackr.currentComputation;
-	let dcomp;
+	let dcomp, anim;
 
 	_comp.onInvalidate(function() {
-		invalid = true;
+		if (anim) raf.cancel(anim);
 		if (dcomp) dcomp.stop();
 	});
 
 	// render each decorator
 	function runDecorator() {
-		if (invalid) return;
-
+		anim = null;
 		dcomp = Trackr.autorun(function(comp) {
 			// assemble the arguments!
 			var args = [ _.extend({
@@ -79,15 +78,17 @@ export function render(name, options) {
 	}
 
 	// defer computation because we cannot have unknown changes happening to the DOM
-	if (d.options && d.options.instant) runDecorator();
-	else _.defer(runDecorator);
+	let inline = d.options && (d.options.inline || d.options.instant);
+	if (inline) runDecorator();
+	else anim = raf(runDecorator);
 
 	return true;
 }
 
 // creates a decorator
 export function add(name, fn, options) {
-	if (typeof name === "object" && fn == null) {
+	if (typeof name === "object") {
+		options = fn;
 		_.each(name, function(fn, n) {
 			if (_.isArray(fn)) add.call(this, n, fn[0], fn[1]);
 			else add.call(this, n, fn, options);

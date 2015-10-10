@@ -3,7 +3,7 @@ import { register } from "./";
 export function plugin() {
 	this.use("decorators");
 	this.refs = {};
-	this.decorate("ref", decorator, { instant: true });
+	this.decorate("ref", decorator, { inline: true });
 	this.findByRef = find;
 }
 

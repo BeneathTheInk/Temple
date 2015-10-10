@@ -47,7 +47,7 @@ Listening for DOM events is really easy in Temple. Enable the plugin and then ad
     <!-- anchor element with on-click attribute -->
     <a href="#" on-click="alert">Click Me</a>
 
-    <!-- scripts are called when views are instantiated -->
+    <!-- scripts are called when views are initiated -->
     <script>
     // enable the DOM events plugin
     this.use("actions");
@@ -61,7 +61,7 @@ Listening for DOM events is really easy in Temple. Enable the plugin and then ad
 </alert-anchor>
 ```
 
-Temple use the new Web Components API to give every view its own custom element. This lets you turn your views into reusable modules.
+Temple uses the new Web Components API to give every view its own custom element. This allows views to be used as reusable modules.
 
 ```html
 <!-- resuable view -->

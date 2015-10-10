@@ -25,7 +25,7 @@ export function plugin() {
 	this.addActionOnce = addOnce;
 	this.removeAction = remove;
 	this.fireAction = fire;
-	this.decorate(decorators);
+	this.decorate(decorators, { inline: true });
 
 	// copy inherited actions
 	if (typeof this !== "function") {

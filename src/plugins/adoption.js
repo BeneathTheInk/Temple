@@ -17,7 +17,7 @@ export function adopt(view, parent, before) {
 	if (this._adopted == null) this._adopted = [];
 
 	// have original parent disown child and set the adopted parent reference
-	if (view.adoptedParent) view.adoptedParent.disown(view.adoptedParent);
+	if (view.adoptedParent) view.adoptedParent.disown(view);
 	view.adoptedParent = this;
 
 	// hook child data up to this data
