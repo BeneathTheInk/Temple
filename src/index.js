@@ -15,6 +15,7 @@ import { parse } from "./m+xml";
 import * as AST from "./ast";
 import { Map, List, Variable } from "trackr-objects";
 
+import * as plugins from "./plugins";
 import * as partials from "./plugins/partials";
 import * as actions from "./plugins/actions";
 import * as decorators from "./plugins/decorators";
@@ -25,5 +26,5 @@ export {
 	idom, AST,
 	proxies, Context, View,
 	Map, List, Variable, utils,
-	actions, partials, decorators
+	plugins, actions, partials, decorators
 };
