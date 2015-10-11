@@ -139,7 +139,12 @@ _.extend(View.prototype, Events, {
 });
 
 // brand the class
-assignProps(View.prototype, "__temple", true);
+assignProps(View.prototype, {
+	__temple: true,
+	data: function() {
+		return this.getTopContext().data;
+	}
+});
 
 // proxy a few computation methods
 [ "invalidate", "onInvalidate" ].forEach(function(method) {
@@ -153,14 +158,14 @@ assignProps(View.prototype, "__temple", true);
 	};
 });
 
-// chainable methods to proxy to context
-[ "set" ]
-.forEach(function(method) {
-	View.prototype[method] = function() {
-		this.context[method].apply(this.context, arguments);
-		return this;
-	};
-});
+// // chainable methods to proxy to context
+// []
+// .forEach(function(method) {
+// 	View.prototype[method] = function() {
+// 		this.context[method].apply(this.context, arguments);
+// 		return this;
+// 	};
+// });
 
 // methods to proxy to context which don't return this
 [ "get", "query", "find", "findContext", "getTopContext",
