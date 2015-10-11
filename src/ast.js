@@ -343,7 +343,7 @@ export class Attribute extends ASTNode {
 		let str = _.invoke(this._children, "compileString", data);
 		this.write([
 			`string: function() { return `,
-			this._sn(data.originalFilename, str).join(" + "),
+			!str.length ? `""` : this._sn(data.originalFilename, str).join(" + "),
 			`; },`
 		]);
 
