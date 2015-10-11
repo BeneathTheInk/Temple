@@ -16,6 +16,32 @@ function query(data, q) {
 	return `ctx.query(${v})`;
 }
 
+function compileGroup(nodes, data) {
+	let base = data.key || [];
+	return nodes.map(function(n, i) {
+		return n.compile(_.extend({}, data, {
+			key: [].concat(base, i.toString())
+		}));
+	});
+}
+
+function getKey(data) {
+	return (data.key || []).reduce(function(memo, v) {
+		if (_.isString(v) && _.isString(_.last(memo))) {
+			memo.push(memo.pop() + "-" + v);
+		} else {
+			memo.push(v);
+		}
+
+		return memo;
+	}, []).map(function(v, i, l) {
+		if (typeof v === "object") return v.value;
+		if (i !== 0) v = "-" + v;
+		if (i !== l.length - 1) v += "-";
+		return JSON.stringify(v);
+	}).join(" + ");
+}
+
 export class ASTNode {
 	constructor(location) {
 		this._location = location;
@@ -57,7 +83,7 @@ export class ASTNode {
 	outdent() {
 		this._normalize_indent();
 		let d = this._writer.data;
-		if (d.indent) d.indent--;
+		if (d.indent && d.indent > 0) d.indent--;
 		return this;
 	}
 
@@ -121,7 +147,7 @@ export class Root extends ASTNode {
 
 		this.start(data);
 		header(data, "var Views = {};\n");
-		this.push(_.invoke(this._children, "compile", data));
+		this.push(compileGroup(this._children, data));
 
 		if (data.exports === "es6") {
 			this.write("export default Views;");
@@ -183,7 +209,7 @@ export class View extends ASTNode {
 		}
 
 		this.write("_render: function(ctx) {").indent();
-		this.push(_.invoke(this._children, "compile", data));
+		this.push(compileGroup(this._children, data));
 		this.outdent().write("}");
 
 		this.outdent().write("});\n");
@@ -242,14 +268,15 @@ export class Element extends ASTNode {
 		let tagName = JSON.stringify(this._name);
 		let hasc = this._children.length;
 		let hasa = this._attributes.length;
+		let key = getKey(data);
 
 		function writeElement(inner) {
 			if (hasc || hasa) {
-				self.write(`Temple.idom.elementOpen(${tagName});`);//${key ? "," + JSON.stringify(key) : ""}
+				self.write(`Temple.idom.elementOpen(${tagName}${key ? "," + key : ""});`);
 				inner.call(self);
 				self.write(`Temple.idom.elementClose(${tagName});`);
 			} else {
-				self.write(`Temple.idom.elementVoid(${tagName});`);
+				self.write(`Temple.idom.elementVoid(${tagName}${key ? "," + key : ""});`);
 			}
 		}
 
@@ -257,8 +284,10 @@ export class Element extends ASTNode {
 			this.write(`(function(){`).indent();
 
 			if (hasc) {
-				this.write("function body(ctx) {").indent();
-				this.push(_.invoke(this._children, "compile", data));
+				this.write("function body(ctx, key) {").indent();
+				this.push(compileGroup(this._children, _.extend({}, data, {
+					key: [{ value: "(key || \"\")" }]
+				})));
 				this.outdent().write("}");
 			}
 
@@ -286,7 +315,9 @@ export class Element extends ASTNode {
 		} else {
 			writeElement(function() {
 				if (hasa) this.push(_.invoke(this._attributes, "compile", data));
-				if (hasc) this.push(_.invoke(this._children, "compile", data));
+				if (hasc) this.push(compileGroup(this._children, _.extend({}, data, {
+					key: []
+				})));
 			});
 		}
 
@@ -353,8 +384,11 @@ export class Section extends ASTNode {
 
 		this.write("(function(){").indent();
 
-		this.compileSection(data, function() {
-			this.push(_.invoke(this._children, "compile", data));
+		this.compileSection(data, function(indexvar) {
+			let key = data.key || [];
+			if (indexvar) key.push({ value: "(" + indexvar + " || \"\")" });
+			else key.push("$");
+			this.push(compileGroup(this._children, _.extend({}, data, { key: key })));
 		});
 
 		this.outdent().write("}).call(this);");
@@ -385,7 +419,7 @@ export class Section extends ASTNode {
 		function renderSection(v, i) {
 			if (i) self.write(`var indexctx = new Temple.Context({ "@index": ${i} }, prevctx, { transparent: true });`);
 			self.write(`var ctx = new Temple.Context(${v}, ${i ? "indexctx" : "prevctx"});`);
-			handle.call(self);
+			handle.call(self, i);
 		}
 
 		this.write("var prevctx = ctx;");
@@ -475,7 +509,9 @@ export class PartialQuery extends ASTNode {
 		if (this._value === "@super") {
 			this.write(`this.super(ctx);`);
 		} else {
+			let key = getKey(data);
 			this.write(`this.renderPartial(${JSON.stringify(this._value)}, ctx, {`).indent();
+			if (key) this.write(`key: ${key},`);
 			this.write(`local: ${JSON.stringify(this._local)}`);
 			this.outdent().write(`});`);
 		}
@@ -493,15 +529,24 @@ export class Partial extends ASTNode {
 
 	compile(data) {
 		this.start(data);
+		var self = this;
+
+		function writeChildren() {
+			self.indent();
+			compileGroup(self._children, _.extend({}, data, {
+				key: [{ value: "(key || \"\")" }]
+			}));
+			self.outdent();
+		}
 
 		if (data.view) {
-			this.write(`${JSON.stringify(this._name)}: function(ctx) {`).indent();
-			this.write(_.invoke(this._children, "compile", data));
-			this.outdent().write("}");
+			this.write(`${JSON.stringify(this._name)}: function(ctx, key) {`);
+			writeChildren();
+			this.write("}");
 		} else {
-			this.write(`Temple.partials.set(${JSON.stringify(this._name)}, function(ctx) {`).indent();
-			this.write(_.invoke(this._children, "compile", data));
-			this.outdent().write("});");
+			this.write(`Temple.partials.set(${JSON.stringify(this._name)}, function(ctx, key) {`);
+			writeChildren();
+			this.write("});");
 		}
 
 		return this.end();

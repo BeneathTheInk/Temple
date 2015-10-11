@@ -81,6 +81,7 @@ export function find(name, options) {
 }
 
 export function render(name, ctx, options) {
+	options = options || {};
 	var partial = find.call(this, name, options);
-	if (partial) partial.call(this, ctx);
+	if (partial) partial.call(this, ctx, options.key);
 }
