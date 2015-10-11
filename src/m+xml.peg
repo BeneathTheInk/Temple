@@ -124,7 +124,7 @@ attribute
 			try {
 				args = peg$parse(value,  _.extend({}, options, { startRule: "attrArguments" }));
 			} catch(e) {
-				args = [{ type: NODE_TYPE.LITERAL, value: value }];
+				args = [new ast.Literal(location(), value)];
 			}
 		} else {
 			args = [];

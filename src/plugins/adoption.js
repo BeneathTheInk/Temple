@@ -1,5 +1,5 @@
-import { isView } from "../utils";
 import { register } from "./";
+import { create as createView } from "../globals";
 
 export function plugin() {
 	this.adopt = adopt;
@@ -9,20 +9,16 @@ export function plugin() {
 export default plugin;
 register("adoption", plugin);
 
-export function adopt(view, parent, before) {
-	if (!isView(view)) {
-		throw new Error("Expecting instanceof Temple View.");
-	}
-
-	if (this._adopted == null) this._adopted = [];
+export function adopt(name, parent, before) {
+	var view = createView(name);
 
 	// have original parent disown child and set the adopted parent reference
 	if (view.adoptedParent) view.adoptedParent.disown(view);
 	view.adoptedParent = this;
 
 	// hook child data up to this data
-	var oldRoot = view.getRootModel();
-	oldRoot.parent = this.model;
+	var oldRoot = view.getRootContext();
+	this.context.append(oldRoot);
 
 	// render immediately if parent is mounted
 	if (this.comp) view.paint(parent, before);
@@ -33,11 +29,13 @@ export function adopt(view, parent, before) {
 		view.paint(parent, before);
 	});
 
+	// stop when parent stops
 	var onStop;
 	this.on("stop", onStop = function() {
 		view.detach();
 	});
 
+	if (this._adopted == null) this._adopted = [];
 	this._adopted.push({
 		stop: onStop,
 		mount: onMount,

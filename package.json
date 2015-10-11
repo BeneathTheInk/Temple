@@ -40,7 +40,7 @@
 		"babel": "~5.8.23",
 		"babelify": "~6.3.0",
 		"browser-run": "~2.6.2",
-		"browserify": "~11.1.0",
+		"browserify": "~11.2.0",
 		"del": "~2.0.2",
 		"gulp": "~3.9.0",
 		"gulp-babel": "~5.2.1",

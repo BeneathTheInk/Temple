@@ -189,7 +189,7 @@ _.extend(Context.prototype, Events, {
 			}
 
 			if (_.isFunction(val)) {
-				val = val.call(fnCtx && fnCtx.data, result, fnCtx);
+				val = val.call(fnCtx && fnCtx.data, result, self);
 			}
 
 			return val;

@@ -1,5 +1,5 @@
 import { register } from "./";
-import { compile } from "../compile";
+import { compile as compileSrc } from "../compile";
 import { Map as ReactiveMap } from "trackr-objects";
 import { getPropertyFromClass } from "../utils";
 
@@ -40,17 +40,21 @@ export function plugin() {
 export default plugin;
 register("partials", plugin);
 
+export function compile(src) {
+	/* jshint -W054 */
+	let opts = { startRule: "html", headers: [] };
+	let inner = compileSrc(src, opts);
+	return new Function("Temple", `return function(ctx) {
+		${opts.headers.join("")}
+		${inner}
+	}`)(require("../"));
+}
+
 export function set(name, src) {
 	var p = this._partials || partials;
 
 	if (typeof src === "string") {
-		/* jshint -W054 */
-		let opts = { startRule: "html", headers: [] };
-		let inner = compile(src, opts);
-		src = new Function("Temple", `return function(ctx) {
-			${opts.headers.join("")}
-			${inner}
-		}`)(require("../"));
+		src = compile(src);
 	}
 
 	if (src == null) p.delete(name);
