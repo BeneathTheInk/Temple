@@ -57,6 +57,18 @@ _.extend(Context.prototype, Events, {
 		return context;
 	},
 
+	prepend: function(context, options) {
+		let parent = this.parent;
+
+		if (Context.isContext(context)) {
+			context.parent = parent;
+		} else {
+			context = new Context(context, parent, options);
+		}
+
+		return (this.parent = context);
+	},
+
 	// gets the first non-transparent context on the stack
 	getTopContext: function() {
 		let context = this;

@@ -1,6 +1,9 @@
 var test = require("tape");
 var Temple = require("../");
-var render = require("./_utils").render;
+var utils = require("./_utils");
+var render = utils.render;
+var create = utils.create;
+var createDocument = utils.createDocument;
 
 test("=== Partials ===", function(_t) {
 	var test = _t.test;
@@ -27,9 +30,9 @@ test("=== Partials ===", function(_t) {
 
 	test("renders partial", function(t) {
 		t.plan(3);
-		var view = render("{{> partial }}", { value: "Hello World" }, {
-			partials: { partial: "{{ value }}" }
-		});
+		var view = create("{{> partial }}", { value: "Hello World" });
+		view.setPartial("partial", "{{ value }}");
+		view.paint(createDocument());
 		var el = view.el;
 
 		t.equal(el.childNodes.length, 1, "has one node in view");
@@ -54,9 +57,9 @@ test("=== Partials ===", function(_t) {
 
 	test("renders partial in element", function(t) {
 		t.plan(6);
-		var view = render("<div>{{> partial }}</div>", { value: "Hello World" }, {
-			partials: { partial: "{{ value }}" }
-		});
+		var view = create("<div>{{> partial }}</div>", { value: "Hello World" });
+		view.setPartial("partial", "{{ value }}");
+		view.paint(createDocument());
 		var el = view.el;
 
 		t.equal(el.childNodes.length, 1, "has one node in view");
@@ -70,12 +73,12 @@ test("=== Partials ===", function(_t) {
 
 	test("renders partial in section", function(t) {
 		t.plan(3);
-		var view = render("{{#section}}{{>partial}}{{/section}}", {
+		var view = create("{{#section}}{{>partial}}{{/section}}", {
 			section: true,
 			value: "Hello World"
-		}, {
-			partials: { partial: "{{ value }}" }
 		});
+		view.setPartial("partial", "{{ value }}");
+		view.paint(createDocument());
 		var el = view.el;
 
 		t.equal(el.childNodes.length, 1, "has one node in view");

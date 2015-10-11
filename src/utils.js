@@ -1,6 +1,10 @@
 import * as _ from "underscore";
 import merge from "plain-merge";
 
+export function assign() {
+	return _.extend.apply(_, arguments);
+}
+
 export function isView(o) {
 	return Boolean(o != null && o.__temple);
 }
@@ -78,12 +82,17 @@ export function getPropertyFromClass(obj, prop) {
 	var val;
 	let proto = Object.getPrototypeOf(obj);
 
+	if (typeof prop === "string" && prop) {
+		let p = prop;
+		prop = c => c[p];
+	}
+
+	if (typeof prop !== "function") {
+		throw new Error("Expecting function or string for property.");
+	}
+
 	while (proto) {
-		let orig, t = typeof prop;
-		if (t === "function") orig = prop(proto.constructor);
-		else if (t === "string" && t) orig = proto.constructor[prop];
-		else throw new Error("Expecting function or string for property.");
-		val = merge.defaults(val, orig);
+		val = merge.defaults(val, prop(proto.constructor));
 		proto = Object.getPrototypeOf(proto);
 	}
 

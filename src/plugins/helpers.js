@@ -3,34 +3,47 @@ import { getPropertyFromClass } from "../utils";
 import { register } from "./";
 
 export function plugin() {
-	// add the method
-	this.helpers = helpers;
-
-	// set the rendering context with helpers
-	if (this._helpers == null) this._helpers = {};
-
-	// copy inherited helpers
-	if (typeof this !== "function") {
-		_.extend(this._helpers, getPropertyFromClass(this, "_helpers"));
-	}
-
-	// push helpers onto context stack
-	if (this.context) {
-		this.context = this.context.append(this._helpers, { transparent: true });
-	}
+	this.defaults = generateHelper.call(this, "defaults", "prepend");
+	this.helpers = generateHelper.call(this, "helpers", "append");
 }
 
 export default plugin;
 register("helpers", plugin);
 
-export function helpers(obj) {
-	if (this._helpers == null) this._helpers = {};
+function generateHelper(name, dir) {
+	let storeKey = "_" + name;
+	this[storeKey] = {};
 
-	for (let k of _.keys(obj)) {
-		let v = obj[k];
-		if (v == null) delete this._helpers[k];
-		else this._helpers[k] = v;
+	// push onto context stack
+	if (dir === "prepend" && this.dataContext) {
+		this.dataContext.prepend(this[storeKey], { transparent: true });
+	} else if (dir === "append" && this.context) {
+		this.context = this.context.append(this[storeKey], { transparent: true });
 	}
 
-	return this;
+	// copy inherited values
+	if (typeof this !== "function") {
+		let h = getPropertyFromClass(this, storeKey);
+		if (h != null) merge.call(this, h);
+	}
+
+	return merge;
+
+	function merge(obj) {
+		if (!_.isObject(obj)) {
+			throw new Error("Expecting object for " + name);
+		}
+
+		let keys = _.keys(obj);
+		if (!keys.length) return;
+
+		// add helpers
+		for (let k of keys) {
+			let v = obj[k];
+			if (v == null) delete this[storeKey][k];
+			else this[storeKey][k] = v;
+		}
+
+		return this;
+	}
 }

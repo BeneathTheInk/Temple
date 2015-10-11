@@ -6,6 +6,7 @@ import { clearUnvisitedDOM } from './incremental-dom/src/alignment';
 import { updateAttribute } from './incremental-dom/src/attributes';
 import { getData } from './incremental-dom/src/node_data';
 import { parse as parseHTML } from "html-parse-stringify";
+import * as proxies from "./proxies";
 
 export { updateAttribute, getContext, getData };
 
@@ -71,4 +72,15 @@ export function html(src) {
 	var tree = parseHTML("<div>" + src + "</div>");
 	if (_.isArray(tree)) tree = tree[0];
 	return tree.children.map(renderHTML);
+}
+
+export function section(inverted, val, fn) {
+	let proxy = proxies.getByTarget(val, [ "empty", "section" ]);
+	let isEmpty = Boolean(proxies.run(proxy, "empty", val));
+
+	if (inverted && isEmpty) {
+		fn(val);
+	} else if (!inverted && !isEmpty) {
+		proxies.run(proxy, "section", val, fn);
+	}
 }

@@ -5,13 +5,15 @@ import * as _ from "underscore";
 var plugins;
 
 export function load(tpl, plugin, args) {
+	let name;
 	if (plugins == null) plugins = {};
 
 	if (_.isString(plugin)) {
-		if (plugins[plugin] == null)
-			throw new Error("No plugin exists with id '" + plugin + "'.");
+		name = plugin;
+		if (plugins[name] == null)
+			throw new Error("No plugin exists with id '" + name + "'.");
 
-		plugin = plugins[plugin];
+		plugin = plugins[name];
 	}
 
 	if (!_.isFunction(plugin))
@@ -19,11 +21,17 @@ export function load(tpl, plugin, args) {
 
 	// check if plugin is already loaded on this template
 	if (tpl._loaded_plugins == null) tpl._loaded_plugins = [];
-	if (~tpl._loaded_plugins.indexOf(plugin)) return tpl;
-	tpl._loaded_plugins.push(plugin);
+	if (tpl._loaded_plugins.some(function(p) {
+		return p.plugin === plugin;
+	})) return tpl;
 
 	if (args == null) args = [];
 	if (!_.isArray(args)) args = [ args ];
+	tpl._loaded_plugins.push({
+		name: name,
+		plugin: plugin,
+		args: args
+	});
 
 	plugin.apply(tpl, args);
 	return tpl;

@@ -1,3 +1,4 @@
+import * as _ from "underscore";
 import { register } from "./";
 import { compile as compileSrc } from "../compile";
 import { Map as ReactiveMap } from "trackr-objects";
@@ -13,9 +14,10 @@ export function plugin() {
 
 	if (typeof this !== "function") {
 		// apply partials attached directly to prototype
-		if (this.partials) {
-			for (let k in this.partials) {
-				this._partials.set(k, this.partials[k]);
+		let lp = _.result(this, "partials");
+		if (lp) {
+			for (let k in lp) {
+				this._partials.set(k, lp[k]);
 			}
 		}
 
@@ -26,13 +28,6 @@ export function plugin() {
 
 		for (let k in partials) {
 			this._partials.set(k, partials[k]);
-		}
-
-		// apply partials from the options passed to the constructor
-		if (this.options.partials) {
-			for (let k in this.options.partials) {
-				set.call(this, k, this.options.partials[k]);
-			}
 		}
 	}
 }

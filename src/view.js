@@ -1,7 +1,6 @@
 import * as _ from "underscore";
 import Trackr from "trackr";
 import Context from "./context";
-import merge from "plain-merge";
 import { patchElement } from "./idom";
 import { load as loadPlugin } from "./plugins";
 import assignProps from "assign-props";
@@ -9,7 +8,7 @@ import * as Events from "backbone-events-standalone";
 import subclass from "backbone-extend-standalone";
 
 function View(data, options) {
-	this.options = options = options || {};
+	options = options || {};
 
 	var parent;
 	if (Context.isContext(data)) {
@@ -18,9 +17,7 @@ function View(data, options) {
 	}
 
 	// load initial data
-	var defaults = _.result(this, "initialState") || _.result(this, "defaults");
-	data = merge.extend({}, defaults, data);
-	this.context = new Context(data, parent, options);
+	this.context = this.dataContext = new Context(data, parent, options);
 
 	// create element from tag name
 	let tag = _.result(this, "tagName");
@@ -29,8 +26,8 @@ function View(data, options) {
 
 	// load plugins that the class loaded
 	if (this.constructor._loaded_plugins) {
-		for (let fn of this.constructor._loaded_plugins) {
-			this.use(fn);
+		for (let p of this.constructor._loaded_plugins) {
+			this.use.apply(this, [p.name || p.plugin].concat(p.args));
 		}
 	}
 
@@ -123,8 +120,9 @@ _.extend(View.prototype, Events, {
 	},
 
 	paint: function(parent, before) {
+		this.detach(); // full detach
+		this.mount(); // mount before render batches new DOM writes
 		this.attach(parent, before);
-		this.mount();
 		return this;
 	},
 
@@ -168,7 +166,7 @@ assignProps(View.prototype, {
 // });
 
 // methods to proxy to context which don't return this
-[ "get", "query", "find", "findContext", "getTopContext",
+[ "query", "find", "findContext", "getTopContext",
   "getRootContext", "getContextAtOffset", "getAllContexts"
 ].forEach(function(method) {
 	View.prototype[method] = function() {
@@ -186,8 +184,8 @@ View.extend = function() {
 	var klass = subclass.apply(this, arguments);
 
 	if (this._loaded_plugins) {
-		for (let fn of this._loaded_plugins) {
-			klass.use(fn);
+		for (let p of this._loaded_plugins) {
+			klass.use.apply(klass, [p.name || p.plugin].concat(p.args));
 		}
 	}
 
@@ -195,8 +193,8 @@ View.extend = function() {
 };
 
 // default plugins
-View.use("decorators");
 View.use("helpers");
+View.use("decorators");
 View.use("partials");
 View.use("components");
 

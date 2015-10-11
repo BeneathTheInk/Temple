@@ -1,4 +1,5 @@
 import { register } from "./";
+import { isView } from "../utils";
 import { create as createView } from "../globals";
 
 export function plugin() {
@@ -9,15 +10,17 @@ export function plugin() {
 export default plugin;
 register("adoption", plugin);
 
-export function adopt(name, parent, before) {
-	var view = createView(name);
+export function adopt(view, parent, before) {
+	if (typeof view === "string") view = createView(view);
+	if (!isView(view)) throw new Error("Expecting view or view name");
 
 	// have original parent disown child and set the adopted parent reference
 	if (view.adoptedParent) view.adoptedParent.disown(view);
 	view.adoptedParent = this;
 
 	// hook child data up to this data
-	var oldRoot = view.getRootContext();
+	var oldRoot = view.context;
+	while(oldRoot.parent) oldRoot = oldRoot.parent;
 	this.context.append(oldRoot);
 
 	// render immediately if parent is mounted

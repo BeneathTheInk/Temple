@@ -1,6 +1,7 @@
 import * as _ from "underscore";
 import { register } from "./";
 import { getPropertyFromClass } from "../utils";
+import Trackr from "trackr";
 
 var value_types = [ "radio", "option" ];
 
@@ -45,13 +46,9 @@ export function plugin(options) {
 		}
 
 		// reactively set the value on the input
-		var c = this.autorun(function() {
+		Trackr.autorun(function() {
 			setNodeValue(el, fbind.get.call(self, d.context), type);
 		});
-
-		// setNodeValue relies on the children elements
-		// those won't be in the DOM till at least the next tick
-		c.invalidate();
 	});
 
 	// add value decorator for radios and options

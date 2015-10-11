@@ -76,14 +76,14 @@ export class ASTNode {
 	indent() {
 		this._normalize_indent();
 		let d = this._writer.data;
-		if (d.indent) d.indent++;
+		if (typeof d.indent === "number") d.indent++;
 		return this;
 	}
 
 	outdent() {
 		this._normalize_indent();
 		let d = this._writer.data;
-		if (d.indent && d.indent > 0) d.indent--;
+		if (typeof d.indent === "number" && d.indent > 0) d.indent--;
 		return this;
 	}
 
@@ -198,9 +198,12 @@ export class View extends ASTNode {
 		}
 
 		if (this._partials.length) {
-			this.write("partials: {").indent();
+			this.write("partials: function() {").indent();
+			this.write(`var p = typeof this.super === "function" ? this.super() : this.super;`);
+			this.write("return Temple.utils.assign({}, p, {").indent();
 			var p = _.invoke(this._partials, "compile", _.extend({ view: true }, data));
-			this.push(this._sn(data.originalFilename, p).join(",\n"));
+			this.push([ this._sn(data.originalFilename, p).replaceRight(/\s*$/, "").join(",\n"), "\n" ]);
+			this.outdent().write("});");
 			this.outdent().write("},");
 		}
 
@@ -249,7 +252,21 @@ export class Script extends ASTNode {
 	}
 
 	compile(data) {
-		return this._sn(data.originalFilename, this._value);
+		let loc = this._location, line, column;
+
+		if (loc) {
+			line = loc.start.line;
+			column = loc.start.column;
+		} else {
+			line = 1;
+			column = 1;
+		}
+
+		let lines = this._value.split("\n").map(function(l, i) {
+			return new SourceNode(i + line, i === 0 ? column : 1, data.originalFilename, l + "\n");
+		});
+
+		return this._sn(data.originalFilename, lines);
 	}
 }
 
@@ -306,8 +323,8 @@ export class Element extends ASTNode {
 			this.write(`this.comp.onInvalidate(this.removeComponent.bind(this, view));`);
 			this.outdent().write(`} else {`).indent();
 			writeElement(function() {
-				if (hasa) this.write(`attributes(ctx);`);
-				if (hasc) this.write(`body(ctx);`);
+				if (hasa) this.write(`attributes.call(this, ctx);`);
+				if (hasc) this.write(`body.call(this, ctx);`);
 			});
 			this.outdent().write(`}`);
 
@@ -382,16 +399,12 @@ export class Section extends ASTNode {
 	compile(data) {
 		this.start(data);
 
-		this.write("(function(){").indent();
-
 		this.compileSection(data, function(indexvar) {
 			let key = data.key || [];
 			if (indexvar) key.push({ value: "(" + indexvar + " || \"\")" });
 			else key.push("$");
 			this.push(compileGroup(this._children, _.extend({}, data, { key: key })));
 		});
-
-		this.outdent().write("}).call(this);");
 
 		return this.end();
 	}
@@ -414,32 +427,12 @@ export class Section extends ASTNode {
 	}
 
 	compileSection(data, handle) {
-		let self = this;
-
-		function renderSection(v, i) {
-			if (i) self.write(`var indexctx = new Temple.Context({ "@index": ${i} }, prevctx, { transparent: true });`);
-			self.write(`var ctx = new Temple.Context(${v}, ${i ? "indexctx" : "prevctx"});`);
-			handle.call(self, i);
-		}
-
-		this.write("var prevctx = ctx;");
-		this.write(`var val = ${query(data, this._query)};`);
-		this.write(`var proxy = Temple.proxies.getByTarget(val, [ "empty", "section" ]);`);
-		let isEmpty = `Boolean(Temple.proxies.run(proxy, "empty", val))`;
-
-		if (this._inverted) {
-			this.write(`if (${isEmpty}) {`).indent();
-			this.write("(function(){").indent();
-			renderSection("val");
-			this.outdent().write("}).call(this);");
-			this.outdent().write("}");
-		} else {
-			this.write(`if (!${isEmpty}) {`).indent();
-			this.write(`Temple.proxies.run(proxy, "section", val, (function(data, index) {`).indent();
-			renderSection("data", "index");
-			this.outdent().write(`}).bind(this));`);
-			this.outdent().write(`}`);
-		}
+		this.write(`Temple.idom.section(${JSON.stringify(this._inverted)}, ${query(data, this._query)}, (function(prevctx, data, index) {`);
+		this.indent().write(`var indexctx;`);
+		this.write(`if (index != null) indexctx = prevctx.append({ "@index": index }, { transparent: true });`);
+		this.write(`var ctx = (indexctx || prevctx).append(data);`);
+		handle.call(this, "index");
+		this.outdent().write(`}).bind(this, ctx));`);
 	}
 }
 
@@ -455,7 +448,7 @@ export class Interpolator extends ASTNode {
 	compile(data) {
 		this.start(data);
 		var q = this.query(data);
-		if (this._unescaped) this.write(`Temple.idom.html(${q});`);
+		if (this._unescaped) this.write(`Temple.idom.html(Temple.utils.toString(${q}));`);
 		else {
 			this.write(`(function() {`).indent();
 			this.write(`var node = Temple.idom.text("");`);
@@ -533,9 +526,9 @@ export class Partial extends ASTNode {
 
 		function writeChildren() {
 			self.indent();
-			compileGroup(self._children, _.extend({}, data, {
+			self.push(compileGroup(self._children, _.extend({}, data, {
 				key: [{ value: "(key || \"\")" }]
-			}));
+			})));
 			self.outdent();
 		}
 
