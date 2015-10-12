@@ -144,31 +144,20 @@ _.extend(Context.prototype, Events, {
 	},
 
 	// returns the value at path, but only looks in the data on this context
-	get: function(path, options) {
-		options = options || {};
+	get: function(path) {
+		if (!path) path = [];
+		if (typeof path === "string") path = path.split(".");
+		if (!_.isArray(path)) throw new Error("Expecting string or array for path.");
 
-		if (typeof path === "string") path = parse(path, { startRule: "path" });
-		if (path == null) path = { parts: [] };
-		if (!_.isObject(path)) throw new Error("Expecting string or object for path.");
-
-		var self = this;
-		if (options.reactive !== false) this._dep.depend();
-
-		return _.reduce(path.parts, function(target, part) {
-			target = getValue(target, part.key);
-
-			_.each(part.children, function(k) {
-				if (_.isObject(k)) k = self.get(k);
-				target = getValue(target, k);
-			});
-
-			return target;
+		return _.reduce(path, function(target, part) {
+			var t = typeof part;
+			if (t !== "string") throw new Error("Unexpected " + t + " is path.");
+			return getValue(target, part);
 		}, this.data);
 	},
 
 	// retrieves value with path query
-	query: function(paths, options) {
-		options = options || null;
+	query: function(paths) {
 		if (typeof paths === "string") paths = parse(paths, { startRule: "pathQuery" });
 		if (!_.isArray(paths)) paths = paths != null ? [ paths ] : [];
 		if (!paths.length) paths.push({ type: "all", parts: [] });
@@ -176,26 +165,38 @@ _.extend(Context.prototype, Events, {
 		let self = this;
 		let fnCtx = this.getTopContext() || null;
 
+		function value(data, parts) {
+			return _.reduce(parts, function(target, part) {
+				if (typeof part === "string") {
+					return getValue(target, part);
+				}
+
+				return getValue(target, self.query(part));
+			}, data);
+		}
+
 		return _.reduce(paths, function(result, path) {
+			if (typeof path !== "object") return path;
+
 			var context = self;
 			var scope = true;
 			var val;
 
-			if (path.type === "root") {
+			if (path.scope === "root") {
 				context = self.getRootContext();
-			} else if (path.type === "parent") {
+			} else if (path.scope === "parent") {
 				context = self.getContextAtOffset(path.distance);
-			} else if (path.type === "all") {
+			} else if (path.scope === "all") {
 				if (!path.parts.length) context = self.getTopContext();
 				scope = false;
-			} else if (path.type === "local") {
+			} else if (path.scope === "local") {
 				context = self.getTopContext();
 			}
 
 			if (context == null) return;
 
 			while (_.isUndefined(val) && context != null) {
-				val = context.get(path, options);
+				val = value(context.data, path.parts);
 				context = context.parent;
 				if (scope) break;
 			}

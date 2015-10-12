@@ -84,3 +84,15 @@ export function section(inverted, val, fn) {
 		proxies.run(proxy, "section", val, fn);
 	}
 }
+
+export function updateProperty(el, name, value) {
+	var data = getData(el);
+	var attrs = data.attrs;
+
+	if (attrs[name] === value) {
+	  return;
+	}
+
+	el[name] = value;
+	attrs[name] = value;
+}

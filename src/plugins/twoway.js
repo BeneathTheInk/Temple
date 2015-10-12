@@ -1,7 +1,8 @@
 import * as _ from "underscore";
 import { register } from "./";
-import { getPropertyFromClass } from "../utils";
+import { getPropertyFromClass, toString } from "../utils";
 import Trackr from "trackr";
+import { updateAttribute, updateProperty } from "../idom";
 
 var value_types = [ "radio", "option" ];
 
@@ -57,13 +58,17 @@ export function plugin(options) {
 			type = getType(el);
 
 		if (!_.contains(value_types, type)) {
-			el.value = strval;
+			updateAttribute(el, "value", strval);
 			return;
 		}
 
-		var args = this.renderArguments(d.template.arguments, d.model);
+		var args = [];
+		if (d.render && typeof d.render.arguments === "function") {
+			args = d.render.arguments();
+		}
+
 		el.$bound_value = args.length <= 1 ? args[0] : args;
-		el.value = strval;
+		updateProperty(el, "value", strval);
 	}, { parse: "string" });
 
 	// copy inherited bindings
@@ -200,36 +205,34 @@ function setNodeValue(el, val, type, live) {
 	switch (type) {
 		case "number":
 			setLiveValue(live, el, function() {
-				if (_.isNumber(val)) el.valueAsNumber = val;
-				else el.value = val;
+				updateProperty(el, _.isNumber(val) ? "valueAsNumber" : "value", val);
 			});
 			break;
 
 		case "text":
 			setLiveValue(live, el, function() {
-				el.value = val == null ? "" : val.toString();
+				updateProperty(el, "value", toString(val));
 			});
 			break;
 
 		case "checkbox":
-			el.checked = !!val;
+			updateProperty(el, "checked", Boolean(val));
 			break;
 
 		case "date":
 			setLiveValue(live, el, function() {
-				if (_.isDate(val)) el.valueAsDate = val;
-				else el.value = val;
+				updateProperty(el, _.isDate(val) ? "valueAsDate" : "value", val);
 			});
 			break;
 
 		case "select":
 			_.toArray(el.querySelectorAll("option")).forEach(function(opt) {
-				opt.selected = opt.$bound_value === val;
+				updateProperty(el, "selected", opt.$bound_value === val);
 			});
 			break;
 
 		case "radio":
-			el.checked = el.$bound_value === val;
+			updateProperty(el, "checked", el.$bound_value === val);
 			break;
 	}
 }

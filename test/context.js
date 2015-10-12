@@ -28,28 +28,28 @@ test("=== Context ===", function(_t) {
 		t.equal(ctx.get("foo.bar"), "baz", "has correct value");
 	});
 
-	test("gets deep path with bracket notation", function(t) {
+	test("queries deep path with bracket notation", function(t) {
 		t.plan(1);
 		var ctx = new Temple.Context({ foo: { bar: "baz" } });
-		t.equal(ctx.get("foo['bar']"), "baz", "has correct value");
+		t.equal(ctx.query("foo['bar']"), "baz", "has correct value");
 	});
 
-	test("gets deep path with dynamic path", function(t) {
+	test("queries deep path with dynamic path", function(t) {
 		t.plan(1);
 		var ctx = new Temple.Context({ foo: { bar: "baz" }, path: "bar" });
-		t.equal(ctx.get("foo[path]"), "baz", "has correct value");
+		t.equal(ctx.query("foo[path]"), "baz", "has correct value");
 	});
 
-	test("gets local value", function(t) {
+	test("queries local value", function(t) {
 		t.plan(1);
 		var ctx = new Temple.Context({ foo: "bar" });
-		t.deepEqual(ctx.get("."), { foo: "bar" }, "has correct value");
+		t.deepEqual(ctx.query("."), { foo: "bar" }, "has correct value");
 	});
 
-	test("gets deep local value", function(t) {
+	test("queries deep local value", function(t) {
 		t.plan(1);
 		var ctx = new Temple.Context({ foo: "bar" });
-		t.deepEqual(ctx.get(".foo"), "bar", "has correct value");
+		t.deepEqual(ctx.query(".foo"), "bar", "has correct value");
 	});
 
 	test("does not get from parent ctx", function(t) {

@@ -62,7 +62,8 @@ export function render(name, options) {
 				owner: d.context,
 				view: view,
 				comp: comp,
-				options: d.options
+				options: d.options,
+				render: options
 			}, options.mixin) ];
 
 			// render arguments based on options

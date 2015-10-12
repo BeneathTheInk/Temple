@@ -289,11 +289,11 @@ export class Element extends ASTNode {
 
 		function writeElement(inner) {
 			if (hasc || hasa) {
-				self.write(`Temple.idom.elementOpen(${tagName}${key ? "," + key : ""});`);
+				self.write(`Temple.idom.elementOpen(${tagName}${key ? ", " + key : ""});`);
 				inner.call(self);
 				self.write(`Temple.idom.elementClose(${tagName});`);
 			} else {
-				self.write(`Temple.idom.elementVoid(${tagName}${key ? "," + key : ""});`);
+				self.write(`Temple.idom.elementVoid(${tagName}${key ? ", " + key : ""});`);
 			}
 		}
 
