@@ -47,7 +47,7 @@ export function plugin(options) {
 
 		// reactively set the value on the input
 		Trackr.autorun(function() {
-			setNodeValue(el, fbind.get.call(self, d.context), type);
+			setNodeValue(el, fbind.get.call(self, d.context), type, options.live);
 		});
 	});
 
@@ -186,19 +186,29 @@ function getNodeValue(node, type) {
 	return val;
 }
 
-function setNodeValue(el, val, type) {
+function setLiveValue(live, el, fn) {
+	var active = document.activeElement === el;
+	if (!live && active) return;
+	var pos = [el.selectionStart, el.selectionEnd];
+	fn();
+	if (active) el.setSelectionRange.apply(el, pos);
+}
+
+function setNodeValue(el, val, type, live) {
 	if (type == null) type = getType(el);
 
 	switch (type) {
 		case "number":
-			if (document.activeElement === el) return;
-			if (_.isNumber(val)) el.valueAsNumber = val;
-			else el.value = val;
+			setLiveValue(live, el, function() {
+				if (_.isNumber(val)) el.valueAsNumber = val;
+				else el.value = val;
+			});
 			break;
 
 		case "text":
-			if (document.activeElement === el) return;
-			el.value = val == null ? "" : val.toString();
+			setLiveValue(live, el, function() {
+				el.value = val == null ? "" : val.toString();
+			});
 			break;
 
 		case "checkbox":
@@ -206,9 +216,10 @@ function setNodeValue(el, val, type) {
 			break;
 
 		case "date":
-			if (document.activeElement === el) return;
-			if (_.isDate(val)) el.valueAsDate = val;
-			else el.value = val;
+			setLiveValue(live, el, function() {
+				if (_.isDate(val)) el.valueAsDate = val;
+				else el.value = val;
+			});
 			break;
 
 		case "select":
