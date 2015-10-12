@@ -167,11 +167,11 @@ _.extend(Context.prototype, Events, {
 
 		function value(data, parts) {
 			return _.reduce(parts, function(target, part) {
-				if (typeof part === "string") {
-					return getValue(target, part);
+				if (typeof part === "object") {
+					return getValue(target, self.query(part));
 				}
 
-				return getValue(target, self.query(part));
+				return getValue(target, part);
 			}, data);
 		}
 

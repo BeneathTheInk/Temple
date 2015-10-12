@@ -4,7 +4,7 @@ if (typeof document !== "undefined") {
 
 export var version = "0.6.1";
 
-import { compile, render, compileHTML, renderHTML } from "./compile";
+import { compile, render, compileHTML, renderHTML, getSource } from "./compile";
 import { add as register, get, create } from "./globals";
 import * as proxies from "./proxies";
 import * as idom from "./idom";
@@ -22,7 +22,7 @@ import * as decorators from "./plugins/decorators";
 
 export {
 	register, get, create,
-	parse, compile, render, compileHTML, renderHTML,
+	parse, compile, render, compileHTML, renderHTML, getSource,
 	idom, AST,
 	proxies, Context, View,
 	Map, List, Variable, utils,
