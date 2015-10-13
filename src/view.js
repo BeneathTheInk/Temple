@@ -59,21 +59,22 @@ _.extend(View.prototype, Events, {
 		});
 
 		// the autorun computation
-		Trackr.autorun(function(comp) {
+		let c = Trackr.autorun(function(comp) {
 			self.comp = comp;
-			self.render.apply(self, args);
 
-			// auto clean up
+			// event about invalidations
 			comp.onInvalidate(function() {
-				// remaining invalidate events
 				self.trigger("invalidate");
-
-				// detect if the computation stopped
-				if (comp.stopped) {
-					delete self.comp;
-					self.trigger("stop");
-				}
 			});
+
+			// run the render
+			self.render.apply(self, args);
+		});
+
+		// clean when the computation stops
+		c.onStop(function() {
+			delete self.comp;
+			self.trigger("stop");
 		});
 
 		// remaining mount events happen after the first render

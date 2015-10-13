@@ -314,7 +314,6 @@ export class Element extends ASTNode {
 				this.outdent().write("}");
 			}
 
-			this.write(`var self = this;`);
 			this.write(`var view = this.createComponent(${tagName}, ctx);`);
 			this.write(`if (view) {`).indent();
 			if (hasc) this.write(`view.setPartial("@body", body);`);
