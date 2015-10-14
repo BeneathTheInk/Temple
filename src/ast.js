@@ -400,7 +400,7 @@ export class Section extends ASTNode {
 
 		this.compileSection(data, function(indexvar) {
 			let key = data.key || [];
-			if (indexvar) key.push({ value: "(" + indexvar + " || \"\")" });
+			if (indexvar) key.push({ value: "Temple.utils.toString(" + indexvar + ")" });
 			else key.push("$");
 			this.push(compileGroup(this._children, _.extend({}, data, { key: key })));
 		});
@@ -426,11 +426,12 @@ export class Section extends ASTNode {
 	}
 
 	compileSection(data, handle) {
-		this.write(`Temple.idom.section(${JSON.stringify(this._inverted)}, ${query(data, this._query)}, (function(prevctx, data, index) {`);
-		this.indent().write(`var indexctx;`);
-		this.write(`if (index != null) indexctx = prevctx.append({ "@index": index }, { transparent: true });`);
+		var indexvar = _.uniqueId("index");
+		this.write(`Temple.idom.section(${JSON.stringify(this._inverted)}, ${query(data, this._query)}, (function(prevctx, data, ${indexvar}) {`).indent();
+		this.write(`var indexctx;`);
+		this.write(`if (${indexvar} != null) indexctx = prevctx.append({ "@index": ${indexvar} }, { transparent: true });`);
 		this.write(`var ctx = (indexctx || prevctx).append(data);`);
-		handle.call(this, "index");
+		handle.call(this, indexvar);
 		this.outdent().write(`}).bind(this, ctx));`);
 	}
 }

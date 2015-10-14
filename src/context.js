@@ -160,7 +160,7 @@ _.extend(Context.prototype, Events, {
 	query: function(paths) {
 		if (typeof paths === "string") paths = parse(paths, { startRule: "pathQuery" });
 		if (!_.isArray(paths)) paths = paths != null ? [ paths ] : [];
-		if (!paths.length) paths.push({ type: "all", parts: [] });
+		if (!paths.length) paths.push({ scope: "all", parts: [] });
 
 		let self = this;
 		let fnCtx = this.getTopContext() || null;
