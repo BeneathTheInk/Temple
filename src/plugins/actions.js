@@ -4,6 +4,7 @@ import { getPropertyFromClass } from "../utils";
 
 var slice = Array.prototype.slice;
 var decorators = {};
+var actions = {};
 
 // Action Class
 export class Action {
@@ -21,6 +22,7 @@ export class Action {
 // the plugin
 export function plugin() {
 	this.use("decorators");
+	this._actions = {};
 	this.actions = this.addAction = add;
 	this.addActionOnce = addOnce;
 	this.removeAction = remove;
@@ -86,30 +88,31 @@ export function defineEvent(event) {
 // Msutache Instance Methods
 export function add(name, fn) {
 	if (typeof name === "object" && fn == null) {
-		_.each(name, function(fn, n) { this.addAction(n, fn); }, this);
+		_.each(name, function(fn, n) { add.call(this, n, fn); }, this);
 		return this;
 	}
 
 	if (typeof name !== "string" || name === "") throw new Error("Expecting non-empty string for action name.");
 	if (typeof fn !== "function") throw new Error("Expecting function for action.");
 
-	if (this._actions == null) this._actions = {};
-	if (this._actions[name] == null) this._actions[name] = [];
-	if (!~this._actions[name].indexOf(fn)) this._actions[name].push(fn);
+	var obj = this._actions;
+	if (!obj) obj = actions;
+	if (obj[name] == null) obj[name] = [];
+	if (!~obj[name].indexOf(fn)) obj[name].push(fn);
 
 	return this;
 }
 
 export function addOnce(name, fn) {
 	if (typeof name === "object" && fn == null) {
-		_.each(name, function(fn, n) { this.addActionOnce(n, fn); }, this);
+		_.each(name, function(fn, n) { addOnce.call(this, n, fn); }, this);
 		return this;
 	}
 
 	var onAction;
 
-	this.addAction(name, onAction = function () {
-		this.removeAction(name, onAction);
+	add.call(this, name, onAction = function () {
+		remove.call(this, name, onAction);
 		fn.apply(this, arguments);
 	});
 
@@ -122,22 +125,26 @@ export function remove(name, fn) {
 		name = null;
 	}
 
-	if (this._actions == null || (name == null && fn == null)) {
-		this._actions = {};
+	var obj = this._actions;
+	if (!obj) obj = actions;
+
+	if (name == null && fn == null) {
+		// clear actions, but never on the global
+		if (this._actions != null) this._actions = {};
 	}
 
 	else if (fn == null) {
-		delete this._actions[name];
+		delete obj[name];
 	}
 
 	else if (name == null) {
-		_.each(this._actions, function(d, n) {
-			this._actions[n] = d.filter(function(f) { return f !== fn; });
-		}, this);
+		_.each(obj, function(d, n) {
+			obj[n] = d.filter(function(f) { return f !== fn; });
+		});
 	}
 
-	else if (this._actions[name] != null) {
-		this._actions[name] = _.without(this._actions[name], fn);
+	else if (obj[name] != null) {
+		obj[name] = _.without(obj[name], fn);
 	}
 
 	return this;
@@ -153,23 +160,25 @@ export function fire(action) {
 
 	args.unshift(action);
 
-	if (this._actions != null && Array.isArray(this._actions[name])) {
-		this._actions[name].some(function(fn) {
-			if (!action.bubbles) return true;
-			fn.apply(this, args);
-		}, this);
+	// runs function, unless propagation is stopped
+	function run(fn) {
+		if (!action.bubbles) return true;
+		fn.apply(view, args);
 	}
 
-	if (action.bubbles && this.parent != null) {
-		// find the first parent with the fire method
-		var fireOn = this.parent;
-		while (typeof fireOn.fireAction !== "function") {
-			// if it has no parent, we can't do anything
-			if (fireOn.parent == null) return;
-			fireOn = fireOn.parent;
+	// bubble the action up through all the views
+	var view = this;
+	while (action.bubbles && view) {
+		if (view._actions != null && Array.isArray(view._actions[name])) {
+			view._actions[name].some(run);
 		}
 
-		fireOn.fireAction.apply(fireOn, args);
+		view = view.parent;
+	}
+
+	// bubble action to the global actions
+	if (action.bubbles && Array.isArray(actions[name])) {
+		actions[name].some(run);
 	}
 
 	return this;
