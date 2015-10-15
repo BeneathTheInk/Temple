@@ -19,12 +19,13 @@ import * as plugins from "./plugins";
 import * as partials from "./plugins/partials";
 import * as actions from "./plugins/actions";
 import * as decorators from "./plugins/decorators";
+import { globals } from "./plugins/helpers";
 
 export {
-	register, get, create,
+	View, register, get, create,
 	parse, compile, render, compileHTML, renderHTML, getSource,
 	idom, AST,
-	proxies, Context, View,
+	proxies, Context,
 	Map, List, Variable, utils,
-	plugins, actions, partials, decorators
+	plugins, actions, partials, decorators, globals
 };

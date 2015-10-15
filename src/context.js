@@ -5,6 +5,7 @@ import * as Events from "backbone-events-standalone";
 import subclass from "backbone-extend-standalone";
 import assignProps from "assign-props";
 import { getValue } from "./proxies";
+import { Map as ReactiveMap } from "trackr-objects";
 
 export default function Context(data, parent, options) {
 	if (!Context.isContext(parent)) {
@@ -23,14 +24,14 @@ export default function Context(data, parent, options) {
 	// a boolean for the context's transparency
 	assignProps(this, "_transparent", Boolean(options.transparent));
 
+	// set the passed data
 	this.set(data, options);
 }
 
+Context.extend = subclass;
 Context.isContext = function(o) {
 	return o instanceof Context;
 };
-
-Context.extend = subclass;
 
 assignProps(Context.prototype, {
 	data: function() {
@@ -40,7 +41,6 @@ assignProps(Context.prototype, {
 });
 
 _.extend(Context.prototype, Events, {
-
 	// sets the data on the context
 	set: function(data, options) {
 		options = options || {};
@@ -197,7 +197,8 @@ _.extend(Context.prototype, Events, {
 
 			while (_.isUndefined(val) && context != null) {
 				val = value(context.data, path.parts);
-				context = context.parent;
+				context = context.parent == null && context !== Context.globals ?
+					Context.globals : context.parent;
 				if (scope) break;
 			}
 
@@ -210,3 +211,5 @@ _.extend(Context.prototype, Events, {
 	}
 
 });
+
+Context.globals = new Context(new ReactiveMap(), { transparent: true });

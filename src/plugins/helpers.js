@@ -1,6 +1,7 @@
-import * as _ from "underscore";
 import { getPropertyFromClass } from "../utils";
 import { register } from "./";
+import { Map as ReactiveMap } from "trackr-objects";
+import Context from "../context";
 
 export function plugin() {
 	this.defaults = generateHelper.call(this, "defaults", "prepend");
@@ -10,39 +11,45 @@ export function plugin() {
 export default plugin;
 register("helpers", plugin);
 
-function generateHelper(name, dir) {
-	let storeKey = "_" + name;
-	this[storeKey] = {};
+var globalData = Context.globals.data;
+export var globals = generateHelper(globalData, "append");
+
+function generateHelper(store, dir) {
+	let storeKey;
+
+	if (typeof store === "string") {
+		storeKey = "_" + store;
+		store = this[storeKey];
+		if (!store) store = this[storeKey] = new ReactiveMap();
+	}
 
 	// push onto context stack
-	if (dir === "prepend" && this.dataContext) {
-		this.dataContext.prepend(this[storeKey], { transparent: true });
-	} else if (dir === "append" && this.context) {
-		this.context = this.context.append(this[storeKey], { transparent: true });
+	if (this) { // chrome bug? this is undefined for the global
+		if (dir === "prepend" && this.dataContext) {
+			this.dataContext.prepend(store, { transparent: true });
+		} else if (dir === "append" && this.context) {
+			this.context = this.context.append(store, { transparent: true });
+		}
 	}
 
 	// copy inherited values
-	if (typeof this !== "function") {
+	if (storeKey && typeof this !== "function") {
 		let h = getPropertyFromClass(this, storeKey);
 		if (h != null) merge.call(this, h);
 	}
 
 	return merge;
 
-	function merge(obj) {
-		if (!_.isObject(obj)) {
-			throw new Error("Expecting object for " + name);
+	function merge(key, value) {
+		if (typeof key === "object") {
+			Object.keys(key).forEach(function(k) {
+				merge(k, key[k]);
+			});
+			return this;
 		}
 
-		let keys = _.keys(obj);
-		if (!keys.length) return;
-
-		// add helpers
-		for (let k of keys) {
-			let v = obj[k];
-			if (v == null) delete this[storeKey][k];
-			else this[storeKey][k] = v;
-		}
+		if (typeof value === "undefined") store.delete(key);
+		else store.set(key, value);
 
 		return this;
 	}
