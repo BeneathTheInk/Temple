@@ -2,7 +2,7 @@ if (typeof document !== "undefined") {
 	require("webcomponents.js/CustomElements.js");
 }
 
-export var version = "0.6.3";
+export var version = "0.6.4";
 
 import { compile, render, compileHTML, renderHTML, getSource } from "./compile";
 import { add as register, get, create } from "./globals";
