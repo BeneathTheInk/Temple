@@ -1,7 +1,7 @@
 import * as _ from "underscore";
 import { register } from "./";
 import { get as getView } from "../globals";
-import { isView } from "../utils";
+import View from "../view";
 import Trackr from "trackr";
 
 export function plugin() {
@@ -77,7 +77,7 @@ export function getOne(name) {
 	for (n in comps) {
 		for (i in comps[n]) {
 			comp = comps[n][i];
-			if (!isView(comp)) continue;
+			if (!View.isView(comp)) continue;
 			res = comp.getComponent(name);
 			if (res != null) return res;
 		}
@@ -94,7 +94,7 @@ export function getAll(name) {
 		if (n === name) m.push.apply(m, comps);
 
 		comps.forEach(function(c) {
-			if (isView(c)) m.push.apply(m, c.getComponents(name));
+			if (View.isView(c)) m.push.apply(m, c.getComponents(name));
 		});
 
 		return m;

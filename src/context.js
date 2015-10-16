@@ -29,16 +29,19 @@ export default function Context(data, parent, options) {
 }
 
 Context.extend = subclass;
-Context.isContext = function(o) {
-	return o instanceof Context;
-};
 
 assignProps(Context.prototype, {
+	__temple: true,
+	__temple_type: "context",
 	data: function() {
 		this._dep.depend();
 		return this._data;
 	}
 });
+
+Context.isContext = function(o) {
+	return o && o.__temple && o.__temple_type === "context";
+};
 
 _.extend(Context.prototype, Events, {
 	// sets the data on the context

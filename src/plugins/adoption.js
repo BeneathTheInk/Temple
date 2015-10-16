@@ -1,5 +1,5 @@
 import { register } from "./";
-import { isView } from "../utils";
+import View from "../view";
 import { create as createView } from "../globals";
 
 export function plugin() {
@@ -12,7 +12,7 @@ register("adoption", plugin);
 
 export function adopt(view, parent, before) {
 	if (typeof view === "string") view = createView(view);
-	if (!isView(view)) throw new Error("Expecting view or view name");
+	if (!View.isView(view)) throw new Error("Expecting view or view name");
 
 	// have original parent disown child and set the adopted parent reference
 	if (view.adoptedParent) view.adoptedParent.disown(view);

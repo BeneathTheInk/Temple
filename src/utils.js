@@ -5,10 +5,6 @@ export function assign() {
 	return _.extend.apply(_, arguments);
 }
 
-export function isView(o) {
-	return Boolean(o != null && o.__temple);
-}
-
 // like jQuery's empty(), removes all children
 export function emptyNode(node) {
 	while (node.lastChild) node.removeChild(node.lastChild);

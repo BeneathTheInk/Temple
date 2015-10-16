@@ -2,19 +2,19 @@ import { Map as ReactiveMap, Variable as ReactiveVar, List as ReactiveList } fro
 import { runWithTarget, register } from "../proxies";
 
 register({
-	match: t => t instanceof ReactiveMap,
+	match: t => ReactiveMap.isMap(t),
 	get: (t, k) => t.get(k)
 });
 
 register({
-	match: t => t instanceof ReactiveList,
+	match: t => ReactiveList.isList(t),
 	get: (t, k) => k === "length" ? t.length : t.get(k),
 	empty: t => !t.length,
 	section: (t, render) => t.forEach(render)
 });
 
 register({
-	match: t => t instanceof ReactiveVar,
+	match: t => ReactiveVar.isVariable(t),
 	get: (t, k) => runWithTarget(t.get(), "get", k),
 	empty: t => runWithTarget(t.get(), "empty"),
 	section: (t, r) => runWithTarget(t.get(), "section", r)

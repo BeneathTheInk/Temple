@@ -32,7 +32,7 @@
 		"raf": "~3.1.0",
 		"source-map": "~0.5.1",
 		"trackr": "~2.0.0",
-		"trackr-objects": "~0.3.0",
+		"trackr-objects": "~0.3.6",
 		"underscore": "~1.8.3",
 		"webcomponents.js": "~0.7.2"
 	},

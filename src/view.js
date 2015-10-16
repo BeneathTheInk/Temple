@@ -140,10 +140,15 @@ _.extend(View.prototype, Events, {
 // brand the class
 assignProps(View.prototype, {
 	__temple: true,
+	__temple_type: "view",
 	data: function() {
 		return this.getTopContext().data;
 	}
 });
+
+View.isView = function(o) {
+	return o && o.__temple && o.__temple_type === "view";
+};
 
 // proxy a few computation methods
 [ "invalidate", "onInvalidate" ].forEach(function(method) {
