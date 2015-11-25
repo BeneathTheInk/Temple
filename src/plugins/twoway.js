@@ -5,6 +5,7 @@ import Trackr from "trackr";
 import { updateAttribute, updateProperty } from "../idom";
 
 var value_types = [ "radio", "option" ];
+var selection_types = [ "text", "search", "tel", "url", "password" ];
 
 export function plugin(options) {
 	this.use("decorators");
@@ -194,9 +195,10 @@ function getNodeValue(node, type) {
 function setLiveValue(live, el, fn) {
 	var active = document.activeElement === el;
 	if (!live && active) return;
-	var pos = [el.selectionStart, el.selectionEnd];
+	var sel = selection_types.indexOf(el.type) > -1;
+	var pos = sel ? [el.selectionStart, el.selectionEnd] : null;
 	fn();
-	if (active) el.setSelectionRange.apply(el, pos);
+	if (sel && active) el.setSelectionRange.apply(el, pos);
 }
 
 function setNodeValue(el, val, type, live) {

@@ -7,13 +7,7 @@ var proxies = [{
 	match: () => true,
 	get: (t, k) => t != null ? t[k] : void 0,
 	empty: t => !(_.isArray(t) ? t.length : t),
-	section: (t, render) => {
-		if (_.isArray(t)) {
-			t.forEach(render);
-		} else {
-			render(t);
-		}
-	}
+	section: (t, render) => _.isArray(t) ? t.forEach(render) : render(t)
 }];
 
 export function register(proxy) {
@@ -61,10 +55,10 @@ export function run(proxy, name) {
 }
 
 export function runWithTarget(target, name) {
-	var proxy = getByTarget(target, name);
+	let proxy = getByTarget(target, name);
 
 	if (proxy) {
-		var args = [ proxy, name, target ].concat(slice(arguments, 2));
+		let args = [ proxy, name, target ].concat(slice(arguments, 2));
 		return run.apply(null, args);
 	}
 }
