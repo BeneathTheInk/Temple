@@ -9,7 +9,7 @@ function header(data, h) {
 	}
 }
 
-function query(data, q) {
+function generateQuery(data, q) {
 	let s = JSON.stringify(q);
 	let v = ("q" + hash(s)).replace("-", "_");
 	header(data, `var ${v} = ${s};\n`);
@@ -427,7 +427,7 @@ export class Section extends ASTNode {
 
 	compileSection(data, handle) {
 		var indexvar = _.uniqueId("index");
-		this.write(`Temple.idom.section(${JSON.stringify(this._inverted)}, ${query(data, this._query)}, (function(prevctx, data, ${indexvar}) {`).indent();
+		this.write(`Temple.idom.section(${JSON.stringify(this._inverted)}, ${generateQuery(data, this._query)}, (function(prevctx, data, ${indexvar}) {`).indent();
 		this.write(`var indexctx;`);
 		this.write(`if (${indexvar} != null) indexctx = prevctx.append({ "@index": ${indexvar} }, { transparent: true });`);
 		this.write(`var ctx = (indexctx || prevctx).append(data);`);
@@ -443,7 +443,7 @@ export class Interpolator extends ASTNode {
 		this._query = query;
 	}
 
-	query(data) { return query(data, this._query); }
+	query(data) { return generateQuery(data, this._query); }
 
 	compile(data) {
 		this.start(data);
