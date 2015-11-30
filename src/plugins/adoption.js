@@ -4,6 +4,7 @@ import { create as createView } from "../globals";
 
 export function plugin() {
 	this.adopt = adopt;
+	this.adoptOnce = adoptOnce;
 	this.disown = disown;
 }
 
@@ -19,7 +20,7 @@ export function adopt(view, parent, before) {
 	view.adoptedParent = this;
 
 	// hook child data up to this data
-	var oldRoot = view.context;
+	let oldRoot = view.context;
 	while(oldRoot.parent) oldRoot = oldRoot.parent;
 	this.context.append(oldRoot);
 
@@ -27,13 +28,13 @@ export function adopt(view, parent, before) {
 	if (this.comp) view.paint(parent, before);
 
 	// render when parent renders
-	var onMount;
+	let onMount;
 	this.on("mount:after", onMount = function() {
 		view.paint(parent, before);
 	});
 
 	// stop when parent stops
-	var onStop;
+	let onStop;
 	this.on("stop", onStop = function() {
 		view.detach();
 	});
@@ -49,10 +50,22 @@ export function adopt(view, parent, before) {
 	return view;
 }
 
+export function adoptOnce(view, parent, before) {
+	view = this.adopt(view, parent, before);
+	let clean = () => {
+		view.off("stop", clean);
+		this.off("stop", clean);
+		this.disown(view);
+	};
+	view.on("stop", clean);
+	this.on("stop", clean);
+	return view;
+}
+
 export function disown(view) {
 	if (this._adopted == null) return;
 
-	var index;
+	let index;
 	if (!this._adopted.some(function(a, i) {
 		if (a.view === view) {
 			index = i;
