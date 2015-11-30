@@ -47,9 +47,20 @@ export function plugin(options) {
 			});
 		}
 
+		var nodeValueComp, stopped = false;
+
+		d.comp.onInvalidate(function() {
+			stopped = true;
+			if (nodeValueComp) nodeValueComp.stop();
+		});
+
 		// reactively set the value on the input
-		Trackr.autorun(function() {
-			setNodeValue(el, fbind.get.call(self, d.context), type, options.live);
+		// deferred so value decorators run
+		_.defer(function() {
+			if (stopped) return;
+			nodeValueComp = Trackr.autorun(function() {
+				setNodeValue(el, fbind.get.call(self, d.context), type, options.live);
+			});
 		});
 	});
 
@@ -229,7 +240,7 @@ function setNodeValue(el, val, type, live) {
 
 		case "select":
 			_.toArray(el.querySelectorAll("option")).forEach(function(opt) {
-				updateProperty(el, "selected", opt.$bound_value === val);
+				updateProperty(opt, "selected", opt.$bound_value === val);
 			});
 			break;
 
