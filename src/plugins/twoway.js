@@ -25,15 +25,12 @@ export function plugin(options) {
 		var el = d.target,
 			type = getType(el),
 			self = this,
-			onChange, value;
+			onChange;
 
 		// detect changes to the input's value
 		if (typeof fbind.change === "function") {
 			onChange = function(e) {
-				var nvalue = getNodeValue(el, type);
-				if (_.isEqual(value, nvalue)) return;
-				fbind.change.call(self, nvalue, d.context, e);
-				value = nvalue;
+				fbind.change.call(self, getNodeValue(el, type), d.context, e);
 			};
 
 			el.addEventListener("change", onChange);
