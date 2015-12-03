@@ -1,44 +1,160 @@
 {
-	var _ = require("underscore");
+	// var _ = require("lodash");
 	var ast = require("./ast");
+	var object = require("lodash/array/object");
+	var assign = require("lodash/object/assign");
+	var pluck = require("lodash/collection/pluck");
 
-	options = _.defaults(options || {}, {
+	options = assign({
 		strict: true
-	});
+	}, options);
+
+	function createNode(type, props) {
+		var loc = location();
+		return new ast[type](loc.start.line, loc.start.column, props);
+	}
+
+	function combineText(nodes) {
+		return nodes.reduce(function(m, n) {
+			var last = m.length - 1;
+			if (typeof n === "string" && typeof m[last] === "string") {
+				m[last] += n;
+			} else {
+				m.push(n);
+			}
+			return m;
+		}, []).map(function(n) {
+			if (typeof n !== "string") return n;
+			return createNode("Text", { value: n });
+		});
+	}
+
+	function combineSections(nodes) {
+		nodes = nodes.slice(0);
+		var stack = [createNode("Node", { children: [] })], n;
+
+		function push(item) {
+			stack[stack.length - 1].children.push(item);
+		}
+
+		function open(item) {
+			push(item);
+			stack.push(item);
+		}
+
+		function close(name, type, check) {
+			var last = stack.pop();
+			if (!(last instanceof ast[type]) || (check && !check(last))) {
+				throw new Error("Unexpected " + name + " section.");
+			}
+		}
+
+		function notelse(n) {
+			return n instanceof ast.Branch && n.query != null;
+		}
+
+		while(nodes.length) {
+			n = nodes.shift();
+			if (!(n instanceof ast.SectionTag)) {
+				push(n);
+				continue;
+			}
+
+			switch(n.name) {
+				case "if":
+					open(createNode("If", { children: [] }));
+					open(createNode("Branch", {
+						query: n.query,
+						children: []
+					}));
+					break;
+
+				case "for":
+					open(createNode("For", {
+						query: n.query,
+						children: []
+					}));
+					break;
+
+				case "else if":
+					close(n.name, "Branch", notelse);
+					open(createNode("Branch", {
+						query: n.query,
+						children: []
+					}));
+					break;
+
+				case "else":
+					close(n.name, "Branch", notelse);
+					open(createNode("Branch", {
+						query: null,
+						children: []
+					}));
+					break;
+
+				case "endif":
+					close(n.name, "Branch");
+					close(n.name, "If");
+					break;
+
+				case "endfor":
+					close(n.name, "For");
+					break;
+			}
+		}
+
+		if (stack.length !== 1) {
+			throw new Error("Non-terminated section.");
+		}
+
+		return stack[0].children;
+	}
+
+	function combine(nodes) {
+		return combineSections(combineText(nodes));
+	}
 }
 
 start = ws nodes:(
 	( scriptNode
-	/ viewNode
-	/ partial
-	/ commentStache
+	/ templateNode
 	/ commentNode ) ws)* {
-		return new ast.Root(location(), _.pluck(nodes, 0));
+		return createNode("Node", {
+			children: pluck(nodes, 0)
+		});
 	}
+
+/*
+Templates
+*/
+templateNode
+= "<" ws "template" attrs:attributes ">" nodes:templateRootNodes "</template>" {
+	return createNode("Node", {
+		attributes: attrs,
+		children: nodes
+	});
+}
+
+templateRootNodes = nodes:
+( sectionTag
+/ commentNode
+/ scriptNode
+/ elementNode
+/ $(!"</template>" !"{%" .))* { return combine(nodes); }
 
 /*
 HTML
 */
 html = nodes:
-	( section
-	/ commentStache
-	/ partialStache
-	/ doubleStache
-	/ tripleStache
+	( sectionTag
 	/ commentNode
 	/ elementNode
-	/ textNode )* { return _.compact(nodes); }
-
-// Text Node
-textNode
-	= text:[^<{]+ {
-		return new ast.Text(location(), text.join(""));
-	}
+	/ $(!("</" key ">") !"{%" .))* { return combine(nodes); }
 
 // Comment Nodes
 commentNode
 	= "<!--" v:$(!"-->" .)* "-->" {
-		return new ast.HTMLComment(location(), v);
+		return createNode("Node", { value: v });
 	}
 
 // script elements
@@ -50,7 +166,7 @@ scriptNode
 		return new ast.Script(location(), v);
 	}
 
-viewKey = ws k:$([a-z0-9]i+ "-" [a-z0-9\-]i+) ws { return k; }
+/*viewKey = ws k:$([a-z0-9]i+ "-" [a-z0-9\-]i+) ws { return k; }
 viewNode
 	= "<" starttag:viewKey attributes:(attribute)* ">" nodes:viewRootNodes "</" endtag:viewKey ">" {
 		starttag = starttag.toLowerCase();
@@ -95,14 +211,18 @@ viewRootNodes = nodes:
 	/ commentNode
 	/ scriptNode
 	/ elementNode
-	/ textNode )* { return _.compact(nodes); }
+	/ textNode )* { return _.compact(nodes); }*/
 
 // Element Nodes
 elementNode
-	= "<" tagname:key attributes:(attribute)* "/>" {
-		return new ast.Element(location(), tagname, attributes, []);
+	= "<" tagname:key attrs:attributes "/>" {
+		return createNode("Element", {
+			tagname: tagname,
+			attributes: attrs
+		});
+		// return new ast.Element(location(), tagname, attributes, []);
 	}
-	/ "<" starttag:key attributes:(attribute)* ">" nodes:html "</" endtag:key ">" {
+	/ "<" starttag:key attrs:attributes ">" nodes:html "</" endtag:key ">" {
 		starttag = starttag.toLowerCase();
 		endtag = endtag.toLowerCase();
 
@@ -110,32 +230,26 @@ elementNode
 			throw new Error("Element tag mismatch: " + starttag + " !== " + endtag);
 		}
 
-		return new ast.Element(location(), starttag, attributes, nodes);
+		return createNode("Element", {
+			tagname: starttag,
+			attributes: attrs,
+			children: nodes
+		});
+		// return new ast.Element(location(), starttag, attributes, nodes);
+	}
+
+attributes
+	= attrs:(attribute)* {
+		return object(attrs);
 	}
 
 // Element Attribute
 attribute
 	= key:key value:("=" ws string ws)? {
-		value = value != null ? value[2] : null;
-		var args;
-
-		if (value != null) {
-			// could fail on complex attributes
-			try {
-				args = peg$parse(value,  _.extend({}, options, { startRule: "attrArguments" }));
-			} catch(e) {
-				args = [new ast.Literal(location(), value)];
-			}
-		} else {
-			args = [];
-		}
-
-		var children = value != null ? peg$parse(value, _.extend({}, options, { startRule: "attrValue" })) : [];
-
-		return new ast.Attribute(location(), key, value, children, args);
+		return [ key, value != null ? value[2] : void 0 ];
 	}
 
-attrValue = nodes:
+/*attrValue = nodes:
 	( section
 	/ commentStache
 	/ partialStache
@@ -156,9 +270,25 @@ attrArg = ws val:
 	/ v:$(!"," .)* { return v.trim(); } ) ws {
 		if (typeof val === "object" && val != null) return val;
 		return new ast.Literal(location(), val);
+	}*/
+
+sectionTag
+	= "{%" ws k:sectionName ws v:$(!"%}" .)* ws "%}" {
+		return createNode("SectionTag", {
+			name: k,
+			query: v
+		});
 	}
 
-// mustache section
+sectionName =
+	( "if"i
+	/ "else if"i
+	/ "else"i
+	/ "endif"i
+	/ "for"i
+	/ "endfor"i )
+
+/*// mustache section
 section
 	= "{{" type:[#\^] startpath:pathQueryWithRaw "}}" nodes:html "{{/" endpath:stacheKey "}}" {
 		if (options.strict && startpath.raw !== endpath) {
@@ -205,12 +335,12 @@ partialStache
 		return new ast.PartialQuery(location(), m === "$", value);
 	}
 
-stacheKey = v:$(escape / [^}])* { return v.trim(); }
+stacheKey = v:$(escape / [^}])* { return v.trim(); }*/
 
 /*
 Paths
 */
-pathQuery = l:path r:("|" path)* { return [l].concat(_.pluck(r, 1)); }
+/*pathQuery = l:path r:("|" path)* { return [l].concat(_.pluck(r, 1)); }
 
 pathQueryWithRaw = m:pathQuery { return { raw: text().trim(), result: m } }
 
@@ -231,7 +361,7 @@ pathPrefix
 
 pathPart
 	= "."? k:$([a-z0-9@_]i [a-z0-9:\-_$@]i*) { return k; }
-	/ "[" p:path "]" { return p; }
+	/ "[" p:path "]" { return p; }*/
 
 /*
 Literals
