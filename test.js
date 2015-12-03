@@ -22,15 +22,17 @@ console.log("hello");
 
 	{% if items.length %}
 	<ul>
-		{% for k, v in items %}
-		<li>{{ v }} <a href="#" on-click="remove-item, {{ k }}">remove</a></li>
+		{% for items %}
+			{% render "list-item" %}
 		{% endfor %}
 	</ul>
-	{% else if xyz %}
-	boom
 	{% else %}
 	<p style="font-style: italic;">No Items</p>
 	{% endif %}
+</template>
+
+<template name="list-item">
+	<li>{{ . }} <a href="#" on-click="remove-item, {{ $index }}">remove</a></li>
 </template>
 `));
 } catch(e) {

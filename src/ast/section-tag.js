@@ -2,6 +2,7 @@ import Node from "./node";
 import Branch from "./branch";
 import If from "./if";
 import For from "./for";
+import Render from "./render";
 
 export default class SectionTag extends Node {
 	static convert(nodes) {
@@ -44,14 +45,6 @@ export default class SectionTag extends Node {
 					}));
 					break;
 
-				case "for":
-					open(new For(n._line, n._column, {
-						expression: n.expression,
-						variables: n.variables,
-						children: []
-					}));
-					break;
-
 				case "else if":
 					close(n.name, Branch, notelse);
 					open(new Branch(n._line, n._column, {
@@ -73,8 +66,21 @@ export default class SectionTag extends Node {
 					close(n.name, If);
 					break;
 
+				case "for":
+					open(new For(n._line, n._column, {
+						expression: n.expression,
+						children: []
+					}));
+					break;
+
 				case "endfor":
 					close(n.name, For);
+					break;
+
+				case "render":
+					push(new Render(n._line, n._column, {
+						expression: n.expression
+					}));
 					break;
 			}
 		}

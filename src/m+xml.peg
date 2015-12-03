@@ -201,22 +201,26 @@ section
 	}
 
 sectionName =
-	"if"i ws v:sectionContent {
+	"if"i ws v:$(sectionChar)* {
 		return { name: "if", expression: createNode("Expression", { tree: jsep(v) }) };
 	}
-	/ "else"i gws "if"i ws v:sectionContent {
+	/ "else"i gws "if"i ws v:$(sectionChar)* {
 		return { name: "else if", expression: createNode("Expression", { tree: jsep(v) }) };
 	}
 	/ "else"i
 	/ "endif"i
-	/ "for"i ws vars:(l:jsvariable ws r:("," ws jsvariable ws)* {
-		return [l].concat(pluck(r, 3));
-	})? "in" ws v:sectionContent {
-		return { name: "for", variables: vars, expression: createNode("Expression", { tree: jsep(v) }) };
+	/ "for"i ws v:$(sectionChar)* {
+		return { name: "for", expression: createNode("Expression", { tree: jsep(v) }) };
 	}
 	/ "endfor"i
+	/ "render"i ws v:$(sectionChar)* {
+		return {
+			name: "render",
+			expression: createNode("Expression", { tree: jsep(v) })
+		};
+	}
 
-sectionContent = $(!"%}" .)*
+sectionChar = !"%}" .
 
 jsvariable = $[a-z0-9$_]i*
 
