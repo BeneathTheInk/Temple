@@ -12,6 +12,10 @@ require("rollup").rollup({
 			builtins: false,
 			skip: [ "source-map", "lodash" ]
 		}),
+		require("rollup-plugin-commonjs")({
+			include: '**',
+			exclude: [ 'node_modules/**' ]
+		}),
 		require("rollup-plugin-babel")({
 			exclude: 'node_modules/**'
 		})
@@ -43,7 +47,7 @@ lib/ast.js: src/ast/index.js $(wildcard src/ast/*.js)
 
 lib/m+xml.js: src/m+xml.peg
 	# $< -> $@
-	@$(BIN)/pegjs $< $@
+	@$(BIN)/pegjs --allowed-start-rules start,arguments $< $@
 
 clean:
 	rm -rf lib/

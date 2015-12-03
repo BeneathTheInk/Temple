@@ -1,9 +1,10 @@
 {
-	// var _ = require("lodash");
 	var ast = require("./ast");
 	var object = require("lodash/array/object");
 	var assign = require("lodash/object/assign");
 	var pluck = require("lodash/collection/pluck");
+	var contains = require("lodash/collection/contains");
+	var jsep = require("jsep");
 
 	options = assign({
 		strict: true
@@ -29,89 +30,8 @@
 		});
 	}
 
-	function combineSections(nodes) {
-		nodes = nodes.slice(0);
-		var stack = [createNode("Node", { children: [] })], n;
-
-		function push(item) {
-			stack[stack.length - 1].children.push(item);
-		}
-
-		function open(item) {
-			push(item);
-			stack.push(item);
-		}
-
-		function close(name, type, check) {
-			var last = stack.pop();
-			if (!(last instanceof ast[type]) || (check && !check(last))) {
-				throw new Error("Unexpected " + name + " section.");
-			}
-		}
-
-		function notelse(n) {
-			return n instanceof ast.Branch && n.query != null;
-		}
-
-		while(nodes.length) {
-			n = nodes.shift();
-			if (!(n instanceof ast.SectionTag)) {
-				push(n);
-				continue;
-			}
-
-			switch(n.name) {
-				case "if":
-					open(createNode("If", { children: [] }));
-					open(createNode("Branch", {
-						query: n.query,
-						children: []
-					}));
-					break;
-
-				case "for":
-					open(createNode("For", {
-						query: n.query,
-						children: []
-					}));
-					break;
-
-				case "else if":
-					close(n.name, "Branch", notelse);
-					open(createNode("Branch", {
-						query: n.query,
-						children: []
-					}));
-					break;
-
-				case "else":
-					close(n.name, "Branch", notelse);
-					open(createNode("Branch", {
-						query: null,
-						children: []
-					}));
-					break;
-
-				case "endif":
-					close(n.name, "Branch");
-					close(n.name, "If");
-					break;
-
-				case "endfor":
-					close(n.name, "For");
-					break;
-			}
-		}
-
-		if (stack.length !== 1) {
-			throw new Error("Non-terminated section.");
-		}
-
-		return stack[0].children;
-	}
-
 	function combine(nodes) {
-		return combineSections(combineText(nodes));
+		return ast.SectionTag.convert(combineText(nodes));
 	}
 }
 
@@ -119,7 +39,7 @@ start = ws nodes:(
 	( scriptNode
 	/ templateNode
 	/ commentNode ) ws)* {
-		return createNode("Node", {
+		return createNode("Root", {
 			children: pluck(nodes, 0)
 		});
 	}
@@ -128,103 +48,76 @@ start = ws nodes:(
 Templates
 */
 templateNode
-= "<" ws "template" attrs:attributes ">" nodes:templateRootNodes "</template>" {
-	return createNode("Node", {
-		attributes: attrs,
-		children: nodes
-	});
-}
+	= "<" ws "template" attrs:attributes ">" nodes:templateRootNodes "</template>" {
+		var name, _extends;
+
+		attrs.forEach(function(a) {
+			if (a.name === "name") name = a.value;
+			else if (a.name === "extends") _extends = a.value;
+		});
+
+		return createNode("Template", {
+			name: name,
+			extends: _extends,
+			children: nodes
+		});
+	}
 
 templateRootNodes = nodes:
-( sectionTag
-/ commentNode
-/ scriptNode
-/ elementNode
-/ $(!"</template>" !"{%" .))* { return combine(nodes); }
+	( section
+	/ interpolator
+	/ commentNode
+	/ scriptNode
+	/ elementNode
+	/ notClosingTag )* { return combine(nodes); }
 
 /*
 HTML
 */
 html = nodes:
-	( sectionTag
+	( section
+	/ interpolator
 	/ commentNode
 	/ elementNode
-	/ $(!("</" key ">") !"{%" .))* { return combine(nodes); }
+	/ notClosingTag )* { return combine(nodes); }
+
+tagname = ws k:$[a-z0-9\-$]i+ ws { return k.toUpperCase(); }
+
+notClosingTag = $(!("</" tagname ">") !"{%" !"{{" .)
 
 // Comment Nodes
-commentNode
-	= "<!--" v:$(!"-->" .)* "-->" {
-		return createNode("Node", { value: v });
+commentNode = value:
+	( "<!--" v:$(!"-->" .)* "-->" { return v; }
+	/ "{#" v:$(!"#}" .)* "#}" { return v; }) {
+		return createNode("Comment", { value: value });
 	}
 
 // script elements
 scriptNode
-	= "<" ws "script" attributes:(attribute)* ">" v:$(!"</script>" .)* "</script>" {
-		return new ast.Script(location(), v);
-	}
-	/ "<" ws "$script" attributes:(attribute)* ">" v:$(!"</$script>" .)* "</$script>" {
-		return new ast.Script(location(), v);
-	}
-
-/*viewKey = ws k:$([a-z0-9]i+ "-" [a-z0-9\-]i+) ws { return k; }
-viewNode
-	= "<" starttag:viewKey attributes:(attribute)* ">" nodes:viewRootNodes "</" endtag:viewKey ">" {
-		starttag = starttag.toLowerCase();
-		endtag = endtag.toLowerCase();
-
-		if (starttag !== endtag) {
-			throw new Error("View tag mismatch: " + starttag + " !== " + endtag);
-		}
-
-		var exts;
-		attributes = attributes.filter(function(a) {
-			if (a._key !== "extends") return true;
-			exts = a._value;
+	= "<" ws "script" attrs:(attribute)* ">" v:$(!"</script>" .)* "</script>" {
+		return createNode("Script", {
+			attributes: attrs,
+			value: v
 		});
-
-		var scripts = [];
-		var partials = [];
-		nodes = nodes.filter(function(n) {
-			if (n instanceof ast.Script) {
-				scripts.push(n);
-				return false;
-			}
-
-			if (n instanceof ast.Partial) {
-				partials.push(n);
-				return false;
-			}
-
-			return true;
-		});
-
-		return new ast.View(location(), starttag, exts, attributes, partials, scripts, nodes);
 	}
-
-viewRootNodes = nodes:
-	( section
-	/ partial
-	/ commentStache
-	/ partialStache
-	/ doubleStache
-	/ tripleStache
-	/ commentNode
-	/ scriptNode
-	/ elementNode
-	/ textNode )* { return _.compact(nodes); }*/
+	/ "<" ws "$script" attrs:(attribute)* ">" v:$(!"</$script>" .)* "</$script>" {
+		return createNode("Script", {
+			attributes: attrs,
+			value: v
+		});
+	}
 
 // Element Nodes
 elementNode
-	= "<" tagname:key attrs:attributes "/>" {
+	= "<" tagname:tagname attrs:attributes "/>" {
 		return createNode("Element", {
 			tagname: tagname,
 			attributes: attrs
 		});
-		// return new ast.Element(location(), tagname, attributes, []);
 	}
-	/ "<" starttag:key attrs:attributes ">" nodes:html "</" endtag:key ">" {
-		starttag = starttag.toLowerCase();
-		endtag = endtag.toLowerCase();
+	/ "<" starttag:tagname attrs:attributes ">" nodes:html "</" endtag:tagname ">" {
+		starttag = starttag;
+		endtag = endtag;
 
 		if (starttag !== endtag) {
 			throw new Error("Element tag mismatch: " + starttag + " !== " + endtag);
@@ -235,133 +128,108 @@ elementNode
 			attributes: attrs,
 			children: nodes
 		});
-		// return new ast.Element(location(), starttag, attributes, nodes);
 	}
 
-attributes
-	= attrs:(attribute)* {
-		return object(attrs);
-	}
+/*
+Attributes
+*/
+attributes = (attribute)*
 
 // Element Attribute
 attribute
-	= key:key value:("=" ws string ws)? {
-		return [ key, value != null ? value[2] : void 0 ];
+	= key:attributeName value:("=" ws attributeValue ws)? {
+		value = value != null ? value[2] : void 0;
+		return createNode("Attribute", assign({
+			name: key
+		}, value));
 	}
 
-/*attrValue = nodes:
+attributeName = ws k:$[a-z0-9\-$]i+ ws { return k.toLowerCase(); }
+
+attributeValue =
+	nodes:( "\"" n:
+		( section
+		/ interpolator
+		/ escape
+		/ $(!"\"" !"{%" !"{{" .))* "\"" { return combine(n); }
+	/ "'" n:
+		( section
+		/ interpolator
+		/ escape
+		/ $(!"'" !"{%" !"{{" .))* "'" { return combine(n); }
+	) {
+		var t = text();
+		t = t.substr(1, t.length - 2);
+		var args;
+
+		try {
+			args = peg$parse(t, { startRule: "arguments" });
+		} catch(e) {
+			args = [];
+		}
+
+		return {
+			children: nodes,
+			arguments: args,
+			value: t
+		};
+	}
+
+arguments = ws l:argument ws r:("," ws argument ws)* {
+	return [l].concat(pluck(r, 2));
+}
+
+argument = nodes:
 	( section
-	/ commentStache
-	/ partialStache
-	/ doubleStache
-	/ tripleStache
-	/ textNode )* { return _.compact(nodes); }
-
-attrArguments =
-	l:attrArg r:("," attrArg)* { return [].concat(l, _.pluck(r, 1)); }
-
-attrArg = ws val:
-	( stache
+	/ interpolator
 	/ string
-	/ boolean
 	/ number
+	/ boolean
 	/ null
 	/ undefined
-	/ v:$(!"," .)* { return v.trim(); } ) ws {
-		if (typeof val === "object" && val != null) return val;
-		return new ast.Literal(location(), val);
-	}*/
+	/ $(!"," .))* {
+		return combine(nodes);
+	}
 
-sectionTag
-	= "{%" ws k:sectionName ws v:$(!"%}" .)* ws "%}" {
-		return createNode("SectionTag", {
-			name: k,
-			query: v
-		});
+/*
+Sections
+*/
+section
+	= "{%" ws k:sectionName ws "%}" {
+		if (typeof k === "string") k = { name: k };
+		return createNode("SectionTag", k);
 	}
 
 sectionName =
-	( "if"i
-	/ "else if"i
+	"if"i ws v:sectionContent {
+		return { name: "if", expression: createNode("Expression", { tree: jsep(v) }) };
+	}
+	/ "else"i gws "if"i ws v:sectionContent {
+		return { name: "else if", expression: createNode("Expression", { tree: jsep(v) }) };
+	}
 	/ "else"i
 	/ "endif"i
-	/ "for"i
-	/ "endfor"i )
-
-/*// mustache section
-section
-	= "{{" type:[#\^] startpath:pathQueryWithRaw "}}" nodes:html "{{/" endpath:stacheKey "}}" {
-		if (options.strict && startpath.raw !== endpath) {
-			throw new Error("Section tag mismatch: " + startpath.raw + " !== " + endpath);
-		}
-
-		return new ast.Section(location(), type === "^", startpath.result, nodes);
+	/ "for"i ws vars:(l:jsvariable ws r:("," ws jsvariable ws)* {
+		return [l].concat(pluck(r, 3));
+	})? "in" ws v:sectionContent {
+		return { name: "for", variables: vars, expression: createNode("Expression", { tree: jsep(v) }) };
 	}
+	/ "endfor"i
 
-partial
-	= "{{%" startkey:stacheKey "}}" nodes:html "{{/" endkey:stacheKey "}}" {
-		if (options.strict && startkey !== endkey) {
-			throw new Error("Section tag mismatch: " + startkey + " !== " + endkey);
-		}
+sectionContent = $(!"%}" .)*
 
-		return new ast.Partial(location(), startkey, nodes);
-	}
-
-// Mustache staches without the prefixes
-stache
-	= value:("{{{" pathQuery "}}}" / "{{" pathQuery "}}") {
-		return new ast.Interpolator(location(), false, value[1]);
-	}
-
-// Mustache double stache
-doubleStache
-	= "{{" ![/#{!$>\^] m:"&"? value:pathQuery "}}" {
-		return new ast.Interpolator(location(), Boolean(m), value);
-	}
-
-// Mustache triple stache
-tripleStache
-	= "{{{" value:pathQuery "}}}" {
-		return new ast.Interpolator(location(), true, value);
-	}
-
-commentStache
-	= "{{!" value:stacheKey "}}" {
-		return new ast.MustacheComment(location(), value);
-	}
-
-partialStache
-	=  "{{" m:[$>] value:stacheKey "}}" {
-		return new ast.PartialQuery(location(), m === "$", value);
-	}
-
-stacheKey = v:$(escape / [^}])* { return v.trim(); }*/
+jsvariable = $[a-z0-9$_]i*
 
 /*
-Paths
+Interpolator
 */
-/*pathQuery = l:path r:("|" path)* { return [l].concat(_.pluck(r, 1)); }
-
-pathQueryWithRaw = m:pathQuery { return { raw: text().trim(), result: m } }
-
-path
-	= ws v:(string / number) ws { return v; }
-	/ ws p:pathPrefix? parts:pathPart+ ws {
-		if (p == null) p = { scope: "all" };
-		p.parts = parts;
-		return p;
+interpolator = value:
+	( "{{{" v:$(!"}}}" .)* "}}}" { return v; }
+	/ "{{"  v:$(!"}}"  .)* "}}"  { return v; }  ) {
+		return createNode("Interpolator", {
+			expression: createNode("Expression", { tree: jsep(value) })
+		});
 	}
-	/ ws p:pathPrefix ws { p.parts = []; return p; }
-
-pathPrefix
-	= d:"../"+ { return { scope: "parent", distance: d.length }; }
-	/ "./" { return { scope: "local" }; }
-	/ "." { return { scope: "local" }; }
-	/ "/" { return { scope: "root" }; }
-
-pathPart
-	= "."? k:$([a-z0-9@_]i [a-z0-9:\-_$@]i*) { return k; }
-	/ "[" p:path "]" { return p; }*/
 
 /*
 Literals
@@ -384,8 +252,6 @@ undefined = ("undefined" / "void" gws (![,; \t\n\r] .)+) { return void 0; }
 /*
 Utils
 */
-key = ws k:$[a-z0-9\-]i+ ws { return k; }
-
 ws "whitespace" = $[ \t\n\r]*
 gws "guaranteed whitespace" = $[ \t\n\r]+
 
