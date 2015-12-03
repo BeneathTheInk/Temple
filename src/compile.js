@@ -1,8 +1,8 @@
-import * as _ from "underscore";
-import { parse } from "./m+xml";
+import * as _ from "lodash";
 import { SourceNode } from "source-map";
-import * as AST from "./ast";
+// import * as AST from "./ast";
 
+var parse = require("./m+xml").parse;
 var url = "sourceMappingURL=data:application/json;charset=utf-8;base64,";
 
 export function getSource(nodes, src, options) {
@@ -37,15 +37,15 @@ export function render(tpl, options) {
 	return (new Function("Temple", r))(require("./"));
 }
 
-export function compileHTML(html, options) {
-	options = options || {};
-	var node = new AST.HTML(null, html);
-	return getSource(node.compile(options), html, options);
-}
-
-export function renderHTML(html, options) {
-	/* jshint -W054 */
-	var r = compileHTML(html, options);
-	// console.log(r);
-	return (new Function("Temple", r))(require("./"));
-}
+// export function compileHTML(html, options) {
+// 	options = options || {};
+// 	var node = new AST.HTML(null, html);
+// 	return getSource(node.compile(options), html, options);
+// }
+//
+// export function renderHTML(html, options) {
+// 	/* jshint -W054 */
+// 	var r = compileHTML(html, options);
+// 	// console.log(r);
+// 	return (new Function("Temple", r))(require("./"));
+// }

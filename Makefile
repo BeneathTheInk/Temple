@@ -12,10 +12,6 @@ require("rollup").rollup({
 			builtins: false,
 			skip: [ "source-map", "lodash" ]
 		}),
-		require("rollup-plugin-commonjs")({
-			include: '**',
-			exclude: [ 'node_modules/**' ]
-		}),
 		require("rollup-plugin-babel")({
 			exclude: 'node_modules/**'
 		})

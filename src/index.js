@@ -2,7 +2,14 @@
 // 	require("webcomponents.js/CustomElements.js");
 // }
 
+
+import { compile } from "./compile";
+var parse = require("./m+xml").parse;
+
 export var version = "0.6.6";
+export {
+	compile, parse
+};
 
 // import { compile, render, compileHTML, renderHTML, getSource } from "./compile";
 // import { add as register, get, create } from "./globals";

@@ -1,4 +1,4 @@
-var parser = require("./lib/m+xml");
+var Temple = require("./");
 var util = require("util");
 
 function inspect(i) {
@@ -9,12 +9,13 @@ function inspect(i) {
 }
 
 try {
-inspect(parser.parse(`
+console.log(Temple.compile(`
 <script>
 console.log("hello");
 </script>
 
 <template name="my-template" extends="my-other-template">
+	<script>console.log(this);</script>
 	<form on-submit="add-item">
 		<input type="text" />
 		<button type="submit">Add</button>
@@ -36,5 +37,6 @@ console.log("hello");
 </template>
 `));
 } catch(e) {
-	inspect(e);
+	console.log(e.stack || e);
+	// inspect(e);
 }
