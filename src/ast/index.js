@@ -1,8 +1,10 @@
 import Node from "./node";
 import SectionTag from "./section-tag";
 import If from "./if";
-import For from "./for";
 import Branch from "./branch";
+import For from "./for";
+import With from "./with";
+import Render from "./render";
 import Element from "./element";
 import Text from "./text";
 import Interpolator from "./interpolator";
@@ -12,13 +14,12 @@ import Expression from "./expression";
 import Template from "./template";
 import Root from "./root";
 import Script from "./script";
-import Render from "./render";
 
 export {
 	Node,
 	Root, Template, Script,
 	Element, Text, Attribute,
-	SectionTag, If, For, Branch, Render,
+	SectionTag, If, Branch, For, With, Render,
 	Interpolator, Expression,
 	Comment
 };

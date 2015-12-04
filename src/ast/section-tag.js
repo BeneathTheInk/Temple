@@ -3,6 +3,7 @@ import Branch from "./branch";
 import If from "./if";
 import For from "./for";
 import Render from "./render";
+import With from "./with";
 
 export default class SectionTag extends Node {
 	static convert(nodes) {
@@ -75,6 +76,17 @@ export default class SectionTag extends Node {
 
 				case "endfor":
 					close(n.name, For);
+					break;
+
+				case "with":
+					open(new With(n._line, n._column, {
+						expression: n.expression,
+						children: []
+					}));
+					break;
+
+				case "endwith":
+					close(n.name, With);
 					break;
 
 				case "render":

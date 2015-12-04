@@ -3,6 +3,9 @@
 // }
 
 import * as idom from "./idom";
+import * as utils from "./utils";
+import Trackr from "trackr";
+import { Map, List, Variable } from "trackr-objects";
 
 export var version = "0.6.6";
 
@@ -10,7 +13,7 @@ export * from "./globals";
 export * from "./views";
 export * from "./compile";
 export var parse = require("./m+xml").parse;
-export { idom };
+export { idom, utils, Trackr, Map, List, Variable };
 
 // import { compile, render, compileHTML, renderHTML, getSource } from "./compile";
 // import { add as register, get, create } from "./globals";

@@ -18,8 +18,8 @@
 		"lint": "jshint src/ test/",
 		"test": "gulp compile && node test/index.js",
 		"test-browser": "gulp compile && browserify test/index.js --debug | browser-run",
-		"build": "gulp clean && gulp",
-		"prepublish": "npm run lint"
+		"build": "make",
+		"prepublish": "npm run lint && npm run build"
 	},
 	"main": "./lib/temple.js",
 	"dependencies": {
@@ -27,6 +27,7 @@
 		"incremental-dom": "~0.2.0",
 		"jsep": "~0.3.0",
 		"lodash": "~3.10.1",
+		"matches-selector": "~1.0.0",
 		"source-map": "~0.5.3",
 		"trackr": "~2.0.2",
 		"trackr-objects": "~0.3.6"

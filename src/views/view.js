@@ -8,8 +8,9 @@ import { patch } from "../idom";
 // import subclass from "backbone-extend-standalone";
 import * as _ from "lodash";
 import {EventEmitter} from "events";
-import {Map as ReactiveMap} from "trackr-objects";
+import {Map as ReactiveMap, Variable as ReactiveVar} from "trackr-objects";
 import assignProps from "assign-props";
+import {emptyNode} from "../utils";
 // import {getValue} from "./proxies";
 
 export default function View(data, parent, options) {
@@ -23,6 +24,8 @@ export default function View(data, parent, options) {
 		parent: null,
 		// holds lexical data
 		scope: new ReactiveMap(_.assign({}, defaults, data)),
+		// holds "this" data
+		data: new ReactiveVar(),
 		// whether or not the view is mounted
 		mounted: false,
 		// whether or not the view is currently rendering
@@ -37,37 +40,112 @@ export default function View(data, parent, options) {
 		}
 
 		this.s.parent = parent;
+	} else {
+		// set the this var to the data that was passed in
+		// but only if this is a root view
+		this.s.data.set(data);
 	}
 
-	this.initialize(options);
+	if (Object.getPrototypeOf(this) === View.prototype) {
+		this.initialize(options);
+	}
 }
 
 View.prototype = Object.create(EventEmitter.prototype);
 
+View.prototype.type = "view";
 View.prototype.initialize = function() {};
 
 assignProps(View.prototype, {
 	scope: function() { return this.s.scope; },
+	dataVar: function() { return this.s.data; },
+	data: function() { return this.s.data.get(); },
 	parent: function() { return this.s.parent; },
 	mounted: function() { return this.s.mounted; },
 	rendering: function() { return this.s.rendering; },
 	firstMount: function() { return this.s.firstMount; }
 });
 
+View.prototype.set = function(key, value) {
+	if (typeof key === "object") {
+		_.forEach(key, (v, k) => this.set(k, v));
+		return this;
+	}
+
+	if (key === "this") {
+		this.s.data.set(value);
+	} else {
+		this.s.scope.set(key, value);
+	}
+
+	return this;
+};
+
 View.prototype.get = function(key) { return this.scope.get(key); };
 
-View.prototype.lookup = function(key) {
-	// 1. check closest template's helpers
+View.prototype.parentData = function(dist) {
+	if (typeof dist !== "number" || isNaN(dist)) dist = 1;
 
-	// 2. check lexical scope
-	let view = this;
+	if (dist >= 0) {
+		let v = this;
+		while (dist && v) {
+			dist--;
+			v = v.parent;
+		}
+		return v ? v.data : void 0;
+	}
+
+	let views = [];
+	let v = this;
+
+	while (v) {
+		views.push(v);
+		v = v.parent;
+	}
+
+	let view = views[Math.abs(dist) - 1];
+	return view ? view.data : void 0;
+};
+
+View.prototype.lookup = function(key) {
+	let view;
+
+	// 0. check for this
+	if (!key || key === "this") {
+		view = this;
+		while (view) {
+			let val = view.data;
+			if (val !== void 0) return val;
+			view = view.parent;
+		}
+	}
+
+	// 1. special key $parent
+	if (key === "$parent") {
+		return (d) => this.parentData(d);
+	}
+
+	// 2. check closest template's helpers
+	view = this;
+	while (view) {
+		if (view.type === "template") {
+			let val = view._helpers.get(key);
+			if (val !== void 0) return val;
+			break;
+		}
+
+		view = view.parent;
+	}
+
+	// 3. check lexical scope
+	view = this;
 	while (view) {
 		let val = view.get(key);
 		if (val !== void 0) return val;
 		view = view.parent;
 	}
 
-	// 3. check global helpers
+	// 4. check global helpers
 };
 
 View.prototype.autorun = function(fn, options) {
@@ -87,22 +165,24 @@ View.prototype.mount = function() {
 		throw new Error("Cannot recursively render.");
 	}
 
-	this.s.rendering = true;
+	try {
+		this.s.rendering = true;
 
-	if (!this.mounted) {
-		Trackr.nonreactive(() => this.emit("mount:before"));
+		if (!this.mounted) {
+			Trackr.nonreactive(() => this.emit("mount:before"));
+		}
+
+		this.render.apply(this, arguments);
+		this.emit("render");
+
+		if (!this.mounted) {
+			this.s.firstMount = false;
+			this.s.mounted = true;
+			Trackr.nonreactive(() => this.emit("mount:after"));
+		}
+	} finally {
+		this.s.rendering = false;
 	}
-
-	this.render.apply(this, arguments);
-	this.emit("render");
-
-	if (!this.mounted) {
-		this.s.firstMount = false;
-		this.s.mounted = true;
-		Trackr.nonreactive(() => this.emit("mount:after"));
-	}
-
-	this.s.rendering = false;
 
 	return this;
 };
@@ -121,15 +201,33 @@ View.prototype.destroy = function() {
 	return this;
 };
 
+View.render = function(type, data, parent, fn, ctx, options) {
+	let v = new View(data, parent, options);
+	v.type = type;
+	v.render = fn;
+	if (ctx) v.dataVar.set(ctx);
+	v.mount();
+
+	let comp = Trackr.currentComputation;
+	if (comp) comp.onInvalidate(() => v.destroy());
+
+	return v;
+};
+
 View.prototype.paint = function(node) {
 	if (typeof node === "string") node = document.querySelector(node);
 	if (node == null) throw new Error("Expecting a valid DOM element to paint.");
+
+	this.destroy();
 
 	let comp = Trackr.autorun(() => {
 		patch(node, () => this.mount());
 	});
 	comp.onStop(() => this.destroy());
-	this.once("destroy", () => comp.stop());
+	this.once("destroy", () => {
+		emptyNode(node);
+		comp.stop();
+	});
 	return comp;
 };
 
@@ -165,8 +263,6 @@ View.prototype.paint = function(node) {
 // 	// // initialize with options
 // 	// this.initialize.call(this, options);
 // }
-
-View.prototype.type = "view";
 
 // _.extend(View.prototype, Events, {
 // 	initialize: function(){},

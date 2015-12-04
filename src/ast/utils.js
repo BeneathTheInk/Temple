@@ -7,11 +7,8 @@ export function header(data, h) {
 }
 
 export function compileGroup(nodes, data) {
-	let base = data.key || [];
 	return nodes.map(function(n, i) {
-		return n.compile(_.extend({}, data, {
-			key: [].concat(base, i.toString())
-		}));
+		return n.compile(addKey(data, i.toString()));
 	});
 }
 
@@ -30,4 +27,15 @@ export function getKey(data) {
 		if (i !== l.length - 1) v += "-";
 		return JSON.stringify(v);
 	}).join(" + ");
+}
+
+export function addKey(data, key) {
+	let base = data.key || [];
+	return _.extend({}, data, {
+		key: [].concat(base, key)
+	});
+}
+
+export function resetKey(data) {
+	return _.extend({}, data, { key: [] });
 }

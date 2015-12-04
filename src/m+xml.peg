@@ -112,7 +112,8 @@ elementNode
 	= "<" tagname:tagname attrs:attributes "/>" {
 		return createNode("Element", {
 			tagname: tagname,
-			attributes: attrs
+			attributes: attrs,
+			children: []
 		});
 	}
 	/ "<" starttag:tagname attrs:attributes ">" nodes:html "</" endtag:tagname ">" {
@@ -202,22 +203,56 @@ section
 
 sectionName =
 	"if"i ws v:$(sectionChar)* {
-		return { name: "if", expression: createNode("Expression", { tree: jsep(v) }) };
+		return {
+			name: "if",
+			expression: createNode("Expression", {
+				value: v,
+				tree: jsep(v)
+			})
+		};
 	}
 	/ "else"i gws "if"i ws v:$(sectionChar)* {
-		return { name: "else if", expression: createNode("Expression", { tree: jsep(v) }) };
+		return {
+			name: "else if",
+			expression: createNode("Expression", {
+				value: v,
+				tree: jsep(v)
+			})
+		};
 	}
 	/ "else"i
 	/ "endif"i
 	/ "for"i ws v:$(sectionChar)* {
-		return { name: "for", expression: createNode("Expression", { tree: jsep(v) }) };
+		return {
+			name: "for",
+			expression: createNode("Expression", {
+				value: v,
+				tree: jsep(v)
+			})
+		};
 	}
 	/ "endfor"i
 	/ "render"i ws v:$(sectionChar)* {
 		return {
 			name: "render",
-			expression: createNode("Expression", { tree: jsep(v) })
+			expression: createNode("Expression", {
+				value: v,
+				tree: jsep(v)
+			})
 		};
+	}
+	/ "with"i ws v:$(sectionChar)* {
+		return {
+			name: "with",
+			expression: createNode("Expression", {
+				value: v,
+				tree: jsep(v)
+			})
+		};
+	}
+	/ "endwith"i
+	/ key:$[a-z0-9]i+ &{
+		throw new Error("Unknown section key '" + key + "'");
 	}
 
 sectionChar = !"%}" .
@@ -231,7 +266,10 @@ interpolator = value:
 	( "{{{" v:$(!"}}}" .)* "}}}" { return v; }
 	/ "{{"  v:$(!"}}"  .)* "}}"  { return v; }  ) {
 		return createNode("Interpolator", {
-			expression: createNode("Expression", { tree: jsep(value) })
+			expression: createNode("Expression", {
+				value: value,
+				tree: jsep(value)
+			})
 		});
 	}
 

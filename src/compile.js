@@ -33,7 +33,7 @@ export function compile(tree, options) {
 export function exec(tpl, options) {
 	/* jshint -W054 */
 	var r = compile(tpl, options);
-	// console.log(r);
+	console.log(r);
 	return (new Function("Temple", r))(require("../"));
 }
 

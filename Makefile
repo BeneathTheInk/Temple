@@ -10,7 +10,7 @@ require("rollup").rollup({
 			jsnext: true,
 			main: true,
 			builtins: false,
-			skip: [ "source-map", "lodash", "trackr", "trackr-objects", "assign-props" ]
+			skip: [ "source-map", "lodash", "trackr", "trackr-objects", "assign-props", "matches-selector" ]
 		}),
 		require("rollup-plugin-babel")({
 			exclude: 'node_modules/**',

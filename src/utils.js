@@ -1,5 +1,6 @@
-import * as _ from "underscore";
-import merge from "plain-merge";
+import * as _ from "lodash";
+import matchesSelector from "matches-selector";
+// import merge from "plain-merge";
 
 export function assign() {
 	return _.extend.apply(_, arguments);
@@ -11,7 +12,7 @@ export function emptyNode(node) {
 	return node;
 }
 
-// cleans html, then converts html entities to unicode
+// converts html entities to unicode
 export var decodeEntities = (function() {
 	if (typeof document === "undefined") return;
 
@@ -54,7 +55,7 @@ export function matches(node, selector) {
 	}
 
 	if (node.nodeType === window.Node.ELEMENT_NODE) {
-		return require("matches-selector")(node, selector);
+		return matchesSelector(node, selector);
 	}
 
 	return false;
@@ -73,24 +74,24 @@ export function hash(str) {
 
 	return h;
 }
-
-export function getPropertyFromClass(obj, prop) {
-	var val;
-	let proto = Object.getPrototypeOf(obj);
-
-	if (typeof prop === "string" && prop) {
-		let p = prop;
-		prop = c => c[p];
-	}
-
-	if (typeof prop !== "function") {
-		throw new Error("Expecting function or string for property.");
-	}
-
-	while (proto) {
-		val = merge.defaults(val, prop(proto.constructor));
-		proto = Object.getPrototypeOf(proto);
-	}
-
-	return val;
-}
+//
+// export function getPropertyFromClass(obj, prop) {
+// 	var val;
+// 	let proto = Object.getPrototypeOf(obj);
+//
+// 	if (typeof prop === "string" && prop) {
+// 		let p = prop;
+// 		prop = c => c[p];
+// 	}
+//
+// 	if (typeof prop !== "function") {
+// 		throw new Error("Expecting function or string for property.");
+// 	}
+//
+// 	while (proto) {
+// 		val = merge.defaults(val, prop(proto.constructor));
+// 		proto = Object.getPrototypeOf(proto);
+// 	}
+//
+// 	return val;
+// }
