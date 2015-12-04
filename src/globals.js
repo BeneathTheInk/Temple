@@ -3,7 +3,7 @@ import View from "./view";
 import Trackr from "trackr";
 
 var deps = {};
-var views = {};
+var templates = {};
 var natives = {};
 
 function getNativePrototype(tag) {
@@ -12,18 +12,17 @@ function getNativePrototype(tag) {
 }
 
 export function add(name, props) {
-	props = _.extend({ tagName: name }, props);
+	props = _.extend({ name: name }, props);
 	let _View = View;
 	let _extends;
 
 	if (props.extends) {
-		if (_.has(views, props.extends)) {
-			_View = views[props.extends];
-			_extends = _View.prototype.extends;
-			delete props.extends;
-		} else {
-			_extends = props.extends;
+		if (!_.has(templates, props.extends)) {
+			throw new Error("No view to extend '" + props.extends + "'");
 		}
+
+		_View = templates[props.extends];
+		delete props.extends;
 	}
 
 	function wrap(k, f) {
@@ -44,7 +43,7 @@ export function add(name, props) {
 		}
 	}
 
-	let V = views[name] = _View.extend(props);
+	let V = templates[name] = _View.extend(props);
 
 	let proto = Object.create(_extends ?
 		getNativePrototype(_extends) :
@@ -61,7 +60,7 @@ export function add(name, props) {
 export function get(name) {
 	if (deps[name] == null) deps[name] = new Trackr.Dependency();
 	deps[name].depend();
-	return views[name];
+	return templates[name];
 }
 
 export function create(name, data, options) {
