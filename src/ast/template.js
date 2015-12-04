@@ -8,7 +8,7 @@ export default class Template extends Node {
 		this.start(data);
 		var safename = JSON.stringify(this.name);
 
-		this.write(`_templates[${safename}] = Temple.register(${safename}, {`);
+		this.write(`Template[${safename}] = Temple.register(${safename}, {`);
 		this.indent();
 
 		if (this.extends) {

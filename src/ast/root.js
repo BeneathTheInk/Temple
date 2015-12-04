@@ -7,17 +7,17 @@ export default class Root extends Node {
 		data.headers = [];
 
 		this.start(data);
-		header(data, "var _templates = {};\n");
+		header(data, "var Template = {};\n");
 		this.push(compileGroup(this.children, data));
 
 		if (data.exports === "es6") {
-			this.write("export default _templates;");
+			this.write("export default Template;");
 		} else if (data.exports === "cjs") {
-			this.write("module.exports = _templates;");
+			this.write("module.exports = Template;");
 		} else if (data.exports === "none") {
 			// print nothing
 		} else {
-			this.write("return _templates;");
+			this.write("return Template;");
 		}
 
 		let output = this.end();

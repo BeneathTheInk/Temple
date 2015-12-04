@@ -1,4 +1,4 @@
-import * as _ from "underscore";
+import * as _ from "lodash";
 
 var slice = Array.prototype.slice;
 slice = slice.call.bind(slice);

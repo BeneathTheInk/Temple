@@ -10,10 +10,11 @@ require("rollup").rollup({
 			jsnext: true,
 			main: true,
 			builtins: false,
-			skip: [ "source-map", "lodash" ]
+			skip: [ "source-map", "lodash", "trackr", "trackr-objects", "assign-props" ]
 		}),
 		require("rollup-plugin-babel")({
-			exclude: 'node_modules/**'
+			exclude: 'node_modules/**',
+			include: [ "node_modules/incremental-dom/**" ]
 		})
 	]
 }).then(function(bundle) {

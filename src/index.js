@@ -2,14 +2,15 @@
 // 	require("webcomponents.js/CustomElements.js");
 // }
 
-
-import { compile } from "./compile";
-var parse = require("./m+xml").parse;
+import * as idom from "./idom";
 
 export var version = "0.6.6";
-export {
-	compile, parse
-};
+
+export * from "./globals";
+export * from "./views";
+export * from "./compile";
+export var parse = require("./m+xml").parse;
+export { idom };
 
 // import { compile, render, compileHTML, renderHTML, getSource } from "./compile";
 // import { add as register, get, create } from "./globals";

@@ -9,12 +9,12 @@ function inspect(i) {
 }
 
 try {
-console.log(Temple.compile(`
+Temple.exec(`
 <script>
 console.log("hello");
 </script>
 
-<template name="my-template" extends="my-other-template">
+<template name="myTemplate">
 	<script>console.log(this);</script>
 	<form on-submit="add-item">
 		<input type="text" />
@@ -24,7 +24,7 @@ console.log("hello");
 	{% if items.length %}
 	<ul>
 		{% for items %}
-			{% render "list-item" %}
+			{% render "listItem" %}
 		{% endfor %}
 	</ul>
 	{% else %}
@@ -32,10 +32,12 @@ console.log("hello");
 	{% endif %}
 </template>
 
-<template name="list-item">
+<template name="listItem">
 	<li>{{ . }} <a href="#" on-click="remove-item, {{ $index }}">remove</a></li>
 </template>
-`));
+`);
+
+Temple.create("myTemplate").paint("body");
 } catch(e) {
 	console.log(e.stack || e);
 	// inspect(e);

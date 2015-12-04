@@ -30,11 +30,11 @@ export function compile(tree, options) {
 	return getSource(nodes, src, options);
 }
 
-export function render(tpl, options) {
+export function exec(tpl, options) {
 	/* jshint -W054 */
 	var r = compile(tpl, options);
 	// console.log(r);
-	return (new Function("Temple", r))(require("./"));
+	return (new Function("Temple", r))(require("../"));
 }
 
 // export function compileHTML(html, options) {

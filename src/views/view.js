@@ -1,43 +1,172 @@
 // import * as _ from "underscore";
-// import Trackr from "trackr";
+import Trackr from "trackr";
 // import Context from "./context";
-// import { patchElement } from "./idom";
+import { patch } from "../idom";
 // import { load as loadPlugin } from "./plugins";
 // import assignProps from "assign-props";
 // import * as Events from "backbone-events-standalone";
 // import subclass from "backbone-extend-standalone";
+import * as _ from "lodash";
 import {EventEmitter} from "events";
+import {Map as ReactiveMap} from "trackr-objects";
+import assignProps from "assign-props";
+// import {getValue} from "./proxies";
 
-export default class View extends EventEmitter {
-	constructor(parent, options) {
+export default function View(data, parent, options) {
+	EventEmitter.call(this);
+	options = options || {};
+	let defaults = _.result(this, "defaults");
 
+	// internal view state
+	this.s = {
+		// parent view for scope
+		parent: null,
+		// holds lexical data
+		scope: new ReactiveMap(_.assign({}, defaults, data)),
+		// whether or not the view is mounted
+		mounted: false,
+		// whether or not the view is currently rendering
+		rendering: false,
+		// whether or not this is the first mount
+		firstMount: true
+	};
+
+	if (parent) {
+		if (!(parent instanceof View)) {
+			throw new Error("Expecting view for parent.");
+		}
+
+		this.s.parent = parent;
 	}
-	// options = options || {};
-	//
-	// var parent;
-	// if (Context.isContext(data)) {
-	// 	parent = data;
-	// 	data = null;
-	// }
-	//
-	// // load initial data
-	// this.context = this.dataContext = new Context(data, parent, options);
-	//
-	// // create element from tag name
-	// let tag = _.result(this, "tagName");
-	// if (!tag) throw new Error("Missing tag name.");
-	// this.el = document.createElement(this.extends || tag, this.extends ? tag : null);
-	//
-	// // load plugins that the class loaded
-	// if (this.constructor._loaded_plugins) {
-	// 	for (let p of this.constructor._loaded_plugins) {
-	// 		this.use.apply(this, [p.name || p.plugin].concat(p.args));
-	// 	}
-	// }
-	//
-	// // initialize with options
-	// this.initialize.call(this, options);
+
+	this.initialize(options);
 }
+
+View.prototype = Object.create(EventEmitter.prototype);
+
+View.prototype.initialize = function() {};
+
+assignProps(View.prototype, {
+	scope: function() { return this.s.scope; },
+	parent: function() { return this.s.parent; },
+	mounted: function() { return this.s.mounted; },
+	rendering: function() { return this.s.rendering; },
+	firstMount: function() { return this.s.firstMount; }
+});
+
+View.prototype.get = function(key) { return this.scope.get(key); };
+
+View.prototype.lookup = function(key) {
+	// 1. check closest template's helpers
+
+	// 2. check lexical scope
+	let view = this;
+	while (view) {
+		let val = view.get(key);
+		if (val !== void 0) return val;
+		view = view.parent;
+	}
+
+	// 3. check global helpers
+};
+
+View.prototype.autorun = function(fn, options) {
+	if (!this.rendering) {
+		throw new Error("Can only call this autorun while rendering");
+	}
+
+	let comp = Trackr.autorun(fn.bind(this), options);
+	let stop = () => comp.stop();
+	comp.onStop(this.removeListener.bind(this, "destroy", stop));
+	this.on("destroy", stop);
+	return comp;
+};
+
+View.prototype.mount = function() {
+	if (this.rendering) {
+		throw new Error("Cannot recursively render.");
+	}
+
+	this.s.rendering = true;
+
+	if (!this.mounted) {
+		Trackr.nonreactive(() => this.emit("mount:before"));
+	}
+
+	this.render.apply(this, arguments);
+	this.emit("render");
+
+	if (!this.mounted) {
+		this.s.firstMount = false;
+		this.s.mounted = true;
+		Trackr.nonreactive(() => this.emit("mount:after"));
+	}
+
+	this.s.rendering = false;
+
+	return this;
+};
+
+View.prototype.destroy = function() {
+	if (this.rendering) {
+		throw new Error("Cannot destroy while rendering.");
+	}
+
+	if (this.mounted) {
+		this.s.firstMount = true;
+		this.s.mounted = false;
+		this.emit("destroy");
+	}
+
+	return this;
+};
+
+View.prototype.paint = function(node) {
+	if (typeof node === "string") node = document.querySelector(node);
+	if (node == null) throw new Error("Expecting a valid DOM element to paint.");
+
+	let comp = Trackr.autorun(() => {
+		patch(node, () => this.mount());
+	});
+	comp.onStop(() => this.destroy());
+	this.once("destroy", () => comp.stop());
+	return comp;
+};
+
+//
+// class View extends EventEmitter {
+// 	constructor
+//
+//
+//
+// 	// options = options || {};
+// 	//
+// 	// var parent;
+// 	// if (Context.isContext(data)) {
+// 	// 	parent = data;
+// 	// 	data = null;
+// 	// }
+// 	//
+// 	// // load initial data
+// 	// this.context = this.dataContext = new Context(data, parent, options);
+// 	//
+// 	// // create element from tag name
+// 	// let tag = _.result(this, "tagName");
+// 	// if (!tag) throw new Error("Missing tag name.");
+// 	// this.el = document.createElement(this.extends || tag, this.extends ? tag : null);
+// 	//
+// 	// // load plugins that the class loaded
+// 	// if (this.constructor._loaded_plugins) {
+// 	// 	for (let p of this.constructor._loaded_plugins) {
+// 	// 		this.use.apply(this, [p.name || p.plugin].concat(p.args));
+// 	// 	}
+// 	// }
+// 	//
+// 	// // initialize with options
+// 	// this.initialize.call(this, options);
+// }
+
+View.prototype.type = "view";
 
 // _.extend(View.prototype, Events, {
 // 	initialize: function(){},
