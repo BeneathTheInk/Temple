@@ -15,7 +15,7 @@
 		return new ast[type](loc.start.line, loc.start.column, props);
 	}
 
-	function combineText(nodes) {
+	function combineText(nodes, type) {
 		return nodes.reduce(function(m, n) {
 			var last = m.length - 1;
 			if (typeof n === "string" && typeof m[last] === "string") {
@@ -26,12 +26,12 @@
 			return m;
 		}, []).map(function(n) {
 			if (typeof n !== "string") return n;
-			return createNode("Text", { value: n });
+			return createNode(type || "Text", { value: n });
 		});
 	}
 
-	function combine(nodes) {
-		return ast.SectionTag.convert(combineText(nodes));
+	function combine(nodes, type) {
+		return ast.SectionTag.convert(combineText(nodes, type));
 	}
 }
 
@@ -70,6 +70,24 @@ templateRootNodes = nodes:
 	/ scriptNode
 	/ elementNode
 	/ notClosingTag )* { return combine(nodes); }
+
+/*
+Interpolator
+*/
+variable = value:
+	( "{{{" v:$(!"}}}" .)* "}}}" { return v; }
+	/ "{{"  v:$(!"}}"  .)* "}}"  { return v; } ) {
+		return createNode("Expression", {
+			value: value,
+			tree: jsep(value)
+		});
+	}
+
+interpolator = expression:variable {
+		return createNode("Interpolator", {
+			expression: expression
+		});
+	}
 
 /*
 HTML
@@ -150,14 +168,14 @@ attributeName = ws k:$[a-z0-9\-$]i+ ws { return k.toLowerCase(); }
 attributeValue =
 	nodes:( "\"" n:
 		( section
-		/ interpolator
+		/ variable
 		/ escape
-		/ $(!"\"" !"{%" !"{{" .))* "\"" { return combine(n); }
+		/ $(!"\"" !"{%" !"{{" .))* "\"" { return combine(n, "Literal"); }
 	/ "'" n:
 		( section
-		/ interpolator
+		/ variable
 		/ escape
-		/ $(!"'" !"{%" !"{{" .))* "'" { return combine(n); }
+		/ $(!"'" !"{%" !"{{" .))* "'" { return combine(n, "Literal"); }
 	) {
 		var t = text();
 		t = t.substr(1, t.length - 2);
@@ -177,20 +195,17 @@ attributeValue =
 	}
 
 arguments = ws l:argument ws r:("," ws argument ws)* {
-	return [l].concat(pluck(r, 2));
+	return combine([l].concat(pluck(r, 2)), "Literal");
 }
 
-argument = nodes:
-	( section
-	/ interpolator
+argument =
+	  variable
 	/ string
 	/ number
 	/ boolean
 	/ null
 	/ undefined
-	/ $(!"," .))* {
-		return combine(nodes);
-	}
+	/ $(!"," .)+
 
 /*
 Sections
@@ -258,20 +273,6 @@ sectionName =
 sectionChar = !"%}" .
 
 jsvariable = $[a-z0-9$_]i*
-
-/*
-Interpolator
-*/
-interpolator = value:
-	( "{{{" v:$(!"}}}" .)* "}}}" { return v; }
-	/ "{{"  v:$(!"}}"  .)* "}}"  { return v; }  ) {
-		return createNode("Interpolator", {
-			expression: createNode("Expression", {
-				value: value,
-				tree: jsep(value)
-			})
-		});
-	}
 
 /*
 Literals

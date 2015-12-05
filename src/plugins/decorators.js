@@ -1,4 +1,4 @@
-import * as _ from "underscore";
+import * as _ from "lodash";
 import Trackr from "trackr";
 import { updateAttribute, getContext } from "../idom";
 import { getPropertyFromClass } from "../utils";

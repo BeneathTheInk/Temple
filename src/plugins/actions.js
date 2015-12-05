@@ -1,4 +1,4 @@
-import * as _ from "underscore";
+import * as _ from "lodash";
 import { register } from "./";
 import { getPropertyFromClass } from "../utils";
 
@@ -60,7 +60,6 @@ export function defineEvent(event) {
 			var action = new Action(key);
 			action.original = e;
 			action.target = action.node = node;
-			action.context = decor.context;
 			action.view = decor.view;
 
 			// find the first parent with the fire method

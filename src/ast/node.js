@@ -74,20 +74,10 @@ export default class ASTNode {
 		return this._sn(w.data.originalFilename, w.chunks);
 	}
 
-	compile(data) {
-		// throw new Error("Not implemented.");
-		return this._sn(data.originalFilename);
+	compile() {
+		throw new Error("Not implemented.");
+		// return this._sn(data.originalFilename);
 	}
-
-	// compileString() {
-	// 	throw new Error("Not implemented.");
-	// 	// return this._sn(data.originalFilename);
-	// }
-	//
-	// compileArguments() {
-	// 	throw new Error("Not implemented.");
-	// 	// return this._sn(data.originalFilename);
-	// }
 
 	toJSON() {
 		let out = {};

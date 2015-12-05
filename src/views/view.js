@@ -2,10 +2,10 @@
 import Trackr from "trackr";
 // import Context from "./context";
 import { patch } from "../idom";
-// import { load as loadPlugin } from "./plugins";
+import { load as loadPlugin } from "../plugins";
 // import assignProps from "assign-props";
 // import * as Events from "backbone-events-standalone";
-// import subclass from "backbone-extend-standalone";
+import subclass from "backbone-extend-standalone";
 import * as _ from "lodash";
 import {EventEmitter} from "events";
 import {Map as ReactiveMap, Variable as ReactiveVar} from "trackr-objects";
@@ -51,10 +51,19 @@ export default function View(data, parent, options) {
 	}
 }
 
+View.extend = subclass;
 View.prototype = Object.create(EventEmitter.prototype);
+View.prototype.constructor = View;
 
 View.prototype.type = "view";
-View.prototype.initialize = function() {};
+View.prototype.initialize = function() {
+	// load plugins that the class loaded
+	if (this.constructor._loaded_plugins) {
+		for (let p of this.constructor._loaded_plugins) {
+			this.use.apply(this, [p.name || p.plugin].concat(p.args));
+		}
+	}
+};
 
 assignProps(View.prototype, {
 	scope: function() { return this.s.scope; },
@@ -225,11 +234,32 @@ View.prototype.paint = function(node) {
 	});
 	comp.onStop(() => this.destroy());
 	this.once("destroy", () => {
-		emptyNode(node);
 		comp.stop();
+		emptyNode(node);
 	});
 	return comp;
 };
+
+// plugin API
+View.use = View.prototype.use = function use(p) {
+	return loadPlugin(this, p, _.toArray(arguments).slice(1));
+};
+
+// modify extend so subclasses use the same plugins
+View.extend = function() {
+	var klass = subclass.apply(this, arguments);
+
+	if (this._loaded_plugins) {
+		for (let p of this._loaded_plugins) {
+			klass.use.apply(klass, [p.name || p.plugin].concat(p.args));
+		}
+	}
+
+	return klass;
+};
+
+// default plugins
+View.use("decorators");
 
 //
 // class View extends EventEmitter {

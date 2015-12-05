@@ -41,6 +41,8 @@ function render(tree) {
 }
 
 export default class Expression extends Node {
+	get reactive() { return true; }
+	
 	compile(data) {
 		this.start(data);
 		this.push(render(this.tree));

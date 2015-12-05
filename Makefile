@@ -10,7 +10,11 @@ require("rollup").rollup({
 			jsnext: true,
 			main: true,
 			builtins: false,
-			skip: [ "source-map", "lodash", "trackr", "trackr-objects", "assign-props", "matches-selector" ]
+			skip: [
+				"source-map", "lodash", "trackr", "trackr-objects",
+				"assign-props", "matches-selector", "raf",
+				"backbone-extend-standalone", "plain-merge"
+			]
 		}),
 		require("rollup-plugin-babel")({
 			exclude: 'node_modules/**',

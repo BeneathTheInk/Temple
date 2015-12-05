@@ -1,3 +1,0 @@
-[submodule "vendor/incremental-dom"]
-	path = vendor/incremental-dom
-	url = git@github.com:google/incremental-dom.git

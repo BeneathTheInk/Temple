@@ -1,6 +1,6 @@
 import * as _ from "lodash";
 import matchesSelector from "matches-selector";
-// import merge from "plain-merge";
+import merge from "plain-merge";
 
 export function assign() {
 	return _.extend.apply(_, arguments);
@@ -74,24 +74,24 @@ export function hash(str) {
 
 	return h;
 }
-//
-// export function getPropertyFromClass(obj, prop) {
-// 	var val;
-// 	let proto = Object.getPrototypeOf(obj);
-//
-// 	if (typeof prop === "string" && prop) {
-// 		let p = prop;
-// 		prop = c => c[p];
-// 	}
-//
-// 	if (typeof prop !== "function") {
-// 		throw new Error("Expecting function or string for property.");
-// 	}
-//
-// 	while (proto) {
-// 		val = merge.defaults(val, prop(proto.constructor));
-// 		proto = Object.getPrototypeOf(proto);
-// 	}
-//
-// 	return val;
-// }
+
+export function getPropertyFromClass(obj, prop) {
+	var val;
+	let proto = Object.getPrototypeOf(obj);
+
+	if (typeof prop === "string" && prop) {
+		let p = prop;
+		prop = c => c[p];
+	}
+
+	if (typeof prop !== "function") {
+		throw new Error("Expecting function or string for property.");
+	}
+
+	while (proto) {
+		val = merge.defaults(val, prop(proto.constructor));
+		proto = Object.getPrototypeOf(proto);
+	}
+
+	return val;
+}

@@ -38,19 +38,19 @@ export function register(name, props) {
 		}
 	}
 
-	let child;
-	if (_.has(props, "constructor")) {
-		child = props.constructor;
-	} else {
-		child = function() { parent.apply(this, arguments); };
-	}
+	// let child;
+	// if (_.has(props, "constructor")) {
+	// 	child = props.constructor;
+	// } else {
+	// 	child = function() { parent.apply(this, arguments); };
+	// }
+	//
+	// _.assign(child, parent);
+	// child.prototype = _.assign(Object.create(parent.prototype), props);
+	// child.prototype.constructor = parent;
+	// child.__super__ = parent.prototype;
 
-	_.assign(child, parent);
-	child.prototype = _.assign(Object.create(parent.prototype), props);
-	child.prototype.constructor = parent;
-	child.__super__ = parent.prototype;
-
-	return (templates[name] = child);
+	return (templates[name] = parent.extend(props));
 }
 
 export function getByName(name) {

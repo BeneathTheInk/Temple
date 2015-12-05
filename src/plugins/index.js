@@ -1,4 +1,4 @@
-import * as _ from "underscore";
+import * as _ from "lodash";
 
 // declare, but don't set the plugin variable
 // exports and imports are hoisted, so this cannot do anything to the value
@@ -62,11 +62,10 @@ export function get(name) {
 
 // load built in plugins
 import "./decorators";
-import "./helpers";
-import "./components";
-import "./partials";
+// import "./components";
+// import "./partials";
 import "./actions";
-import "./twoway";
-import "./adoption";
-import "./refs";
-import "./reactive-proxies.js";
+// import "./twoway";
+// import "./adoption";
+// import "./refs";
+// import "./reactive-proxies.js";

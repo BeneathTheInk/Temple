@@ -14,12 +14,13 @@ import Expression from "./expression";
 import Template from "./template";
 import Root from "./root";
 import Script from "./script";
+import Literal from "./literal";
 
 export {
 	Node,
 	Root, Template, Script,
 	Element, Text, Attribute,
 	SectionTag, If, Branch, For, With, Render,
-	Interpolator, Expression,
+	Interpolator, Expression, Literal,
 	Comment
 };
