@@ -1,6 +1,6 @@
 import * as _ from "lodash";
 import Node from "./node";
-import {compileGroup} from "./utils";
+import {compileGroup,addKey} from "./utils";
 import Script from "./script";
 
 export default class Template extends Node {
@@ -30,7 +30,9 @@ export default class Template extends Node {
 			this.outdent().write("},");
 		}
 
-		this.write("render: function() {").indent();
+		this.write("render: function(render_opts) {").indent();
+		this.write(`render_opts = render_opts || {};`);
+		data = addKey(data, { value: "(render_opts.key || \"\")" });
 		this.push(compileGroup(render, data));
 		this.outdent().write("}");
 

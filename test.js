@@ -46,12 +46,7 @@ Temple.exec(`
 	</form>
 
 	{% if items.length %}
-	<ul>
-		{% for items %}
-			<li>{{ this }} <a href="#" on-click="remove-item, {{ $index }}">remove</a></li>
-			{# {% render "listItem" %} #}
-		{% endfor %}
-	</ul>
+	<ul>{% for items %}{% render "listItem" %}{% endfor %}</ul>
 	{% else %}
 	<p style="font-style: italic;">No Items</p>
 	{% endif %}

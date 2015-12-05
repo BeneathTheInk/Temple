@@ -101,7 +101,7 @@ View.prototype.parentData = function(dist) {
 			dist--;
 			v = v.parent;
 		}
-		return v ? v.data : void 0;
+		return !dist && v ? v.data : void 0;
 	}
 
 	let views = [];
