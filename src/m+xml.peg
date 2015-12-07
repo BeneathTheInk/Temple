@@ -33,6 +33,13 @@
 	function combine(nodes, type) {
 		return ast.SectionTag.convert(combineText(nodes, type));
 	}
+
+	function createExpression(v) {
+		return createNode("Expression", {
+			value: v,
+			tree: jsep(v)
+		});
+	}
 }
 
 start = ws nodes:(
@@ -48,28 +55,18 @@ start = ws nodes:(
 Templates
 */
 templateNode
-	= "<" ws "template" attrs:attributes ">" nodes:templateRootNodes "</template>" {
-		var name, _extends;
+	= "<" ws "template" attrs:attributes ">" nodes:html "</template>" {
+		var name;
 
 		attrs.forEach(function(a) {
 			if (a.name === "name") name = a.value;
-			else if (a.name === "extends") _extends = a.value;
 		});
 
 		return createNode("Template", {
 			name: name,
-			extends: _extends,
 			children: nodes
 		});
 	}
-
-templateRootNodes = nodes:
-	( section
-	/ interpolator
-	/ commentNode
-	/ scriptNode
-	/ elementNode
-	/ notClosingTag )* { return combine(nodes); }
 
 /*
 Interpolator
@@ -77,10 +74,7 @@ Interpolator
 variable = value:
 	( "{{{" v:$(!"}}}" .)* "}}}" { return v; }
 	/ "{{"  v:$(!"}}"  .)* "}}"  { return v; } ) {
-		return createNode("Expression", {
-			value: value,
-			tree: jsep(value)
-		});
+		return createExpression(value);
 	}
 
 interpolator = expression:variable {
@@ -220,19 +214,13 @@ sectionName =
 	"if"i ws v:$(sectionChar)* {
 		return {
 			name: "if",
-			expression: createNode("Expression", {
-				value: v,
-				tree: jsep(v)
-			})
+			expression: createExpression(v)
 		};
 	}
 	/ "else"i gws "if"i ws v:$(sectionChar)* {
 		return {
 			name: "else if",
-			expression: createNode("Expression", {
-				value: v,
-				tree: jsep(v)
-			})
+			expression: createExpression(v)
 		};
 	}
 	/ "else"i
@@ -240,29 +228,20 @@ sectionName =
 	/ "for"i ws v:$(sectionChar)* {
 		return {
 			name: "for",
-			expression: createNode("Expression", {
-				value: v,
-				tree: jsep(v)
-			})
+			expression: createExpression(v)
 		};
 	}
 	/ "endfor"i
 	/ "render"i ws v:$(sectionChar)* {
 		return {
 			name: "render",
-			expression: createNode("Expression", {
-				value: v,
-				tree: jsep(v)
-			})
+			expression: createExpression(v)
 		};
 	}
 	/ "with"i ws v:$(sectionChar)* {
 		return {
 			name: "with",
-			expression: createNode("Expression", {
-				value: v,
-				tree: jsep(v)
-			})
+			expression: createExpression(v)
 		};
 	}
 	/ "endwith"i
@@ -271,8 +250,6 @@ sectionName =
 	}
 
 sectionChar = !"%}" .
-
-jsvariable = $[a-z0-9$_]i*
 
 /*
 Literals

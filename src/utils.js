@@ -1,9 +1,12 @@
-import * as _ from "lodash";
+import {assign,isArray,forEach as each} from "lodash";
 import matchesSelector from "matches-selector";
 import merge from "plain-merge";
 
-export function assign() {
-	return _.extend.apply(_, arguments);
+export {assign};
+
+export function forEach(val, fn, ctx) {
+	if (val && typeof val.forEach === "function") val.forEach(fn, ctx);
+	else each(val, fn, ctx);
 }
 
 // like jQuery's empty(), removes all children
@@ -42,7 +45,7 @@ export function toString(value) {
 }
 
 export function matches(node, selector) {
-	if (_.isArray(selector)) return selector.some(function(s) {
+	if (isArray(selector)) return selector.some(function(s) {
 		return matches(node, s);
 	});
 
@@ -59,20 +62,6 @@ export function matches(node, selector) {
 	}
 
 	return false;
-}
-
-export function hash(str) {
-	var h = 0, i, chr, len;
-
-	if (str.length === 0) return h;
-
-	for (i = 0, len = str.length; i < len; i++) {
-		chr = str.charCodeAt(i);
-		h = ((h << 5) - h) + chr;
-		h |= 0; // Convert to 32bit integer
-	}
-
-	return h;
 }
 
 export function getPropertyFromClass(obj, prop) {

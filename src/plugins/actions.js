@@ -1,6 +1,6 @@
 import * as _ from "lodash";
 import { register } from "./";
-import { getPropertyFromClass } from "../utils";
+// import { getPropertyFromClass } from "../utils";
 
 var slice = Array.prototype.slice;
 var decorators = {};
@@ -26,14 +26,18 @@ export function plugin() {
 	this.actions = this.addAction = add;
 	this.addActionOnce = addOnce;
 	this.removeAction = remove;
-	this.fireAction = fire;
+	// this.fireAction = fire;
 	this.decorate(decorators, { inline: true });
 
-	// copy inherited actions
-	if (typeof this !== "function") {
-		var decs = getPropertyFromClass(this, "_actions");
-		this._actions = _.extend(this._actions || {}, decs);
-	}
+	this.on("view", function(v) {
+		v.fireAction = fire;
+	});
+
+	// // copy inherited actions
+	// if (typeof this !== "function") {
+	// 	var decs = getPropertyFromClass(this, "_actions");
+	// 	this._actions = _.extend(this._actions || {}, decs);
+	// }
 }
 
 export default plugin;
@@ -61,6 +65,7 @@ export function defineEvent(event) {
 			action.original = e;
 			action.target = action.node = node;
 			action.view = decor.view;
+			action.template = decor.template;
 
 			// find the first parent with the fire method
 			var fireOn = self;
@@ -168,8 +173,11 @@ export function fire(action) {
 	// bubble the action up through all the views
 	var view = this;
 	while (action.bubbles && view) {
-		if (view._actions != null && Array.isArray(view._actions[name])) {
-			view._actions[name].some(run);
+		if (view.type !== "template" || !view.template) continue;
+
+		let acts = view.template._actions;
+		if (acts != null && Array.isArray(acts[name])) {
+			acts[name].some(run);
 		}
 
 		view = view.parent;

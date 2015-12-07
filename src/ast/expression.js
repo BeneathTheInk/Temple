@@ -1,7 +1,12 @@
 import Node from "./node";
+import {header,hash} from "./utils";
 
 function render(tree) {
 	switch (tree.type) {
+		case "Compound": { // expressions seperated by comma or semicolon
+			return "(" + tree.body.map(render).join(",") + ")";
+		}
+
 		case "Identifier": // plain varable
 			return `this.lookup(${JSON.stringify(tree.name)})`;
 
@@ -34,18 +39,35 @@ function render(tree) {
 			return out;
 		}
 
+		case "LogicalExpression":
+		case "BinaryExpression": { // math
+			return "(" + render(tree.left) + tree.operator + render(tree.right) + ")";
+		}
+
+		case "ArrayExpression": { // arrays
+			return "[" + tree.elements.map(render).join(",") + "]";
+		}
+
+		case "ConditionalExpression": { // if ? then : else
+			return "(" + render(tree.test) +
+				"?" + render(tree.consequent) +
+				":" + render(tree.alternate) + ")";
+		}
+
 		default:
-			console.log(tree);
-			return "";
+			throw new Error("Not supported.");
 	}
 }
 
 export default class Expression extends Node {
 	get reactive() { return true; }
-	
+
 	compile(data) {
 		this.start(data);
-		this.push(render(this.tree));
+		let exp = render(this.tree);
+		let v = ("EXP_" + hash(exp)).replace("-", "_");
+		header(data, `var ${v} = function(){return ${exp};};\n`);
+		this.push(data.asFn ? `${v}` : `${v}.call(this)`);
 		return this.end();
 	}
 }

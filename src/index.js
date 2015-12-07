@@ -7,15 +7,16 @@ import * as utils from "./utils";
 import Trackr from "trackr";
 import { Map, List, Variable } from "trackr-objects";
 import * as plugins from "./plugins";
+import View from "./view";
 
 export var version = "0.6.6";
 
-export * from "./globals";
-export * from "./views";
+export * from "./templates";
 export * from "./compile";
+export * from "./builtins";
 export var parse = require("./m+xml").parse;
 export var ast = require("./ast");
-export { idom, utils, Trackr, Map, List, Variable, plugins };
+export { View, idom, utils, Trackr, Map, List, Variable, plugins };
 
 // import { compile, render, compileHTML, renderHTML, getSource } from "./compile";
 // import { add as register, get, create } from "./globals";

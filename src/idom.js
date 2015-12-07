@@ -1,12 +1,9 @@
-// import * as _ from "lodash";
+import * as _ from "lodash";
 import * as idom from "incremental-dom/index.js";
+import { notifications } from "incremental-dom/src/notifications";
 import { getContext } from "incremental-dom/src/context";
-// import { firstChild, nextSibling, parentNode, } from 'incremental-dom/src/traversal';
-// import { clearUnvisitedDOM } from 'incremental-dom/src/alignment';
 import { updateAttribute } from 'incremental-dom/src/attributes';
 import { getData } from 'incremental-dom/src/node_data';
-// import { parse as parseHTML } from "html-parse-stringify";
-// import * as proxies from "./proxies";
 import * as utils from "./utils";
 import Trackr from "trackr";
 
@@ -16,7 +13,8 @@ export { updateAttribute, getContext, getData };
 export function autotext(fn, ctx) {
 	var node = idom.text("");
 
-	function renderText() {
+	function renderText(c) {
+		c.node = node;
 		var data = getData(node);
 		var value = utils.toString(fn.call(ctx, node));
 		if (data.text !== value) node.data = data.text = value;
@@ -25,12 +23,53 @@ export function autotext(fn, ctx) {
 	return Trackr.autorun(renderText);
 }
 
-export function autopatch(node, fn, ctx) {
+export function autoelement(node, fn, ctx) {
 	fn = fn.bind(ctx, node);
-	return Trackr.autorun(function() {
+	return Trackr.autorun(function(c) {
+		c.element = node;
 		if (getContext()) fn();
 		else idom.patch(node, fn);
 	});
+}
+
+export function renderElement(tagname, key, body, ctx) {
+	let node = idom.elementOpen(tagname, key);
+	let comp = autoelement(node, body, ctx);
+	idom.elementClose(tagname);
+	return comp;
+}
+
+var execDeletedCallbacks = function(node) {
+	let data = getData(node);
+	let cbs = data.deletedCallbacks;
+	if (!cbs) return;
+	cbs.splice(0, cbs.length).forEach(function(fn) {
+		fn.call(null, node);
+	});
+};
+
+notifications.nodesDeleted = function(nodes) {
+	_.forEach(nodes, (node) => {
+		if (node.childNodes) notifications.nodesDeleted(node.childNodes);
+		execDeletedCallbacks(node);
+	});
+};
+
+export function onDestroy(node, fn) {
+	if (typeof fn !== "function") {
+		throw new Error("Expecting function.");
+	}
+
+	let data = getData(node);
+	if (!data.deletedCallbacks) data.deletedCallbacks = [];
+	data.deletedCallbacks.push(fn);
+}
+
+export function removeDestroyListener(node, fn) {
+	let data = getData(node);
+	if (data.deletedCallbacks) {
+		data.deletedCallbacks = _.without(data.deletedCallbacks, fn);
+	}
 }
 
 // // export every key in idom

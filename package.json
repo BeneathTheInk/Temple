@@ -22,8 +22,10 @@
 		"prepublish": "npm run lint && npm run build"
 	},
 	"main": "./lib/temple.js",
+	"jsnext:main": "./src/index.js",
 	"dependencies": {
 		"assign-props": "~1.1.2",
+		"babel-preset-es2015-rollup": "~1.0.0",
 		"backbone-extend-standalone": "~0.1.2",
 		"incremental-dom": "~0.2.0",
 		"jsep": "~0.3.0",
@@ -38,7 +40,7 @@
 	"devDependencies": {
 		"pegjs": "~0.9.0",
 		"rollup": "~0.21.1",
-		"rollup-plugin-babel": "~1.0.0",
+		"rollup-plugin-babel": "~2.2.0",
 		"rollup-plugin-commonjs": "~1.4.0",
 		"rollup-plugin-npm": "~1.1.0"
 	},

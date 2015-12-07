@@ -17,8 +17,8 @@ require("rollup").rollup({
 			]
 		}),
 		require("rollup-plugin-babel")({
-			exclude: 'node_modules/**',
-			include: [ "node_modules/incremental-dom/**" ]
+			exclude: [ "node_modules/**" ],
+			include: [ "node_modules/incremental-dom/**", "src/**" ]
 		})
 	]
 }).then(function(bundle) {

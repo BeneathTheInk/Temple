@@ -45,16 +45,16 @@ export default class ASTNode {
 	tabs() {
 		this._normalize_indent();
 
-		let tabs = "";
+		let res = "";
 		let d = this._writer.data;
 		let tabchar = d.tabchar;
 		if (tabchar == null) tabchar = "  ";
 
 		if (typeof d.indent === "number") {
-			for (let i = 0; i < d.indent; i++) tabs += tabchar;
+			for (let i = 0; i < d.indent; i++) res += tabchar;
 		}
 
-		return tabs;
+		return res;
 	}
 
 	write(chunk) {

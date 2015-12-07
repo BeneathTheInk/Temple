@@ -6,6 +6,20 @@ export function header(data, h) {
 	}
 }
 
+export function hash(str) {
+	var h = 0, i, chr, len;
+
+	if (str.length === 0) return h;
+
+	for (i = 0, len = str.length; i < len; i++) {
+		chr = str.charCodeAt(i);
+		h = ((h << 5) - h) + chr;
+		h |= 0; // Convert to 32bit integer
+	}
+
+	return h;
+}
+
 export function compileGroup(nodes, data) {
 	return nodes.map(function(n, i) {
 		return n.compile(addKey(data, i.toString()));
