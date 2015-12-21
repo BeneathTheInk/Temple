@@ -20,7 +20,7 @@ Temple.exec(`
 	{% if items.length %}
 	<ul>
 		{% for items %}
-		<li>{{ this }} <a href="#" on-click="remove-item, {{ $key }}">remove</a></li>
+		<li>{{ this }} <a href="#" on-click="{{ [ 'remove-item', $key ] }}">remove</a></li>
 		{% endfor %}
 	</ul>
 	{% else %}
@@ -47,7 +47,6 @@ Template.list.actions({
 	},
 	"remove-item": function(e, index) {
 		e.original.preventDefault();
-		console.log(index);
 		items.splice(index, 1);
 	},
 	"clear-items": function(e) {
@@ -55,16 +54,10 @@ Template.list.actions({
 		items.splice(0, items.length);
 	}
 });
-
-Template.list.decorate("autofocus", function(d) {
-	console.log(d.view.firstRender);
-	d.target.focus();
-});
 </script>
 `);
 
-var tpl = window.tpl = Temple.render("list");
-tpl.paint("body");
+var tpl = window.tpl = Temple.paint("list", "body");
 } catch(e) {
 	console.log(e.stack || e);
 	// inspect(e);

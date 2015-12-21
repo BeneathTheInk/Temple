@@ -1,40 +1,39 @@
 import * as _ from "lodash";
 import * as idom from "incremental-dom/index.js";
 import { notifications } from "incremental-dom/src/notifications";
-import { getContext } from "incremental-dom/src/context";
 import { updateAttribute } from 'incremental-dom/src/attributes';
 import { getData } from 'incremental-dom/src/node_data';
 import * as utils from "./utils";
 import Trackr from "trackr";
+import { render as renderDecorator } from "./plugins/decorators"
 
 export * from "incremental-dom/index.js";
-export { updateAttribute, getContext, getData };
+export { updateAttribute, getData, renderDecorator };
 
-export function autotext(fn, ctx) {
+export function autotext(fn, that) {
 	var node = idom.text("");
 
 	function renderText(c) {
 		c.node = node;
 		var data = getData(node);
-		var value = utils.toString(fn.call(ctx, node));
+		var value = utils.toString(fn.call(that, node));
 		if (data.text !== value) node.data = data.text = value;
 	}
 
 	return Trackr.autorun(renderText);
 }
 
-export function autoelement(node, fn, ctx) {
-	fn = fn.bind(ctx, node);
+export function autoelement(node, fn) {
 	return Trackr.autorun(function(c) {
 		c.element = node;
-		if (getContext()) fn();
-		else idom.patch(node, fn);
+		if (idom.currentElement() === node) fn(node, c);
+		else idom.patch(node, () => fn(node, c));
 	});
 }
 
-export function renderElement(tagname, key, body, ctx) {
+export function renderElement(tagname, key, body) {
 	let node = idom.elementOpen(tagname, key);
-	let comp = autoelement(node, body, ctx);
+	let comp = autoelement(node, body);
 	idom.elementClose(tagname);
 	return comp;
 }

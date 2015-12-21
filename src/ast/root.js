@@ -1,3 +1,4 @@
+import {invoke} from "lodash";
 import Node from "./node";
 import {header, compileGroup} from "./utils";
 
@@ -8,7 +9,8 @@ export default class Root extends Node {
 
 		this.start(data);
 		header(data, "var Template = {};\n");
-		this.push(compileGroup(this.children, data));
+		header(data, "var idom = Temple.idom;\n");
+		this.push(invoke(this.children, "compile", data));
 
 		if (data.exports === "es6") {
 			this.write("export default Template;");

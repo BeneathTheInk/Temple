@@ -27,10 +27,10 @@ export function plugin() {
 	this.addActionOnce = addOnce;
 	this.removeAction = remove;
 	// this.fireAction = fire;
-	this.decorate(decorators, { inline: true });
+	this.decorate(decorators);
 
-	this.on("view", function(v) {
-		v.fireAction = fire;
+	this.on("context", function(c) {
+		c.fireAction = fire;
 	});
 
 	// // copy inherited actions
@@ -55,34 +55,34 @@ defineEvent([
 export function defineEvent(event) {
 	if (_.isArray(event)) return event.forEach(defineEvent);
 
-	decorators["on-" + event] = function(decor, key) {
-		var self = this,
-			args, node;
+	decorators["on-" + event] = function(decor, args) {
+		let node, key;
 
 		function listener(e) {
 			// create a new action object
 			var action = new Action(key);
 			action.original = e;
 			action.target = action.node = node;
-			action.view = decor.view;
+			action.context = decor.context;
 			action.template = decor.template;
 
 			// find the first parent with the fire method
-			var fireOn = self;
-			while (typeof fireOn.fireAction !== "function") {
-				// if it has no parent, we can't do anything
-				if (fireOn.parent == null) return;
+			let fireOn = decor.context;
+			while (fireOn && !fireOn.fireAction) {
 				fireOn = fireOn.parent;
 			}
 
 			// fire the action
-			fireOn.fireAction.apply(fireOn, [ action ].concat(args));
+			if (fireOn) {
+				fireOn.fireAction.apply(fireOn, [ action ].concat(args));
+			}
 		}
 
 		node = decor.target;
-		args = _.toArray(arguments).slice(2);
-		node.addEventListener(event, listener);
+		args = _.isArray(args) ? args : [ args ];
+		key = args.shift();
 
+		node.addEventListener(event, listener);
 		decor.comp.onInvalidate(function() {
 			node.removeEventListener(event, listener);
 		});
@@ -159,7 +159,8 @@ export function fire(action) {
 	if (_.isObject(action) && !(action instanceof Action)) action = _.extend(new Action(), action);
 	if (!(action instanceof Action)) throw new Error("Expecting action name, object or instance of Action.");
 
-	var name = action.name,
+	var ctx = this,
+		name = action.name,
 		args = slice.call(arguments, 1);
 
 	args.unshift(action);
@@ -167,20 +168,19 @@ export function fire(action) {
 	// runs function, unless propagation is stopped
 	function run(fn) {
 		if (!action.bubbles) return true;
-		fn.apply(view, args);
+		fn.apply(ctx && ctx.template, args);
 	}
 
-	// bubble the action up through all the views
-	var view = this;
-	while (action.bubbles && view) {
-		if (view.type !== "template" || !view.template) continue;
-
-		let acts = view.template._actions;
-		if (acts != null && Array.isArray(acts[name])) {
-			acts[name].some(run);
+	// bubble the action up through all the contexts
+	while (action.bubbles && ctx) {
+		if (ctx.template) {
+			let acts = ctx.template._actions;
+			if (acts != null && Array.isArray(acts[name])) {
+				acts[name].some(run);
+			}
 		}
 
-		view = view.parent;
+		ctx = ctx.parent;
 	}
 
 	// bubble action to the global actions

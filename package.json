@@ -25,21 +25,21 @@
 	"jsnext:main": "./src/index.js",
 	"dependencies": {
 		"assign-props": "~1.1.2",
-		"babel-preset-es2015-rollup": "~1.0.0",
 		"backbone-extend-standalone": "~0.1.2",
-		"incremental-dom": "~0.2.0",
+		"incremental-dom": "~0.3.0",
 		"jsep": "~0.3.0",
 		"lodash": "~3.10.1",
 		"matches-selector": "~1.0.0",
-		"plain-merge": "~1.0.1",
+		"plain-merge": "~2.0.0",
 		"raf": "~3.1.0",
 		"source-map": "~0.5.3",
 		"trackr": "~2.0.2",
 		"trackr-objects": "~0.3.6"
 	},
 	"devDependencies": {
+		"babel-preset-es2015-rollup": "~1.0.0",
 		"pegjs": "~0.9.0",
-		"rollup": "~0.21.1",
+		"rollup": "~0.21.2",
 		"rollup-plugin-babel": "~2.2.0",
 		"rollup-plugin-commonjs": "~1.4.0",
 		"rollup-plugin-npm": "~1.1.0"

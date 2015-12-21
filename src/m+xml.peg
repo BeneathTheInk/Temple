@@ -93,7 +93,7 @@ html = nodes:
 	/ elementNode
 	/ notClosingTag )* { return combine(nodes); }
 
-tagname = ws k:$[a-z0-9\-$]i+ ws { return k.toUpperCase(); }
+tagname = ws k:$[a-z0-9\-$]i+ ws { return k.toLowerCase(); }
 
 notClosingTag = $(!("</" tagname ">") !"{%" !"{{" .)
 
@@ -173,17 +173,17 @@ attributeValue =
 	) {
 		var t = text();
 		t = t.substr(1, t.length - 2);
-		var args;
+		// var args;
 
-		try {
-			args = peg$parse(t, { startRule: "arguments" });
-		} catch(e) {
-			args = [];
-		}
+		// try {
+		// 	args = peg$parse(t, { startRule: "arguments" });
+		// } catch(e) {
+		// 	args = [];
+		// }
 
 		return {
 			children: nodes,
-			arguments: args,
+			// arguments: args,
 			value: t
 		};
 	}

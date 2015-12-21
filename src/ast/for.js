@@ -9,9 +9,9 @@ export default class For extends Node {
 
 		let exp = this.expression.compile(data);
 
-		this.write(`Temple.For(${exp}, function(index) {`).indent();
+		this.write(`Temple.Each(${exp}, ctx, function(ctx, index) {`).indent();
 		this.push(compileGroup(this.children, addKey(data, { value: "index" })));
-		this.outdent().write(`}, this).render();`);
+		this.outdent().write(`});`);
 
 		return this.end();
 	}

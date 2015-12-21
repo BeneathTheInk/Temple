@@ -8,10 +8,10 @@ function render(tree) {
 		}
 
 		case "Identifier": // plain varable
-			return `this.lookup(${JSON.stringify(tree.name)})`;
+			return `c.lookup(${JSON.stringify(tree.name)})`;
 
 		case "ThisExpression": // plain varable
-			return `this.lookup()`;
+			return `c.lookup()`;
 
 		case "MemberExpression": {// object property
 			let out = render(tree.object);
@@ -27,7 +27,7 @@ function render(tree) {
 		case "CallExpression": { // function call
 			let out = render(tree.callee);
 			if (tree.callee.type === "MemberExpression") out += "(";
-			else out += ".call(this.lookup()" + (tree.arguments.length ? ", " : "");
+			else out += ".call(c.lookup()" + (tree.arguments.length ? ", " : "");
 			out += tree.arguments.map(render).join(", ") + ")";
 			return out;
 		}
@@ -66,8 +66,8 @@ export default class Expression extends Node {
 		this.start(data);
 		let exp = render(this.tree);
 		let v = ("EXP_" + hash(exp)).replace("-", "_");
-		header(data, `var ${v} = function(){return ${exp};};\n`);
-		this.push(data.asFn ? `${v}` : `${v}.call(this)`);
+		header(data, `var ${v} = function(c){return ${exp};};\n`);
+		this.push(data.asFn ? `${v}.bind(null, ctx)` : `${v}(ctx)`);
 		return this.end();
 	}
 }

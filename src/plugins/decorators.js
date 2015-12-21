@@ -1,7 +1,7 @@
 import * as _ from "lodash";
 // import { getPropertyFromClass } from "../utils";
 import { register } from "./";
-import {getContext,getData,onDestroy,updateAttribute} from "../idom";
+import { currentElement, updateAttribute } from "../idom";
 import Trackr from "trackr";
 import raf from "raf";
 
@@ -11,11 +11,7 @@ export function plugin() {
 	this._decorators = {};
 	this.decorate = add;
 	this.stopDecorating = remove;
-
-	this.on("view", function(v) {
-		v.findDecorator = find;
-		v.renderDecorator = render;
-	});
+	this.findDecorator = find;
 }
 
 export default plugin;
@@ -37,6 +33,7 @@ export function add(name, fn, options) {
 
 	var decs = this._decorators ? this._decorators : decorators;
 	decs[name] = {
+		template: this,
 		callback: fn,
 		options: options || {}
 	};
@@ -56,31 +53,34 @@ export function remove(name) {
 	return this;
 }
 
-// finds first decorator in view scope
 export function find(name) {
-	let c = this;
-
-	while (c != null) {
-		if (c.type !== "template" || !c.template) continue;
-
-		let decs = c.template._decorators;
-		if (decs != null && decs[name]) {
-			return _.extend({ context: c }, decs[name]);
-		}
-
-		c = c.parent === c ? null : c.parent;
-	}
-
-	if (decorators[name]) {
-		return _.extend({ context: global }, decorators[name]);
+	let decs = this._decorators;
+	if (decs != null && decs[name]) {
+		return decs[name];
 	}
 }
 
-export function render(name, view, options) {
-	options = options || {};
-	let ictx = getContext();
-	let el = ictx && ictx.walker.getCurrentParent();
-	if (!el) throw new Error("Not patching any element");
+// finds first decorator in template scope
+export function lookup(ctx, name) {
+	let c = ctx;
+
+	while (c) {
+		if (c.template) {
+			let dec = c.template.findDecorator(name);
+			if (dec) return dec;
+		}
+
+		c = c.parent;
+	}
+
+	if (decorators[name]) {
+		return decorators[name];
+	}
+}
+
+export function render(ctx, name, value) {
+	let node = currentElement();
+	if (!node) throw new Error("Not currently patching.");
 
 	let pcomp = Trackr.currentComputation;
 	if (!pcomp) {
@@ -89,7 +89,7 @@ export function render(name, view, options) {
 
 	let anim, comp;
 	let cancel = false;
-	let call = (m) => options[m].call(view);
+	let getValue = (ctx) => typeof value === "function" ? value(ctx) : value;
 
 	pcomp.onInvalidate(() => {
 		cancel = true;
@@ -98,8 +98,7 @@ export function render(name, view, options) {
 	});
 
 	// look up decorator by name
-	let self = this;
-	let d = this.findDecorator(name);
+	let d = lookup(ctx, name);
 
 	// rendered in it's own autorun track
 	let renderDecorator = Trackr.nonreactable(function() {
@@ -107,37 +106,31 @@ export function render(name, view, options) {
 		anim = null;
 		comp = Trackr.autorun(function(c) {
 			if (!d) {
-				if (typeof options.string === "function") {
-					updateAttribute(el, name, call("string"));
-				}
+				updateAttribute(node, name, getValue(ctx));
 				return;
 			}
 
-			// assemble the arguments!
-			let args = [ _.extend({
-				target: el,
-				owner: d.context,
-				template: self.template,
-				view: view,
-				comp: c,
-				options: d.options,
-				render: options
-			}, options.mixin) ];
-
-			// render arguments based on options
-			if (d.options && d.options.parse === "string") {
-				if (typeof options.string === "function") args.push(call("string"));
-			} else if (d.options == null || d.options.parse !== false) {
-				if (typeof options["arguments"] === "function") args = args.concat(call("arguments"));
-			}
-
 			// execute the callback
-			d.callback.apply(d.context, args);
+			d.callback.call(d.template, {
+				target: node,
+				context: ctx,
+				template: d.template,
+				comp: c,
+				options: d.options
+			}, getValue(ctx));
 		});
 	});
 
-	// defer computation because we cannot have unknown changes happening to the DOM
-	let inline = !d || (d.options && (d.options.inline || d.options.instant));
-	if (inline) renderDecorator();
-	else anim = raf(renderDecorator);
+	// defer computation if desired
+	if (d && d.options && d.options.defer) anim = raf(renderDecorator);
+	else renderDecorator();
 }
+
+// export function render(name, view, options) {
+// 	options = options || {};
+// 	let ictx = getContext();
+// 	let el = ictx && ictx.walker.getCurrentParent();
+// 	if (!el) throw new Error("Not patching any element");
+//
+
+// }

@@ -1,7 +1,11 @@
 import * as _ from "lodash";
-import View from "./view";
+import Context from "./context";
 import { load as loadPlugin } from "./plugins";
 import {EventEmitter} from "events";
+import Trackr from "trackr";
+import {patch} from "./idom";
+import {Variable as ReactiveVar} from "trackr-objects";
+import assignProps from "assign-props";
 
 export var templates = {};
 
@@ -30,7 +34,9 @@ export function Template(name, render) {
 		// template name
 		name: name,
 		// render method
-		render: render
+		render: render,
+		// dependency for easy invalidate
+		renderdep: new Trackr.Dependency()
 	};
 
 	// attach globally
@@ -44,35 +50,61 @@ export function Template(name, render) {
 Template.prototype = Object.create(EventEmitter.prototype);
 Template.prototype.constructor = Template;
 
+assignProps(Template.prototype, {
+	// render: function() { return this.s.render; }
+});
+
 // plugin API
 Template.prototype.use = function use(p) {
 	return loadPlugin(this, p, _.toArray(arguments).slice(1));
 };
 
-Template.prototype.createView = function(parent) {
-	let v = View("template", this.s.render, parent);
-	v.template = this;
-	this.emit("view", v);
-	return v;
+Template.prototype.createContext = function(data, parent) {
+	let ctx = new Context(parent, this);
+	ctx.set(data);
+	if (!ctx.parent) ctx.dataVar.set(data);
+	return ctx;
 };
 
-Template.prototype.render = function(data, parent) {
-	let v = this.createView(parent);
-	if (data) v.set(data);
-	if (!v.parent) v.dataVar.set(data);
-	return v;
+Template.prototype.invalidate = function() {
+	this.s.renderdep.invalidate();
+	return this;
 };
 
-Template.prototype.paint = function(data, node, parent) {
-	return this.render(data, parent).paint(node);
+Template.prototype.render = function(ctx, key) {
+	this.s.renderdep.depend();
+	this.s.render(ctx, key);
+	this.emit("render", ctx);
+	return this;
+};
+
+Template.prototype.paint = function(node, data) {
+	if (typeof node === "string") node = document.querySelector(node);
+	if (!node || node.nodeType !== Node.ELEMENT_NODE) {
+		throw new Error("Expecting a valid DOM element to paint.");
+	}
+
+	let ctx = this.createContext(data);
+	let c = Trackr.autorun(() => {
+		patch(node, () => this.render(ctx));
+	});
+
+	c.context = ctx;
+	c.template = this;
+
+	c.onStop(() => {
+		patch(node, ()=>{});
+	});
+
+	return c;
 };
 
 export function getByName(name) {
 	return templates[name];
 }
 
-export function render(name, data, parent) {
+export function paint(name, node, data) {
 	let tpl = getByName(name);
 	if (!tpl) throw new Error("No template exists with name '"+name+"'");
-	return tpl.render(data, parent);
+	return tpl.paint(node, data);
 }

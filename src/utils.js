@@ -15,13 +15,18 @@ export function emptyNode(node) {
 	return node;
 }
 
+var entity = /&(?:#x[a-f0-9]+|#[0-9]+|[a-z0-9]+);?/ig;
+
+export function containsEntities(str) {
+	return entity.test(str);
+}
+
 // converts html entities to unicode
 export var decodeEntities = (function() {
 	if (typeof document === "undefined") return;
 
 	// this prevents any overhead from creating the object each time
 	var element = document.createElement('div');
-	var entity = /&(?:#x[a-f0-9]+|#[0-9]+|[a-z0-9]+);?/ig;
 
 	return function decodeHTMLEntities(str) {
 		str = str.replace(entity, function(m) {
