@@ -12,7 +12,7 @@ require("rollup").rollup({
 			builtins: false,
 			skip: [
 				"source-map", "lodash", "trackr", "trackr-objects",
-				"assign-props", "matches-selector", "raf",
+				"assign-props", "matches-selector", "raf", "detect-indent",
 				"backbone-extend-standalone", "plain-merge"
 			]
 		}),

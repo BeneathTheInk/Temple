@@ -26,6 +26,7 @@
 	"dependencies": {
 		"assign-props": "~1.1.2",
 		"backbone-extend-standalone": "~0.1.2",
+		"detect-indent": "~4.0.0",
 		"incremental-dom": "~0.3.0",
 		"jsep": "~0.3.0",
 		"lodash": "~3.10.1",
