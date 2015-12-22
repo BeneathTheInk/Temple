@@ -1,7 +1,7 @@
 import Node from "./node";
 import Branch from "./branch";
 import If from "./if";
-import For from "./for";
+import Each from "./each";
 import Render from "./render";
 import With from "./with";
 
@@ -67,15 +67,15 @@ export default class SectionTag extends Node {
 					close(n.name, If);
 					break;
 
-				case "for":
-					open(new For(n._line, n._column, {
+				case "each":
+					open(new Each(n._line, n._column, {
 						expression: n.expression,
 						children: []
 					}));
 					break;
 
-				case "endfor":
-					close(n.name, For);
+				case "endeach":
+					close(n.name, Each);
 					break;
 
 				case "with":

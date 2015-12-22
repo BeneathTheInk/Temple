@@ -1,5 +1,4 @@
 import * as _ from "lodash";
-// import { getPropertyFromClass } from "../utils";
 import { register } from "./";
 import { currentElement, updateAttribute } from "../idom";
 import Trackr from "trackr";
@@ -82,23 +81,32 @@ export function render(ctx, name, value) {
 	let node = currentElement();
 	if (!node) throw new Error("Not currently patching.");
 
-	let pcomp = Trackr.currentComputation;
-	if (!pcomp) {
-		throw new Error("Can only render decorator in a computation.");
+	let isStatic = typeof value !== "function";
+
+	// look up decorator by name
+	let d = lookup(ctx, name);
+
+	// quick escape if static value and no decorator
+	if (isStatic && !d) {
+		updateAttribute(node, name, value);
+		return;
 	}
 
 	let anim, comp;
 	let cancel = false;
-	let getValue = (ctx) => typeof value === "function" ? value(ctx) : value;
+	let getValue = (ctx) => isStatic ? value : value(ctx);
+
+	// clean up when current computation reruns
+	let pcomp = Trackr.currentComputation;
+	if (!pcomp) {
+		throw new Error("Can only render decorator in a computation.");
+	}
 
 	pcomp.onInvalidate(() => {
 		cancel = true;
 		if (anim) raf.cancel(anim);
 		if (comp) comp.stop();
 	});
-
-	// look up decorator by name
-	let d = lookup(ctx, name);
 
 	// rendered in it's own autorun track
 	let renderDecorator = Trackr.nonreactable(function() {

@@ -1,22 +1,5 @@
-// import View from "./view";
 import Context from "./context";
 import {forEach} from "./utils";
-//
-// export function For(data, render, parent) {
-// 	return View("for", function() {
-// 		let loop = this;
-//
-// 		forEach(data, function(item, key) {
-// 			let v = View("foritem", function() {
-// 				render.call(this, key);
-// 			}, loop);
-//
-// 			v.set({ $key: key, $item: item });
-// 			v.dataVar.set(item);
-// 			v.render();
-// 		});
-// 	}, parent);
-// }
 
 export function Each(val, ctx, fn, that) {
 	forEach(val, function(item, key) {
@@ -25,4 +8,11 @@ export function Each(val, ctx, fn, that) {
 		nctx.dataVar.set(item);
 		fn.call(that, nctx, key, val);
 	});
+}
+
+export function With(val, ctx, fn, that) {
+	let nctx = new Context(ctx);
+	nctx.set(val);
+	nctx.dataVar.set(val);
+	fn.call(that, nctx);
 }

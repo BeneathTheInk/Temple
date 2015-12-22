@@ -1,21 +1,38 @@
 import * as _ from "lodash";
 import { register } from "./";
-// import { getPropertyFromClass } from "../utils";
 
-var slice = Array.prototype.slice;
 var decorators = {};
 var actions = {};
 
 // Action Class
 export class Action {
-	constructor(name) {
+	constructor(name, context) {
 		this.name = name;
+		this.context = context;
 		this.bubbles = true;
 	}
 
 	stopPropagation() {
 		this.bubbles = false;
 		return this;
+	}
+
+	static create(name, context) {
+		let action;
+
+		if (typeof name === "string") {
+			action = new Action(name, context);
+		} else if (_.isObject(name) && !(name instanceof Action)) {
+			action = _.extend(new Action(), action);
+		} else {
+			action = name;
+		}
+
+		if (!(action instanceof Action)) {
+			throw new Error("Expecting action name, object or instance of Action.");
+		}
+
+		return action;
 	}
 }
 
@@ -26,18 +43,8 @@ export function plugin() {
 	this.actions = this.addAction = add;
 	this.addActionOnce = addOnce;
 	this.removeAction = remove;
-	// this.fireAction = fire;
+	this.fireAction = fireTemplate;
 	this.decorate(decorators);
-
-	this.on("context", function(c) {
-		c.fireAction = fire;
-	});
-
-	// // copy inherited actions
-	// if (typeof this !== "function") {
-	// 	var decs = getPropertyFromClass(this, "_actions");
-	// 	this._actions = _.extend(this._actions || {}, decs);
-	// }
 }
 
 export default plugin;
@@ -60,27 +67,19 @@ export function defineEvent(event) {
 
 		function listener(e) {
 			// create a new action object
-			var action = new Action(key);
+			var action = new Action(key, decor.context);
 			action.original = e;
 			action.target = action.node = node;
-			action.context = decor.context;
 			action.template = decor.template;
 
-			// find the first parent with the fire method
-			let fireOn = decor.context;
-			while (fireOn && !fireOn.fireAction) {
-				fireOn = fireOn.parent;
-			}
-
 			// fire the action
-			if (fireOn) {
-				fireOn.fireAction.apply(fireOn, [ action ].concat(args));
-			}
+			fire(action, null, args);
 		}
 
 		node = decor.target;
-		args = _.isArray(args) ? args : [ args ];
+		args = [].concat(args);
 		key = args.shift();
+		if (!key) return;
 
 		node.addEventListener(event, listener);
 		decor.comp.onInvalidate(function() {
@@ -154,16 +153,16 @@ export function remove(name, fn) {
 	return this;
 }
 
-export function fire(action) {
-	if (typeof action === "string") action = new Action(action);
-	if (_.isObject(action) && !(action instanceof Action)) action = _.extend(new Action(), action);
-	if (!(action instanceof Action)) throw new Error("Expecting action name, object or instance of Action.");
+export function fire(a, b, args) {
+	let action = Action.create(a, b);
 
-	var ctx = this,
-		name = action.name,
-		args = slice.call(arguments, 1);
+	if (!action.context) {
+		throw new Error("Action is missing a context.");
+	}
 
-	args.unshift(action);
+	let ctx = action.context;
+	let name = action.name;
+	args = [].concat(action, args);
 
 	// runs function, unless propagation is stopped
 	function run(fn) {
@@ -188,5 +187,9 @@ export function fire(action) {
 		actions[name].some(run);
 	}
 
-	return this;
+	return action;
+}
+
+function fireTemplate(name, ctx, value) {
+	return fire(name, ctx, this, value);
 }

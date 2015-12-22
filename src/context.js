@@ -30,11 +30,6 @@ export default function Context(parent, template) {
 		// whether or not this view has been destroyed
 		destroyed: false
 	};
-
-	// let template know about this new context
-	if (this.template) {
-		this.template.emit("context", this);
-	}
 }
 
 Context.prototype = Object.create(EventEmitter.prototype);

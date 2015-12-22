@@ -1,6 +1,6 @@
 import {invoke} from "lodash";
 import Node from "./node";
-import {header, compileGroup} from "./utils";
+import {header} from "./utils";
 
 export default class Root extends Node {
 	compile(data) {

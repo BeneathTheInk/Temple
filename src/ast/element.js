@@ -1,6 +1,6 @@
 import * as _ from "lodash";
 import Node from "./node";
-import {getKey, compileGroup, resetKey, header} from "./utils";
+import {getKey,compileGroup,resetKey} from "./utils";
 
 export default class Element extends Node {
 	get reactive() {

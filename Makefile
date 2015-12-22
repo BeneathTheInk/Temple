@@ -48,7 +48,7 @@ lib/ast.js: src/ast/index.js $(wildcard src/ast/*.js)
 
 lib/m+xml.js: src/m+xml.peg
 	# $< -> $@
-	@$(BIN)/pegjs --allowed-start-rules start,arguments $< $@
+	@$(BIN)/pegjs --allowed-start-rules start $< $@
 
 clean:
 	rm -rf lib/

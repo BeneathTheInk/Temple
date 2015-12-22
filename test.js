@@ -19,9 +19,9 @@ Temple.exec(`
 
 	{% if items.length %}
 	<ul>
-		{% for items %}
+		{% each items %}
 		<li>{{ this }} <a href="#" on-click="{{ [ 'remove-item', $key ] }}">remove</a></li>
-		{% endfor %}
+		{% endeach %}
 	</ul>
 	{% else %}
 	<p style="font-style: italic;">No Items</p>

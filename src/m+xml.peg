@@ -173,33 +173,12 @@ attributeValue =
 	) {
 		var t = text();
 		t = t.substr(1, t.length - 2);
-		// var args;
-
-		// try {
-		// 	args = peg$parse(t, { startRule: "arguments" });
-		// } catch(e) {
-		// 	args = [];
-		// }
 
 		return {
 			children: nodes,
-			// arguments: args,
 			value: t
 		};
 	}
-
-arguments = ws l:argument ws r:("," ws argument ws)* {
-	return combine([l].concat(pluck(r, 2)), "Literal");
-}
-
-argument =
-	  variable
-	/ string
-	/ number
-	/ boolean
-	/ null
-	/ undefined
-	/ $(!"," .)+
 
 /*
 Sections
@@ -225,13 +204,13 @@ sectionName =
 	}
 	/ "else"i
 	/ "endif"i
-	/ "for"i ws v:$(sectionChar)* {
+	/ "each"i ws v:$(sectionChar)* {
 		return {
-			name: "for",
+			name: "each",
 			expression: createExpression(v)
 		};
 	}
-	/ "endfor"i
+	/ "endeach"i
 	/ "render"i ws v:$(sectionChar)* {
 		return {
 			name: "render",

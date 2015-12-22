@@ -5,7 +5,7 @@ import { updateAttribute } from 'incremental-dom/src/attributes';
 import { getData } from 'incremental-dom/src/node_data';
 import * as utils from "./utils";
 import Trackr from "trackr";
-import { render as renderDecorator } from "./plugins/decorators"
+import { render as renderDecorator } from "./plugins/decorators";
 
 export * from "incremental-dom/index.js";
 export { updateAttribute, getData, renderDecorator };

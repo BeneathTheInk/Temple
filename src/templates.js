@@ -4,7 +4,6 @@ import { load as loadPlugin } from "./plugins";
 import {EventEmitter} from "events";
 import Trackr from "trackr";
 import {patch} from "./idom";
-import {Variable as ReactiveVar} from "trackr-objects";
 import assignProps from "assign-props";
 
 export var templates = {};
