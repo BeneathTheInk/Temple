@@ -11,6 +11,7 @@ var Temple = global.Temple = require("./");
 try {
 Temple.exec(`
 <template name="todoapp">
+	{% if items %}
 	<h3>Todo</h3>
 
 	{% render "todolist" %}
@@ -19,12 +20,13 @@ Temple.exec(`
 		<input type="text" ref="item-value" autofocus />
 		<button type="submit">Add #{{ items.length + 1 }}</button>
 	</form>
+	{% endif %}
 </template>
 
 <template name="todolist">
 	<ul>
 		{% each items %}
-		<li>{{ this }} <a href="#" on-click="{{ [ 'remove-item', $key ] }}">remove</a></li>
+		<li>{{ this }} <a href="#" on-click="{{ [ 'remove-item', $index ] }}">remove</a></li>
 		{% endeach %}
 	</ul>
 </template>

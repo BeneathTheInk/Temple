@@ -4,7 +4,11 @@ import {forEach} from "./utils";
 export function Each(val, ctx, fn, that) {
 	forEach(val, function(item, key) {
 		let nctx = new Context(ctx);
-		nctx.set({ $key: key, $item: item });
+		nctx.set({
+			$item: item,
+			$index: key,
+			$list: val
+		});
 		nctx.dataVar.set(item);
 		fn.call(that, nctx, key, val);
 	});

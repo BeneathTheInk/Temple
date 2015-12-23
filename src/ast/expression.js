@@ -70,7 +70,7 @@ export default class Expression extends Node {
 
 		if (data.asFn) {
 			let cv = "B" + v;
-			contextHeader(data, `var ${cv} = ${v}.bind(null, ctx);`);
+			contextHeader(data, `var ${cv} = function(){return ${v}(ctx);};`);
 			this.push(cv);
 		} else {
 			this.push(`${v}(ctx)`);
