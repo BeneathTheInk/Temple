@@ -10,6 +10,7 @@ export default class Root extends Node {
 		this.start(data);
 		header(data, "var Template = {};\n");
 		header(data, "var idom = Temple.idom;\n");
+		header(data, "var decorators = Temple.decorators;\n");
 		this.push(invoke(this.children, "compile", data));
 
 		if (data.exports === "es6") {

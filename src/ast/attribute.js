@@ -27,25 +27,7 @@ export default class Attribute extends Node {
 			value = `""`;
 		}
 
-		this.write([ `idom.renderDecorator(ctx, ${JSON.stringify(this.name)}, `, value, `);` ]);
-
-		// this.write(`this.getClosest("template").renderDecorator(${JSON.stringify(this.name)}, this, {`).indent();
-		//
-		// let str = ;
-		// this.write([
-		// 	`string: function() { return `,
-		// 	!str.length ? `""` : this._sn(data.originalFilename, str).join(" + "),
-		// 	`; },`
-		// ]);
-		//
-		// let args = _.invoke(this.arguments, "compile", data);
-		// this.write([
-		// 	`"arguments": function() { return [ `,
-		// 	this._sn(data.originalFilename, args).join(", "),
-		// 	` ]; }`
-		// ]);
-		//
-		// this.outdent().write(`});`);
+		this.write([ `decorators.render(ctx, ${JSON.stringify(this.name)}, `, value, `);` ]);
 
 		return this.end();
 	}

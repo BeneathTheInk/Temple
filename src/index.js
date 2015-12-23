@@ -6,8 +6,11 @@ import * as idom from "./idom";
 import * as utils from "./utils";
 import Trackr from "trackr";
 import { Map, List, Variable } from "trackr-objects";
-import * as plugins from "./plugins";
 import Context from "./context";
+
+import * as plugins from "./plugins";
+import * as decorators from "./plugins/decorators";
+import * as actions from "./plugins/actions";
 
 export var version = "0.6.6";
 
@@ -15,8 +18,11 @@ export * from "./templates";
 export * from "./compile";
 export * from "./builtins";
 export var parse = require("./m+xml").parse;
-export var ast = require("./ast");
-export { Context, idom, utils, Trackr, Map, List, Variable, plugins };
+export var AST = require("./ast");
+export {
+	Context, idom, utils, Trackr, Map, List, Variable,
+	plugins, decorators, actions
+};
 
 // import { compile, render, compileHTML, renderHTML, getSource } from "./compile";
 // import { add as register, get, create } from "./globals";
@@ -32,7 +38,6 @@ export { Context, idom, utils, Trackr, Map, List, Variable, plugins };
 // import * as plugins from "./plugins";
 // import * as partials from "./plugins/partials";
 // import * as actions from "./plugins/actions";
-// import * as decorators from "./plugins/decorators";
 // import { globals } from "./plugins/helpers";
 //
 // export {

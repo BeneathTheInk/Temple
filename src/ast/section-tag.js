@@ -3,7 +3,9 @@ import Branch from "./branch";
 import If from "./if";
 import Each from "./each";
 import Render from "./render";
+import Set from "./set";
 import With from "./with";
+var parse = require("./m+xml.js");
 
 export default class SectionTag extends Node {
 	static convert(nodes) {
@@ -94,6 +96,18 @@ export default class SectionTag extends Node {
 						expression: n.expression
 					}));
 					break;
+
+				case "set":
+					push(new Set(n._line, n._column, {
+						variable: n.variable,
+						expression: n.expression
+					}));
+					break;
+
+				default:
+					throw new parse.SyntaxError(`Unknown section tag '${n.name}' (${n._line}:${n._column})`, null, n.name, {
+						start: { line: n._line, column: n._column }
+					});
 			}
 		}
 

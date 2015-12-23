@@ -66,14 +66,14 @@ export function lookup(ctx, name) {
 	while (c) {
 		if (c.template) {
 			let dec = c.template.findDecorator(name);
-			if (dec) return dec;
+			if (dec) return _.assign({ owner: c }, dec);
 		}
 
 		c = c.parent;
 	}
 
 	if (decorators[name]) {
-		return decorators[name];
+		return _.assign({ owner: global }, decorators[name]);
 	}
 }
 
@@ -94,51 +94,42 @@ export function render(ctx, name, value) {
 
 	let anim, comp;
 	let cancel = false;
-	let getValue = (ctx) => isStatic ? value : value(ctx);
+	let getValue = () => isStatic ? value : value(ctx);
 
-	// clean up when current computation reruns
-	let pcomp = Trackr.currentComputation;
-	if (!pcomp) {
-		throw new Error("Can only render decorator in a computation.");
-	}
+	let run = function(c) {
+		if (!d) {
+			updateAttribute(node, name, getValue());
+			return;
+		}
 
-	pcomp.onInvalidate(() => {
-		cancel = true;
-		if (anim) raf.cancel(anim);
-		if (comp) comp.stop();
-	});
-
-	// rendered in it's own autorun track
-	let renderDecorator = Trackr.nonreactable(function() {
-		if (cancel) return;
-		anim = null;
-		comp = Trackr.autorun(function(c) {
-			if (!d) {
-				updateAttribute(node, name, getValue(ctx));
-				return;
-			}
-
-			// execute the callback
-			d.callback.call(d.template, {
-				target: node,
-				context: ctx,
-				template: d.template,
-				comp: c,
-				options: d.options
-			}, getValue(ctx));
-		});
-	});
+		// execute the callback
+		d.callback.call(d.owner, {
+			target: node,
+			owner: d.owner,
+			context: ctx,
+			comp: c,
+			options: d.options
+		}, getValue());
+	};
 
 	// defer computation if desired
-	if (d && d.options && d.options.defer) anim = raf(renderDecorator);
-	else renderDecorator();
+	if (d && d.options && d.options.defer) {
+		// clean up when current computation reruns
+		let pcomp = Trackr.currentComputation;
+		if (!pcomp) throw new Error("Can only render decorator in a computation.");
+		pcomp.onInvalidate(() => {
+			cancel = true;
+			if (anim) raf.cancel(anim);
+			if (comp) comp.stop();
+		});
+
+		// run decorator on the next frame
+		anim = raf(() => {
+			if (cancel) return;
+			anim = null;
+			comp = Trackr.autorun(run);
+		});
+	} else {
+		Trackr.autorun(run);
+	}
 }
-
-// export function render(name, view, options) {
-// 	options = options || {};
-// 	let ictx = getContext();
-// 	let el = ictx && ictx.walker.getCurrentParent();
-// 	if (!el) throw new Error("Not patching any element");
-//
-
-// }

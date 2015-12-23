@@ -3,21 +3,25 @@ import * as idom from "incremental-dom/index.js";
 import { notifications } from "incremental-dom/src/notifications";
 import { updateAttribute } from 'incremental-dom/src/attributes';
 import { getData } from 'incremental-dom/src/node_data';
+import { text as coreText } from 'incremental-dom/src/core';
 import * as utils from "./utils";
 import Trackr from "trackr";
-import { render as renderDecorator } from "./plugins/decorators";
 
 export * from "incremental-dom/index.js";
-export { updateAttribute, getData, renderDecorator };
+export { updateAttribute, getData };
 
 export function autotext(fn, that) {
-	var node = idom.text("");
+	var node = coreText();
 
 	function renderText(c) {
 		c.node = node;
 		var data = getData(node);
-		var value = utils.toString(fn.call(that, node));
-		if (data.text !== value) node.data = data.text = value;
+		var value = fn.call(that, node);
+
+		if (data.text !== value) {
+			data.text = value;
+			node.data = utils.toString(value);
+		}
 	}
 
 	return Trackr.autorun(renderText);
@@ -26,7 +30,14 @@ export function autotext(fn, that) {
 export function autoelement(node, fn) {
 	return Trackr.autorun(function(c) {
 		c.element = node;
-		if (idom.currentElement() === node) fn(node, c);
+
+		// catch errors that idom likes to throw
+		let cur;
+		try { cur = idom.currentElement(); }
+		catch(e) {}
+
+		// call straight or patch
+		if (cur === node) fn(node, c);
 		else idom.patch(node, () => fn(node, c));
 	});
 }

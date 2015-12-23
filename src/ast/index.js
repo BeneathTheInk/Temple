@@ -15,12 +15,13 @@ import Template from "./template";
 import Root from "./root";
 import Script from "./script";
 import Literal from "./literal";
+import Set from "./set";
 
 export {
 	Node,
 	Root, Template, Script,
 	Element, Text, Attribute,
-	SectionTag, If, Branch, Each, With, Render,
+	SectionTag, If, Branch, Each, With, Set, Render,
 	Interpolator, Expression, Literal,
 	Comment
 };

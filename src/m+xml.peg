@@ -224,6 +224,13 @@ sectionName =
 		};
 	}
 	/ "endwith"i
+	/ "set"i ws variable:$([a-z]i [a-z0-9_$]i+) ws "=" ws v:$(sectionChar)* {
+		return {
+			name: "set",
+			variable: variable,
+			expression: createExpression(v)
+		};
+	}
 	/ key:$[a-z0-9]i+ &{
 		throw new Error("Unknown section key '" + key + "'");
 	}

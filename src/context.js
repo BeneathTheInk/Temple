@@ -1,17 +1,19 @@
-// import Trackr from "trackr";
-// import {patch,getContext,getData} from "./idom";
 import * as _ from "lodash";
 import {EventEmitter} from "events";
 import {Variable as ReactiveVar} from "trackr-objects";
 import assignProps from "assign-props";
 
-export default function Context(parent, template) {
+export default function Context(data, parent, template) {
 	if (!(this instanceof Context)) {
 		return new Context(parent);
 	}
 
 	EventEmitter.call(this);
 	this.setMaxListeners(0);
+
+	if (data instanceof Context) {
+		[template, parent, data] = [parent, data, null];
+	}
 
 	if (parent && !(parent instanceof Context)) {
 		throw new Error("Expecting an instance of Context for parent.");
@@ -24,12 +26,16 @@ export default function Context(parent, template) {
 		// associated template object
 		template: template || null,
 		// holds lexical data
-		scope: _.assign({}, _.result(this, "defaults")),
+		scope: {},
 		// holds "this" data
 		data: new ReactiveVar(),
 		// whether or not this view has been destroyed
 		destroyed: false
 	};
+
+	// set initial data
+	if (data != null) this.set(data);
+	if (!this.parent) this.dataVar.set(data);
 }
 
 Context.prototype = Object.create(EventEmitter.prototype);

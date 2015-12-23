@@ -41,9 +41,7 @@ export function plugin() {
 	this.use("decorators");
 	this._actions = {};
 	this.actions = this.addAction = add;
-	this.addActionOnce = addOnce;
 	this.removeAction = remove;
-	this.fireAction = fireTemplate;
 	this.decorate(decorators);
 }
 
@@ -64,17 +62,15 @@ export function defineEvent(event) {
 
 	decorators["on-" + event] = function(decor, args) {
 		let node, key;
-
-		function listener(e) {
+		let listener = function(e) {
 			// create a new action object
 			var action = new Action(key, decor.context);
 			action.original = e;
 			action.target = action.node = node;
-			action.template = decor.template;
 
 			// fire the action
 			fire(action, null, args);
-		}
+		};
 
 		node = decor.target;
 		args = [].concat(args);
@@ -102,22 +98,6 @@ export function add(name, fn) {
 	if (!obj) obj = actions;
 	if (obj[name] == null) obj[name] = [];
 	if (!~obj[name].indexOf(fn)) obj[name].push(fn);
-
-	return this;
-}
-
-export function addOnce(name, fn) {
-	if (typeof name === "object" && fn == null) {
-		_.each(name, function(fn, n) { addOnce.call(this, n, fn); }, this);
-		return this;
-	}
-
-	var onAction;
-
-	add.call(this, name, onAction = function () {
-		remove.call(this, name, onAction);
-		fn.apply(this, arguments);
-	});
 
 	return this;
 }
@@ -155,7 +135,6 @@ export function remove(name, fn) {
 
 export function fire(a, b, args) {
 	let action = Action.create(a, b);
-
 	if (!action.context) {
 		throw new Error("Action is missing a context.");
 	}
@@ -167,7 +146,7 @@ export function fire(a, b, args) {
 	// runs function, unless propagation is stopped
 	function run(fn) {
 		if (!action.bubbles) return true;
-		fn.apply(ctx && ctx.template, args);
+		fn.apply(ctx, args);
 	}
 
 	// bubble the action up through all the contexts
@@ -188,8 +167,4 @@ export function fire(a, b, args) {
 	}
 
 	return action;
-}
-
-function fireTemplate(name, ctx, value) {
-	return fire(name, ctx, this, value);
 }

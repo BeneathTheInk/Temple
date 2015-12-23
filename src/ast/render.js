@@ -6,7 +6,8 @@ export default class Render extends Node {
 
 	compile(data) {
 		this.start(data);
-		this.write(`Temple.Template.render(${this.expression.compile(data)}, ${getKey(data)}, this);`);
+		let exp = this.expression.compile(data);
+		this.write([ `Temple.Template.render(`, exp, `, ctx, ${getKey(data)});` ]);
 		return this.end();
 	}
 }

@@ -1,5 +1,5 @@
 import Node from "./node";
-import {header,hash} from "./utils";
+import {header,hash,contextHeader} from "./utils";
 
 function render(tree) {
 	switch (tree.type) {
@@ -67,7 +67,15 @@ export default class Expression extends Node {
 		let exp = render(this.tree);
 		let v = ("EXP_" + hash(exp)).replace("-", "_");
 		header(data, `var ${v} = function(c){return ${exp};};\n`);
-		this.push(data.asFn ? `${v}.bind(null, ctx)` : `${v}(ctx)`);
+
+		if (data.asFn) {
+			let cv = "B" + v;
+			contextHeader(data, `var ${cv} = ${v}.bind(null, ctx);`);
+			this.push(cv);
+		} else {
+			this.push(`${v}(ctx)`);
+		}
+
 		return this.end();
 	}
 }
