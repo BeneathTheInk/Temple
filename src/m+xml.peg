@@ -160,16 +160,34 @@ attribute
 attributeName = ws k:$[a-z0-9\-$]i+ ws { return k.toLowerCase(); }
 
 attributeValue =
-	nodes:( "\"" n:
-		( section
-		/ variable
-		/ escape
-		/ $(!"\"" !"{%" !"{{" .))* "\"" { return combine(n, "Literal"); }
-	/ "'" n:
-		( section
-		/ variable
-		/ escape
-		/ $(!"'" !"{%" !"{{" .))* "'" { return combine(n, "Literal"); }
+	nodes:( "\"" c:(
+		"{" v:$(!"}\"" .)* "}" &{
+			var p;
+			try { p = jsep(v); }
+			catch(e) { return; }
+			return true;
+		} {
+			return createExpression("[" + v + "]");
+		}
+		/ n:( section
+		  / variable
+		  / escape
+		  / $(!"\"" !"{%" !"{{" .))* { return combine(n, "Literal"); }
+		) "\"" { return c; }
+	/ "'" c:(
+		"{" v:$(!"}'" .)* "}" &{
+			var p;
+			try { p = jsep(v); }
+			catch(e) { return; }
+			return true;
+		} {
+			return createExpression("[" + v + "]");
+		}
+		/ n:( section
+		  / variable
+		  / escape
+		  / $(!"'" !"{%" !"{{" .))* { return combine(n, "Literal"); }
+		) "'" { return c; }
 	) {
 		var t = text();
 		t = t.substr(1, t.length - 2);

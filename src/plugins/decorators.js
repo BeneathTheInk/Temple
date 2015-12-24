@@ -82,34 +82,40 @@ export function render(ctx, name, value) {
 	if (!node) throw new Error("Not currently patching.");
 
 	let isStatic = typeof value !== "function";
+	let getValue = () => {
+		let val = isStatic ? value : value(ctx);
+		if (!_.isArray(val)) val = [ val ];
+		return val;
+	};
 
 	// look up decorator by name
 	let d = lookup(ctx, name);
 
 	// quick escape if static value and no decorator
 	if (isStatic && !d) {
-		updateAttribute(node, name, value);
+		updateAttribute(node, name, getValue()[0]);
 		return;
 	}
 
 	let anim, comp;
 	let cancel = false;
-	let getValue = () => isStatic ? value : value(ctx);
 
 	let run = function(c) {
+		let val = getValue();
+
 		if (!d) {
-			updateAttribute(node, name, getValue());
+			updateAttribute(node, name, val[0]);
 			return;
 		}
 
 		// execute the callback
-		d.callback.call(d.owner, {
+		d.callback.apply(d.owner, [{
 			target: node,
 			owner: d.owner,
 			context: ctx,
 			comp: c,
 			options: d.options
-		}, getValue());
+		}].concat(val));
 	};
 
 	// defer computation if desired

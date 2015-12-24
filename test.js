@@ -26,7 +26,7 @@ Temple.exec(`
 <template name="todolist">
 	<ul>
 		{% each items %}
-		<li>{{ this }} <a href="#" on-click="{{ [ 'remove-item', $index ] }}">remove</a></li>
+		<li>{{ this }} <a href="#" on-click="{'remove-item', $index}">remove</a></li>
 		{% endeach %}
 	</ul>
 </template>

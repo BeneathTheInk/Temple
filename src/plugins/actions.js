@@ -60,8 +60,8 @@ defineEvent([
 export function defineEvent(event) {
 	if (_.isArray(event)) return event.forEach(defineEvent);
 
-	decorators["on-" + event] = function(decor, args) {
-		let node, key;
+	decorators["on-" + event] = function(decor, key) {
+		let node, args;
 		let listener = function(e) {
 			// create a new action object
 			var action = new Action(key, decor.context);
@@ -73,9 +73,7 @@ export function defineEvent(event) {
 		};
 
 		node = decor.target;
-		args = [].concat(args);
-		key = args.shift();
-		if (!key) return;
+		args = Array.prototype.slice.call(arguments, 2);
 
 		node.addEventListener(event, listener);
 		decor.comp.onInvalidate(function() {
