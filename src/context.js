@@ -91,16 +91,21 @@ Context.prototype.parentData = function(dist) {
 	return view ? view.data : void 0;
 };
 
-Context.prototype.getTemplate = function() {
+Context.prototype.getTemplateContext = function() {
 	let view = this;
 
 	while (view) {
 		if (view.template != null) {
-			return view.template;
+			return view;
 		}
 
 		view = view.parent;
 	}
+};
+
+Context.prototype.getTemplate = function() {
+	let ctx = this.getTemplateContext();
+	return ctx ? ctx.template : void 0;
 };
 
 var lookup = function(tpl, ctx, key) {

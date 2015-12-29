@@ -56,14 +56,16 @@ Templates
 */
 templateNode
 	= "<" ws "template" attrs:attributes ">" nodes:html "</template>" {
-		var name;
+		var name, type;
 
 		attrs.forEach(function(a) {
 			if (a.name === "name") name = a.value;
+			else if (a.name === "type") type = a.value;
 		});
 
 		return createNode("Template", {
 			name: name,
+			type: type,
 			children: nodes
 		});
 	}
@@ -72,8 +74,8 @@ templateNode
 Interpolator
 */
 variable = value:
-	( "{{{" v:$(!"}}}" .)* "}}}" { return v; }
-	/ "{{"  v:$(!"}}"  .)* "}}"  { return v; } ) {
+	( "{-" v:$(!"-}" .)* "-}" { return v; }
+	/ "{{" v:$(!"}}" .)* "}}"  { return v; } ) {
 		return createExpression(value);
 	}
 

@@ -5,20 +5,14 @@ import Trackr from "trackr";
 import {patch} from "./idom";
 import {Map as ReactiveMap} from "trackr-objects";
 import { load as loadPlugin } from "./plugins";
+import subclass from "backbone-extend-standalone";
 
 export var templates = {};
+export var types = {};
 
 export function Template(name, render) {
-	if (!(this instanceof Template)) {
-		return new Template(name, render);
-	}
-
 	if (typeof name !== "string" || name === "") {
 		throw new Error("Expecting a non-empty string for template name.");
-	}
-
-	if (_.has(templates, name)) {
-		throw new Error("Template already exists with name '"+name+"'");
 	}
 
 	if (typeof render !== "function") {
@@ -40,15 +34,16 @@ export function Template(name, render) {
 		helpers: new ReactiveMap()
 	};
 
-	// attach globally
-	templates[name] = this;
-
 	// default plugins
 	this.use("decorators");
+	this.initialize();
 }
 
+Template.extend = subclass;
 Template.prototype = Object.create(EventEmitter.prototype);
 Template.prototype.constructor = Template;
+Template.prototype.type = "template";
+Template.prototype.initialize = function(){};
 
 // plugin proxy for contexts
 Template.prototype.use = function use(p) {
@@ -112,10 +107,10 @@ Template.prototype.getHelper = function(key) {
 	return this.s.helpers.get(key);
 };
 
-Template.render = function(name, ctx, key) {
+export function render(name, ctx, key) {
 	let tpl = getByName(name);
 	if (tpl) return tpl.render(ctx, key);
-};
+}
 
 export function getByName(name) {
 	return templates[name];
@@ -125,4 +120,62 @@ export function paint(name, node, data) {
 	let tpl = getByName(name);
 	if (!tpl) throw new Error("No template exists with name '"+name+"'");
 	return tpl.paint(node, data);
+}
+
+export function registerType(type, props) {
+	if (typeof type !== "string" || !type) {
+		throw new Error("Expecting non-empty string for type.");
+	}
+	if (_.has(types, type)) {
+		throw new Error(`Template type '${type}' already exists.`);
+	}
+
+	if (typeof props === "function") {
+		props = { initialize: props };
+	}
+
+	props = _.assign({}, props, { type });
+
+	let T = Template;
+	if (props.extends && _.has(types, props.extends)) {
+		T = types[props.extends];
+		delete props.extends;
+	}
+
+	function wrap(k, f) {
+		return function() {
+			let osuper = this.super;
+			this.super = T.prototype[k];
+			let ret = f.apply(this, arguments);
+			this.super = osuper;
+			return ret;
+		};
+	}
+
+	for (let k in props) {
+		let fn = props[k];
+		if (typeof fn !== "function") continue;
+		if (/this\.super|this\["super"\]|this\['super'\]/.test(fn.toString())) {
+			props[k] = wrap(k, fn);
+		}
+	}
+
+	return (types[type] = T.extend(props));
+}
+
+export function create(name, type, render) {
+	if (typeof name !== "string" || !name) {
+		throw new Error("Expecting non-empty string for name.");
+	}
+	if (getByName(name)) {
+		throw new Error(`Template '${name}' already exists.`);
+	}
+
+	if (typeof type === "function") [render,type] = [type,null];
+	if (type && !_.has(types, type)) {
+		throw new Error(`Template type ${type} does not exist.`);
+	}
+
+	let T = type ? types[type] : Template;
+	return (templates[name] = new T(name, render));
 }

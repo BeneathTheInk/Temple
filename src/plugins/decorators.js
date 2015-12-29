@@ -59,31 +59,33 @@ export function find(name) {
 	}
 }
 
-// finds first decorator in template scope
+// finds the best decorator
 export function lookup(ctx, name) {
-	let c = ctx;
-
-	while (c) {
-		if (c.template) {
-			let dec = c.template.findDecorator(name);
-			if (dec) return _.assign({ owner: c }, dec);
-		}
-
-		c = c.parent;
+	// look on the closest template
+	let owner = ctx.getTemplateContext();
+	if (owner) {
+		let dec = owner.template.findDecorator(name);
+		if (dec) return _.assign({ owner }, dec);
 	}
 
+	// look globally
 	if (decorators[name]) {
 		return _.assign({ owner: global }, decorators[name]);
 	}
+}
+
+function setAttribute(node, name, values) {
+	let v = !values || !values.length || values[0] == null ? "" : values[0];
+	updateAttribute(node, name, v);
 }
 
 export function render(ctx, name, value) {
 	let node = currentElement();
 	if (!node) throw new Error("Not currently patching.");
 
-	let isStatic = typeof value !== "function";
+	let isStaticValue = typeof value !== "function";
 	let getValue = () => {
-		let val = isStatic ? value : value(ctx);
+		let val = isStaticValue ? value : value(ctx);
 		if (!_.isArray(val)) val = [ val ];
 		return val;
 	};
@@ -92,8 +94,8 @@ export function render(ctx, name, value) {
 	let d = lookup(ctx, name);
 
 	// quick escape if static value and no decorator
-	if (isStatic && !d) {
-		updateAttribute(node, name, getValue()[0]);
+	if (isStaticValue && !d) {
+		setAttribute(node, name, getValue());
 		return;
 	}
 
@@ -104,18 +106,16 @@ export function render(ctx, name, value) {
 		let val = getValue();
 
 		if (!d) {
-			updateAttribute(node, name, val[0]);
+			setAttribute(node, name, val);
 			return;
 		}
 
 		// execute the callback
-		d.callback.apply(d.owner, [{
+		d.callback.apply(d.template, [_.assign({
 			target: node,
-			owner: d.owner,
 			context: ctx,
-			comp: c,
-			options: d.options
-		}].concat(val));
+			comp: c
+		}, d)].concat(val));
 	};
 
 	// defer computation if desired

@@ -1,19 +1,13 @@
 import Node from "./node";
 import {compileGroup,addKey,resetContextHeader} from "./utils";
 
-var safevar = /^[a-z0-9_$]+$/i;
-
 export default class Template extends Node {
 	compile(data) {
 		this.start(data);
 		let safename = JSON.stringify(this.name);
-		let lead = "";
+		let safetype = this.type ? JSON.stringify(this.type) : null;
 
-		if (safevar.test(this.name)) {
-			lead = `var ${this.name} = `;
-		}
-
-		this.write(`${lead}Template[${safename}] = Temple.Template(${safename}, function(ctx, key) {`).indent();
+		this.write(`Template[${safename}] = Temple.create(${safename}, ${safetype ? safetype + ", " : ""}function(ctx, key) {`).indent();
 		data = resetContextHeader(data);
 		data = addKey(data, { value: "key" });
 		let c = compileGroup(this.children, data);

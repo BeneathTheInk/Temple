@@ -16,44 +16,32 @@ Temple.exec(`
 
 	{% render "todolist" %}
 
-	<form on-submit="add-item">
-		<input type="text" ref="item-value" autofocus />
+	<form on-submit="{ 'add-item', items }">
+		<input type="text" name="item-value" autofocus />
 		<button type="submit">Add #{{ items.length + 1 }}</button>
 	</form>
 	{% endif %}
 </template>
 
 <template name="todolist">
-	<ul>
+	<ol>
 		{% each items %}
-		<li>{{ this }} <a href="#" on-click="{'remove-item', $index}">remove</a></li>
+		<li>{{ this }}</li>
 		{% endeach %}
-	</ul>
+	</ol>
 </template>
 
 <script>
-todoapp.use("actions");
-todoapp.use("refs");
+Template.todoapp.use("actions");
 
-todoapp.actions({
-	"add-item": function(e) {
+Template.todoapp.actions({
+	"add-item": function(e, items) {
 		e.original.preventDefault();
-		var items = this.lookup("items");
-		var input = this.refs["item-value"];
+		var input = e.target.elements["item-value"];
 		var val = input.value;
 		if (val) items.push(val);
 		input.value = "";
 		input.focus();
-	},
-	"remove-item": function(e, index) {
-		e.original.preventDefault();
-		var items = this.lookup("items");
-		items.splice(index, 1);
-	},
-	"clear-items": function(e) {
-		e.original.preventDefault();
-		var items = this.lookup("items");
-		items.splice(0, items.length);
 	}
 });
 </script>
@@ -63,26 +51,29 @@ todoapp.actions({
 </template>
 
 <script>
-stopwatch.helpers({
+Template.stopwatch.helpers({
 	elapsed: function(startDate) {
 		if (startDate == null) return 0;
-		return (Date.now() - startDate)/1000;
+		return Math.round((Date.now() - startDate)/1000);
 	}
 });
 
-stopwatch.on("render", function() {
-	setTimeout(this.invalidate.bind(this), 992);
+Template.stopwatch.on("render", function() {
+	setTimeout(this.invalidate.bind(this), 1000);
 });
 </script>
+
+<template name="all">
+	<div>{% render "todoapp" %}</div>
+	{# <hr />
+	<div>{% render "stopwatch" %}</div> #}
+</template>
 `);
 
-window.tpl = Temple.paint("todoapp", "body", {
-	items: new Temple.List()
+window.tpl = Temple.paint("all", "body", {
+	items: new Temple.List(),
+	startDate: new Date()
 });
-
-// window.tpl = Temple.paint("stopwatch", "body", {
-// 	startDate: new Date()
-// });
 
 } catch(e) {
 	console.log(e.stack || e);

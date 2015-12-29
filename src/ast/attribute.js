@@ -1,7 +1,6 @@
 import * as _ from "lodash";
 import Node from "./node";
 import Expression from "./expression";
-import Literal from "./literal";
 import {header} from "./utils";
 
 export default class Attribute extends Node {
@@ -21,9 +20,12 @@ export default class Attribute extends Node {
 				str = this.children.compile(data);
 				fun = true;
 			} else {
+				let len = this.children.length;
 				str = _.invoke(this.children, "compile", data);
-				str = !str.length ? `""` : this._sn(data.originalFilename, str).join(" + ");
-				fun = this.children.length && this.children.some(c => c.reactive);
+				str = !len ? null : this._sn(data.originalFilename, str).join(" + ");
+				if (len > 1) str = [`""+ `,str];
+				fun = len && this.children.some(c => c.reactive);
+				if (fun) str = ["[", str, "]"];
 			}
 
 			if (fun) {
@@ -33,11 +35,9 @@ export default class Attribute extends Node {
 			} else {
 				value = str;
 			}
-		} else {
-			value = `""`;
 		}
 
-		this.write([ `decorators.render(ctx, ${JSON.stringify(this.name)}, `, value, `);` ]);
+		this.write([ `decorators.render(ctx, ${JSON.stringify(this.name)}`, (value != null ? [", ", value] : ""), `);` ]);
 
 		return this.end();
 	}

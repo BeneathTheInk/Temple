@@ -67,6 +67,8 @@ export function defineEvent(event) {
 			var action = new Action(key, decor.context);
 			action.original = e;
 			action.target = action.node = node;
+			action.owner = decor.owner;
+			action.template = decor.template;
 
 			// fire the action
 			fire(action, null, args);
