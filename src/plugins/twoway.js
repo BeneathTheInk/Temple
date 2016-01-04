@@ -1,6 +1,6 @@
-import * as _ from "underscore";
+import * as _ from "lodash";
 import { register } from "./";
-import { getPropertyFromClass, toString } from "../utils";
+import { toString } from "../utils";
 import Trackr from "trackr";
 import { updateAttribute, updateProperty } from "../idom";
 
@@ -18,73 +18,11 @@ export function plugin(options) {
 	this.removeFormBinding = remove;
 
 	// add main binding decorator
-	this.decorate("bind-to", function bindTo(d, id, lazy) {
-		var fbind = this.getFormBinding(id);
-		if (fbind == null) return;
-
-		var el = d.target,
-			type = getType(el),
-			self = this,
-			onChange;
-
-		// detect changes to the input's value
-		if (typeof fbind.change === "function") {
-			onChange = function(e) {
-				fbind.change.call(self, getNodeValue(el, type), d.context, e);
-			};
-
-			el.addEventListener("change", onChange);
-			el.addEventListener("paste", onChange);
-			if (!(options.lazy || lazy)) el.addEventListener("keyup", onChange);
-
-			d.comp.onInvalidate(function() {
-				el.removeEventListener("change", onChange);
-				el.removeEventListener("paste", onChange);
-				el.removeEventListener("keyup", onChange);
-			});
-		}
-
-		var nodeValueComp, stopped = false;
-
-		d.comp.onInvalidate(function() {
-			stopped = true;
-			if (nodeValueComp) nodeValueComp.stop();
-		});
-
-		// reactively set the value on the input
-		// deferred so value decorators run
-		_.defer(function() {
-			if (stopped) return;
-			nodeValueComp = Trackr.autorun(function() {
-				setNodeValue(el, fbind.get.call(self, d.context), type, options.live);
-			});
-		});
-	});
+	this.decorate("bind-to", bindTo.bind(this, options, false));
+	this.decorate("lazybind-to", bindTo.bind(this, options, true));
 
 	// add value decorator for radios and options
-	this.decorate("value", function valueOf(d, strval) {
-		var el = d.target,
-			type = getType(el);
-
-		if (!_.contains(value_types, type)) {
-			updateAttribute(el, "value", strval);
-			return;
-		}
-
-		var args = [];
-		if (d.render && typeof d.render.arguments === "function") {
-			args = d.render.arguments();
-		}
-
-		el.$bound_value = args.length <= 1 ? args[0] : args;
-		updateProperty(el, "value", strval);
-	}, { parse: "string" });
-
-	// copy inherited bindings
-	if (typeof this !== "function") {
-		let bindings = getPropertyFromClass(this, "_formBindings");
-		this._formBindings = _.extend(this._formBindings || {}, bindings);
-	}
+	this.decorate("value", valueOf, { parse: "string" });
 }
 
 export default plugin;
@@ -245,4 +183,68 @@ function setNodeValue(el, val, type, live) {
 			updateProperty(el, "checked", el.$bound_value === val);
 			break;
 	}
+}
+
+function bindTo(options, lazy, d, id) {
+	let fbind = this.getFormBinding(id);
+	if (fbind == null) return;
+
+	let el = d.target;
+	let args = _.toArray(arguments).slice(4);
+	let type = getType(el);
+	let onChange;
+	let twctx = _.pick(d, "context", "template", "target");
+
+	// detect changes to the input's value
+	if (typeof fbind.change === "function") {
+		onChange = function(e) {
+			fbind.change.apply(_.assign(twctx, {
+				original: e
+			}), [getNodeValue(el, type)].concat(args));
+		};
+
+		el.addEventListener("change", onChange);
+		el.addEventListener("paste", onChange);
+		if (!(options.lazy || lazy)) el.addEventListener("keyup", onChange);
+
+		d.comp.onInvalidate(function() {
+			el.removeEventListener("change", onChange);
+			el.removeEventListener("paste", onChange);
+			el.removeEventListener("keyup", onChange);
+		});
+	}
+
+	let nodeValueComp, stopped = false;
+
+	d.comp.onInvalidate(function() {
+		stopped = true;
+		if (nodeValueComp) nodeValueComp.stop();
+	});
+
+	// reactively set the value on the input
+	// deferred so value decorators run
+	_.defer(function() {
+		if (stopped) return;
+		nodeValueComp = Trackr.autorun(function() {
+			setNodeValue(el, fbind.get.apply(twctx, args), type, options.live);
+		});
+	});
+}
+
+function valueOf(d, strval) {
+	var el = d.target,
+		type = getType(el);
+
+	if (!_.contains(value_types, type)) {
+		updateAttribute(el, "value", strval);
+		return;
+	}
+
+	var args = [];
+	if (d.render && typeof d.render.arguments === "function") {
+		args = d.render.arguments();
+	}
+
+	el.$bound_value = args.length <= 1 ? args[0] : args;
+	updateProperty(el, "value", strval);
 }

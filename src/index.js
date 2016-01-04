@@ -12,7 +12,7 @@ import * as plugins from "./plugins";
 import * as decorators from "./plugins/decorators";
 import * as actions from "./plugins/actions";
 
-export var version = "0.6.6";
+export var version = "0.7.0-alpha1";
 
 export * from "./templates";
 export * from "./compile";

@@ -101,8 +101,13 @@ export function render(ctx, name, value) {
 
 	let anim, comp;
 	let cancel = false;
+	let decctx = _.assign({
+		target: node,
+		context: ctx
+	}, d);
 
 	let run = function(c) {
+		decctx.comp = c;
 		let val = getValue();
 
 		if (!d) {
@@ -111,11 +116,7 @@ export function render(ctx, name, value) {
 		}
 
 		// execute the callback
-		d.callback.apply(d.template, [_.assign({
-			target: node,
-			context: ctx,
-			comp: c
-		}, d)].concat(val));
+		d.callback.apply(d.template, [decctx].concat(val));
 	};
 
 	// defer computation if desired

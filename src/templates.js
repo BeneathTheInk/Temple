@@ -91,20 +91,31 @@ Template.prototype.paint = function(node, data) {
 	return c;
 };
 
+var globalHelpers = new ReactiveMap();
+
+export var helpers =
 Template.prototype.helpers = function(key, value) {
 	if (typeof key === "object") {
-		Object.keys(key).forEach((k) => this.helpers(k, key[k]));
+		Object.keys(key).forEach((k) => helpers.call(this, k, key[k]));
 		return this;
 	}
 
-	if (typeof value === "undefined") this.s.helpers.delete(key);
-	else this.s.helpers.set(key, value);
+	var h = globalHelpers;
+	if (this instanceof Template) h = this.s.helpers;
+
+	if (typeof value === "undefined") h.delete(key);
+	else h.set(key, value);
 
 	return this;
 };
 
+export var getHelper =
 Template.prototype.getHelper = function(key) {
-	return this.s.helpers.get(key);
+	if (this instanceof Template) {
+		return this.s.helpers.get(key);
+	}
+
+	return globalHelpers.get(key);
 };
 
 export function render(name, ctx, key) {
@@ -116,9 +127,14 @@ export function getByName(name) {
 	return templates[name];
 }
 
-export function paint(name, node, data) {
-	let tpl = getByName(name);
-	if (!tpl) throw new Error("No template exists with name '"+name+"'");
+export function paint(tpl, node, data) {
+	if (typeof tpl === "string") {
+		tpl = getByName(tpl);
+		if (!tpl) throw new Error("No template exists with name '"+tpl+"'");
+	}
+	if (!(tpl instanceof Template)) {
+		throw new Error("Expecting template name or instance of Template.");
+	}
 	return tpl.paint(node, data);
 }
 

@@ -2,6 +2,7 @@ import * as _ from "lodash";
 import {EventEmitter} from "events";
 import {Variable as ReactiveVar} from "trackr-objects";
 import assignProps from "assign-props";
+import {getHelper} from "./templates";
 
 export default function Context(data, parent, template) {
 	if (!(this instanceof Context)) {
@@ -141,15 +142,10 @@ var lookup = function(tpl, ctx, key) {
 	}
 
 	// 3. check global helpers
+	let val = getHelper(key);
+	if (val !== void 0) return val;
 };
 
 Context.prototype.lookup = function(key) {
-	let val = lookup(this.getTemplate(), this, key);
-
-	// reactive variables are always resolved
-	if (val instanceof ReactiveVar) {
-		val = val.get();
-	}
-
-	return val;
+	return lookup(this.getTemplate(), this, key);
 };

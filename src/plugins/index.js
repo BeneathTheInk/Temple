@@ -65,7 +65,7 @@ import "./decorators";
 // import "./components";
 // import "./partials";
 import "./actions";
-// import "./twoway";
+import "./twoway";
 // import "./adoption";
 import "./refs";
 // import "./reactive-proxies.js";

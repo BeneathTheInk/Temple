@@ -1,6 +1,9 @@
 BIN = ./node_modules/.bin
+BUILD = lib/ lib/temple.js lib/ast.js lib/m+xml.js
+DIST = dist/ dist/temple.js dist/temple.min.js
 
-build: lib/ lib/temple.js lib/ast.js lib/m+xml.js
+build: $(BUILD)
+build-dist: $(DIST)
 
 define ROLLUP
 require("rollup").rollup({
@@ -32,11 +35,18 @@ require("rollup").rollup({
 	});
 });
 endef
-
 export ROLLUP
 
+define HEADER
+/* Temple v$(shell node -e 'process.stdout.write(require("./package.json").version)')
+ * Copyright (c) $(shell date +'%Y') Tyler Johnson. License MIT
+ */
+
+endef
+export HEADER
+
 lib/:
-	mkdir -p lib/
+	mkdir -p $@
 
 lib/temple.js: src/index.js $(wildcard src/*.js src/*/*.js)
 	# $< -> $@
@@ -50,7 +60,20 @@ lib/m+xml.js: src/m+xml.peg
 	# $< -> $@
 	@$(BIN)/pegjs --allowed-start-rules start $< $@
 
+dist/:
+	mkdir -p $@
+
+dist/temple.js: lib/temple.js $(BUILD)
+	# $< -> $@
+	@echo "$$HEADER" > $@
+	@$(BIN)/browserify --standalone Temple $< >> $@
+
+dist/temple.min.js: dist/temple.js
+	# $< -> $@
+	@echo "$$HEADER" > $@
+	@$(BIN)/uglifyjs $< >> $@
+
 clean:
-	rm -rf lib/
+	rm -rf lib/ dist/
 
 .PHONY: build
