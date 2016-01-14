@@ -82,36 +82,6 @@ export function removeDestroyListener(node, fn) {
 	}
 }
 
-// // export every key in idom
-// (function(doExport) {
-// 	for (var k of Object.keys(idom)) doExport(k);
-// })(function(k) {
-// 	if (typeof exports[k] === "undefined") {
-// 		Object.defineProperty(exports, k, {
-// 			enumerable: true,
-// 			get: function() { return idom[k]; }
-// 		});
-// 	}
-// });
-
-// export function patchElement(el, fn) {
-// 	let ictx = getContext();
-//
-// 	if (ictx) {
-// 		let walker = ictx.walker;
-// 		walker.getCurrentParent().insertBefore(el, walker.currentNode);
-// 		walker.currentNode = el;
-//
-// 		firstChild();
-// 		fn();
-// 		parentNode();
-// 		clearUnvisitedDOM(el);
-// 		nextSibling();
-// 	} else {
-// 		idom.patch(el, fn);
-// 	}
-// }
-
 // function renderHTML(node) {
 // 	if (node.type == "text") {
 // 		return idom.text(node.content);
@@ -144,17 +114,6 @@ export function removeDestroyListener(node, fn) {
 // 	var tree = parseHTML("<div>" + src + "</div>");
 // 	if (_.isArray(tree)) tree = tree[0];
 // 	return tree.children.map(renderHTML);
-// }
-
-// export function section(inverted, val, fn) {
-// 	let proxy = proxies.getByTarget(val, [ "empty", "section" ]);
-// 	let isEmpty = Boolean(proxies.run(proxy, "empty", val));
-//
-// 	if (inverted && isEmpty) {
-// 		fn(val);
-// 	} else if (!inverted && !isEmpty) {
-// 		proxies.run(proxy, "section", val, fn);
-// 	}
 // }
 
 export function updateProperty(el, name, value) {

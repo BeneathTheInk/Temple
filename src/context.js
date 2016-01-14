@@ -29,9 +29,7 @@ export default function Context(data, parent, template) {
 		// holds lexical data
 		scope: {},
 		// holds "this" data
-		data: new ReactiveVar(),
-		// whether or not this view has been destroyed
-		destroyed: false
+		data: new ReactiveVar()
 	};
 
 	// set initial data
