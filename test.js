@@ -10,7 +10,7 @@ function inspect(i) {
 
 try {
 Temple.exec(`
-<template name="todoapp">
+<template name="todoapp" use="actions">
 	{% if items %}
 	<h3>Todo</h3>
 
@@ -32,8 +32,6 @@ Temple.exec(`
 </template>
 
 <script>
-Template.todoapp.use("actions");
-
 Template.todoapp.actions({
 	"add-item": function(e, items) {
 		e.original.preventDefault();

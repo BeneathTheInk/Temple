@@ -49,17 +49,29 @@ Templates
 */
 templateNode
 	= "<" ws "template" attrs:attributes ">" nodes:html "</template>" {
-		var name, type;
+		var name, type, plugins = [];
 
 		attrs.forEach(function(a) {
-			if (a.name === "name") name = a.value;
-			else if (a.name === "type") type = a.value;
+			switch (a.name) {
+				case "name":
+					name = a.value;
+					break;
+
+				case "type":
+					type = a.value;
+					break;
+
+				case "use":
+					plugins.push(a.value);
+					break;
+			}
 		});
 
 		return createNode("Template", {
 			name: name,
 			type: type,
-			children: nodes
+			children: nodes,
+			plugins: plugins
 		});
 	}
 

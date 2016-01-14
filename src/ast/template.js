@@ -15,6 +15,13 @@ export default class Template extends Node {
 		this.push(c);
 		this.outdent().write("});\n");
 
+		if (this.plugins && this.plugins.length) {
+			this.plugins.forEach((p) => {
+				this.write(`Template[${safename}].use(${JSON.stringify(p)});`);
+			});
+			this.write("");
+		}
+
 		return this.end();
 	}
 }

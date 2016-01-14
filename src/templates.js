@@ -76,7 +76,7 @@ Template.prototype.paint = function(node, data) {
 		throw new Error("Expecting a valid DOM element to paint.");
 	}
 
-	let ctx = new Context(data);
+	let ctx = data instanceof Context ? data : new Context(data);
 	let c = Trackr.autorun(() => {
 		patch(node, () => this.render(ctx));
 	});
