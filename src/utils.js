@@ -1,5 +1,5 @@
 import {assign,isArray,forEach as each} from "lodash";
-import matchesSelector from "matches-selector";
+import matchesSelector from "dom-matches";
 import merge from "plain-merge";
 
 export {assign};

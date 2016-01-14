@@ -1,12 +1,9 @@
 {
 	var ast = require("./ast");
-	var object = require("lodash/array/object");
-	var assign = require("lodash/object/assign");
-	var pluck = require("lodash/collection/pluck");
-	var contains = require("lodash/collection/contains");
+	var _ = require("lodash");
 	var jsep = require("jsep");
 
-	options = assign({
+	options = _.assign({
 		strict: true
 	}, options);
 
@@ -30,10 +27,6 @@
 		});
 	}
 
-	function combine(nodes, type) {
-		return ast.SectionTag.convert(combineText(nodes, type));
-	}
-
 	function createExpression(v) {
 		return createNode("Expression", {
 			value: v,
@@ -47,7 +40,7 @@ start = ws nodes:(
 	/ templateNode
 	/ commentNode ) ws)* {
 		return createNode("Root", {
-			children: pluck(nodes, 0)
+			children: _.pluck(nodes, 0)
 		});
 	}
 
@@ -93,7 +86,7 @@ html = nodes:
 	/ interpolator
 	/ commentNode
 	/ elementNode
-	/ notClosingTag )* { return combine(nodes); }
+	/ notClosingTag )* { return combineText(nodes); }
 
 tagname = ws k:$[a-z0-9\-$]i+ ws { return k.toLowerCase(); }
 
@@ -154,42 +147,27 @@ attributes = (attribute)*
 attribute
 	= key:attributeName value:("=" ws attributeValue ws)? {
 		value = value != null ? value[2] : void 0;
-		return createNode("Attribute", assign({
+		return createNode("Attribute", _.assign({
 			name: key
 		}, value));
 	}
 
 attributeName = ws k:$[a-z0-9\-$]i+ ws { return k.toLowerCase(); }
 
-attributeValue =
-	nodes:( "\"" c:(
-		"{" v:$(!"}\"" .)* "}" &{
-			var p;
-			try { p = jsep(v); }
-			catch(e) { return; }
-			return true;
-		} {
-			return createExpression("[" + v + "]");
-		}
-		/ n:( section
-		  / variable
-		  / escape
-		  / $(!"\"" !"{%" !"{{" .))* { return combine(n, "Literal"); }
-		) "\"" { return c; }
-	/ "'" c:(
-		"{" v:$(!"}'" .)* "}" &{
-			var p;
-			try { p = jsep(v); }
-			catch(e) { return; }
-			return true;
-		} {
-			return createExpression("[" + v + "]");
-		}
-		/ n:( section
-		  / variable
-		  / escape
-		  / $(!"'" !"{%" !"{{" .))* { return combine(n, "Literal"); }
-		) "'" { return c; }
+attributeValue = nodes:(
+	"{" exp:$(!"}" .)* "}" {
+		return createExpression("[" + exp + "]");
+	}
+	/ "\"" n:( section
+		/ variable
+		/ escape
+		/ $(!"\"" .)
+	)* "\"" { return combineText(n, "Literal"); }
+	/ "'" n:( section
+		/ variable
+		/ escape
+		/ $(!"'" .)
+	)* "'" { return combineText(n, "Literal"); }
 	) {
 		var t = text();
 		t = t.substr(1, t.length - 2);
@@ -203,56 +181,73 @@ attributeValue =
 /*
 Sections
 */
+
 section
-	= "{%" ws k:sectionName ws "%}" {
-		if (typeof k === "string") k = { name: k };
-		return createNode("SectionTag", k);
+	= ifSection
+	/ eachSection
+	/ renderSection
+	/ withSection
+	/ setSection
+
+sOpen = "{%" ws
+sClose = ws "%}"
+
+ifSection
+	= sOpen "if"i ws exp:$(sectionChar)* sClose nodes:html
+	elsifs:(sOpen "else"i gws "if"i ws exp:$(sectionChar)* sClose nodes:html { return [exp,nodes]; })*
+	els:(sOpen "else"i sClose nodes:html { return nodes; })?
+	sOpen "endif"i sClose {
+		var branches = [ createNode("Branch", {
+			expression: createExpression(exp),
+			children: nodes
+		}) ];
+
+		elsifs.forEach(function(b) {
+			branches.push(createNode("Branch", {
+				expression: createExpression(b[0]),
+				children: b[1]
+			}));
+		});
+
+		if (els) branches.push(createNode("Branch", {
+			expression: null,
+			children: els
+		}));
+
+		return createNode("If", {
+			children: branches
+		});
 	}
 
-sectionName =
-	"if"i ws v:$(sectionChar)* {
-		return {
-			name: "if",
-			expression: createExpression(v)
-		};
+eachSection
+	= sOpen "each"i ws exp:$(sectionChar)* sClose nodes:html sOpen "endeach"i sClose {
+		return createNode("Each", {
+			expression: createExpression(exp),
+			children: nodes
+		});
 	}
-	/ "else"i gws "if"i ws v:$(sectionChar)* {
-		return {
-			name: "else if",
-			expression: createExpression(v)
-		};
+
+renderSection
+	= sOpen "render"i ws exp:$(sectionChar)* sClose {
+		return createNode("Render", {
+			expression: createExpression(exp)
+		});
 	}
-	/ "else"i
-	/ "endif"i
-	/ "each"i ws v:$(sectionChar)* {
-		return {
-			name: "each",
-			expression: createExpression(v)
-		};
+
+withSection
+	= sOpen "with"i ws exp:$(sectionChar)* sClose nodes:html sOpen "endwith"i sClose {
+		return createNode("With", {
+			expression: createExpression(exp),
+			children: nodes
+		});
 	}
-	/ "endeach"i
-	/ "render"i ws v:$(sectionChar)* {
-		return {
-			name: "render",
-			expression: createExpression(v)
-		};
-	}
-	/ "with"i ws v:$(sectionChar)* {
-		return {
-			name: "with",
-			expression: createExpression(v)
-		};
-	}
-	/ "endwith"i
-	/ "set"i ws variable:$([a-z]i [a-z0-9_$]i+) ws "=" ws v:$(sectionChar)* {
-		return {
-			name: "set",
-			variable: variable,
-			expression: createExpression(v)
-		};
-	}
-	/ key:$[a-z0-9]i+ &{
-		throw new Error("Unknown section key '" + key + "'");
+
+setSection
+	= sOpen "set"i ws v:$([a-z]i [a-z0-9_$]i+) ws "=" ws exp:$(sectionChar)* sClose {
+		return createNode("Set", {
+			variable: v,
+			expression: createExpression(exp)
+		});
 	}
 
 sectionChar = !"%}" .

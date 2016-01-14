@@ -1,12 +1,12 @@
 var Temple = global.Temple = require("./");
-// var util = require("util");
-//
-// function inspect(i) {
-// 	console.log(util.inspect(i, {
-// 		depth: 100,
-// 		colors: true
-// 	}));
-// }
+var util = require("util");
+
+function inspect(i) {
+	console.log(util.inspect(i, {
+		depth: 100,
+		colors: true
+	}));
+}
 
 try {
 Temple.exec(`
@@ -16,7 +16,7 @@ Temple.exec(`
 
 	{% render "todolist" %}
 
-	<form on-submit="{ 'add-item', items }">
+	<form on-submit={"add-item",items}>
 		<input type="text" name="item-value" autofocus />
 		<button type="submit">Add #{{ items.length + 1 }}</button>
 	</form>
@@ -77,5 +77,5 @@ window.tpl = Temple.paint("all", "body", {
 
 } catch(e) {
 	console.log(e.stack || e);
-	// inspect(e);
+	if (e.location) inspect(e.location);
 }

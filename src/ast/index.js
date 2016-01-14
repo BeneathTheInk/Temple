@@ -1,5 +1,4 @@
 import Node from "./node";
-import SectionTag from "./section-tag";
 import If from "./if";
 import Branch from "./branch";
 import Each from "./each";
@@ -21,7 +20,7 @@ export {
 	Node,
 	Root, Template, Script,
 	Element, Text, Attribute,
-	SectionTag, If, Branch, Each, With, Set, Render,
+	If, Branch, Each, With, Set, Render,
 	Interpolator, Expression, Literal,
 	Comment
 };
