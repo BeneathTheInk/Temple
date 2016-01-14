@@ -168,7 +168,17 @@ attributeName = ws k:$[a-z0-9\-$]i+ ws { return k.toLowerCase(); }
 
 attributeValue = nodes:(
 	"{" exp:$(!"}" .)* "}" {
-		return createExpression("[" + exp + "]");
+		var e = createExpression(exp);
+		var root = { type: "ArrayExpression" };
+
+		if (e.tree.type === "Compound") {
+			root.elements = e.tree.body;
+		} else {
+			root.elements = [e.tree];
+		}
+
+		e.tree = root;
+		return e;
 	}
 	/ "\"" n:( section
 		/ variable
