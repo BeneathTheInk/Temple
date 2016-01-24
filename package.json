@@ -35,7 +35,7 @@
 		"raf": "~3.1.0",
 		"source-map": "~0.5.3",
 		"trackr": "~2.0.2",
-		"trackr-objects": "~0.3.6"
+		"trackr-objects": "~0.3.7"
 	},
 	"devDependencies": {
 		"babel-preset-es2015-rollup": "~1.0.0",
@@ -46,40 +46,6 @@
 		"rollup-plugin-commonjs": "~1.4.0",
 		"rollup-plugin-npm": "~1.1.0",
 		"uglify-js": "~2.6.1"
-	},
-	"oldDependencies": {
-		"assign-props": "~1.1.2",
-		"backbone-events-standalone": "~0.2.7",
-		"backbone-extend-standalone": "~0.1.2",
-		"html-parse-stringify": "~1.0.2",
-		"matches-selector": "~1.0.0",
-		"plain-merge": "~1.0.1",
-		"raf": "~3.1.0",
-		"source-map": "~0.5.1",
-		"trackr": "~2.0.0",
-		"trackr-objects": "~0.3.6",
-		"underscore": "~1.8.3",
-		"webcomponents.js": "~0.7.2"
-	},
-	"oldDevDependencies": {
-		"babel": "~5.8.23",
-		"babelify": "~6.3.0",
-		"browser-run": "~2.6.2",
-		"browserify": "~11.2.0",
-		"del": "~2.0.2",
-		"gulp": "~3.9.0",
-		"gulp-babel": "~5.2.1",
-		"gulp-header": "~1.7.1",
-		"gulp-peg": "github:nicompte/gulp-peg",
-		"gulp-plumber": "~1.0.1",
-		"gulp-rename": "~1.2.2",
-		"gulp-sourcemaps": "~1.6.0",
-		"gulp-uglify": "~1.4.1",
-		"jshint": "~2.8.0",
-		"merge-stream": "~1.0.0",
-		"tape": "~4.2.0",
-		"vinyl-buffer": "~1.0.0",
-		"vinyl-source-stream": "~1.1.0"
 	},
 	"license": "MIT",
 	"keywords": [
