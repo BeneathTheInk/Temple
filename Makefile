@@ -1,5 +1,5 @@
 BIN = ./node_modules/.bin
-BUILD = lib/ lib/temple.js lib/ast.js lib/m+xml.js
+BUILD = lib/ lib/temple.js lib/ast.js lib/m+xml.js lib/superfast.js
 DIST = dist/ dist/temple.js dist/temple.min.js
 
 build: $(BUILD)
@@ -59,6 +59,10 @@ lib/ast.js: src/ast/index.js $(wildcard src/ast/*.js)
 lib/m+xml.js: src/m+xml.peg
 	# $< -> $@
 	@$(BIN)/pegjs --allowed-start-rules start $< $@
+
+lib/superfast.js: src/superfast.js
+	# $< -> $@
+	@node -e "$$ROLLUP" > $@
 
 dist/:
 	mkdir -p $@
