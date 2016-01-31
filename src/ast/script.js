@@ -15,12 +15,12 @@ export default class Script extends Node {
 			let lindent = detectIndent(l);
 			l = l.replace(/^\s+/, "");
 			let len = Math.round(lindent.amount / indent.amount);
-			let tabs = "";
+			let tabs = this.tabs();
 			let tabchar = data.tabchar;
 			if (tabchar == null) tabchar = "  ";
 			for (let j = 0; j < len; j++) tabs += tabchar;
 
-			this.push(new SourceNode(i + line, i === 0 ? column : 1, data.origdinalFilename, tabs + l + "\n"));
+			this.push(new SourceNode(i + line, i === 0 ? column : 1, data.originalFilename, tabs + l + "\n"));
 		});
 
 		return this.end();

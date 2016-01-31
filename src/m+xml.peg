@@ -98,9 +98,10 @@ interpolator = expression:variable {
 HTML
 */
 html = nodes:
-	( section
+	( commentNode
+	/ section
 	/ interpolator
-	/ commentNode
+	/ scriptNode
 	/ elementNode
 	/ notClosingTag )* { return combineText(nodes); }
 
@@ -171,9 +172,9 @@ attribute
 attributeName = ws k:$[a-z0-9\-$]i+ ws { return k.toLowerCase(); }
 
 attributeNode
-	= section
+	= escape
+	/ section
 	/ variable
-	/ escape
 
 attributeValue
 	= &{
