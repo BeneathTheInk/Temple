@@ -33,6 +33,10 @@
 			tree: jsep(v)
 		});
 	}
+
+	var attributeMode = false;
+	function enterAttribute() { attributeMode = true; }
+	function exitAttribute() { attributeMode = false; }
 }
 
 start = ws nodes:(
@@ -166,31 +170,41 @@ attribute
 
 attributeName = ws k:$[a-z0-9\-$]i+ ws { return k.toLowerCase(); }
 
-attributeValue = nodes:(
-	"{" exp:$(!"}" .)* "}" {
-		var e = createExpression(exp);
-		var root = { type: "ArrayExpression" };
+attributeNode
+	= section
+	/ variable
+	/ escape
 
-		if (e.tree.type === "Compound") {
-			root.elements = e.tree.body;
-		} else {
-			root.elements = [e.tree];
+attributeValue
+	= &{
+		enterAttribute();
+		return true;
+	} nodes:(
+		"{" exp:$(!"}" .)* "}" {
+			var e = createExpression(exp);
+			var root = { type: "ArrayExpression" };
+
+			if (e.tree.type === "Compound") {
+				root.elements = e.tree.body;
+			} else {
+				root.elements = [e.tree];
+			}
+
+			e.tree = root;
+			return e;
 		}
 
-		e.tree = root;
-		return e;
-	}
-	/ "\"" n:( section
-		/ variable
-		/ escape
-		/ $(!"\"" .)
-	)* "\"" { return combineText(n, "Literal"); }
-	/ "'" n:( section
-		/ variable
-		/ escape
-		/ $(!"'" .)
-	)* "'" { return combineText(n, "Literal"); }
-	) {
+		/ "\"" n:( attributeNode / $(!"\"" .))* "\"" {
+			return combineText(n, "Literal");
+		}
+
+		/ "'" n:( attributeNode / $(!"'" .))* "'" {
+			return combineText(n, "Literal");
+		}
+	) &{
+		exitAttribute();
+		return true;
+	} {
 		var t = text();
 		t = t.substr(1, t.length - 2);
 
@@ -213,10 +227,16 @@ section
 sOpen = "{%" ws
 sClose = ws "%}"
 
+sectionNodes
+	= &{ return attributeMode; } n:(attributeNode / $(!sOpen .))* {
+		return combineText(n, "Literal");
+	}
+	/ html
+
 ifSection
-	= sOpen "if"i ws exp:$(sectionChar)* sClose nodes:html
-	elsifs:(sOpen "else"i gws "if"i ws exp:$(sectionChar)* sClose nodes:html { return [exp,nodes]; })*
-	els:(sOpen "else"i sClose nodes:html { return nodes; })?
+	= sOpen "if"i ws exp:$(sectionChar)* sClose nodes:sectionNodes
+	elsifs:(sOpen "else"i gws "if"i ws exp:$(sectionChar)* sClose nodes:sectionNodes { return [exp,nodes]; })*
+	els:(sOpen "else"i sClose nodes:sectionNodes { return nodes; })?
 	sOpen "endif"i sClose {
 		var branches = [ createNode("Branch", {
 			expression: createExpression(exp),
@@ -236,30 +256,33 @@ ifSection
 		}));
 
 		return createNode("If", {
-			children: branches
+			children: branches,
+			attribute: attributeMode
 		});
 	}
 
 eachSection
-	= sOpen "each"i ws exp:$(sectionChar)* sClose nodes:html sOpen "endeach"i sClose {
+	= sOpen "each"i ws exp:$(sectionChar)* sClose nodes:sectionNodes sOpen "endeach"i sClose {
 		return createNode("Each", {
 			expression: createExpression(exp),
-			children: nodes
+			children: nodes,
+			attribute: attributeMode
 		});
 	}
 
 renderSection
-	= sOpen "render"i ws exp:$(sectionChar)* sClose {
+	= &{ return !attributeMode; } sOpen "render"i ws exp:$(sectionChar)* sClose {
 		return createNode("Render", {
 			expression: createExpression(exp)
 		});
 	}
 
 withSection
-	= sOpen "with"i ws exp:$(sectionChar)* sClose nodes:html sOpen "endwith"i sClose {
+	= sOpen "with"i ws exp:$(sectionChar)* sClose nodes:sectionNodes sOpen "endwith"i sClose {
 		return createNode("With", {
 			expression: createExpression(exp),
-			children: nodes
+			children: nodes,
+			attribute: attributeMode
 		});
 	}
 
