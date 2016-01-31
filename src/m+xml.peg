@@ -296,7 +296,8 @@ setSection
 	= sOpen "set"i ws v:$([a-z]i [a-z0-9_$]i+) ws "=" ws exp:$(sectionChar)* sClose {
 		return createNode("Set", {
 			variable: v,
-			expression: createExpression(exp)
+			expression: createExpression(exp),
+			attribute: attributeMode
 		});
 	}
 

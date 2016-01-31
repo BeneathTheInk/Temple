@@ -3,6 +3,7 @@ import { register } from "./";
 import { currentElement, updateAttribute } from "../idom";
 import Trackr from "trackr";
 import raf from "raf";
+import Context from "../context";
 
 var decorators = {};
 
@@ -79,9 +80,12 @@ function setAttribute(node, name, values) {
 	updateAttribute(node, name, v);
 }
 
-export function render(ctx, name, value) {
+export function render(_ctx, name, value) {
 	let node = currentElement();
 	if (!node) throw new Error("Not currently patching.");
+
+	// each decorator is given its own context
+	let ctx = new Context(null, _ctx);
 
 	let isStaticValue = typeof value !== "function";
 	let getValue = () => {

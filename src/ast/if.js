@@ -15,7 +15,7 @@ export default class If extends Node {
 		this.children.forEach((c, i, l) => {
 			if (this.attribute) {
 				if (c.expression) this.push([ c.expression.compile(data), " ? " ]);
-				this.push([ "(", c.compile(addKey(data, i.toString())).join("+"), ")" ]);
+				this.push([ "Temple.utils.joinValues(", c.compile(addKey(data, i.toString())).join(","), ")" ]);
 				if ((i + 1) === l.length && c.expression) this.push(" : ''");
 			} else {
 				let line = [];

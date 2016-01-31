@@ -12,13 +12,18 @@ export default class Each extends Node {
 		let indexvar = _.uniqueId("index");
 		let vars = JSON.stringify(this.variables || []);
 
-		this.write([ `Temple.Each(`, exp, `, `, vars, `, ctx, function(ctx, ${indexvar}) {` ]).indent();
+		if (!this.attribute) this.push(this.tabs());
+		this.push([ `Temple.Each(`, exp, `, `, vars, `, ctx, function(ctx, ${indexvar}) {` ]).indent();
+		if (!this.attribute) this.push("\n");
 		data = resetContextHeader(data);
 		data = addKey(data, { value: indexvar });
-		let c = compileGroup(this.children, data);
+		let c = this._sn(data.originalFilename, compileGroup(this.children, data));
 		data.contextHeaders.forEach(this.write, this);
+		if (this.attribute) c = [ " return Temple.utils.joinValues(", c.join(","), "); " ];
 		this.push(c);
-		this.outdent().write(`});`);
+		this.outdent().push(`})`);
+		if (!this.attribute) this.write(";");
+		else this.push(`.join("")`);
 
 		return this.end();
 	}

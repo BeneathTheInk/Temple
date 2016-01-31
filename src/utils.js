@@ -1,4 +1,4 @@
-import {assign,isArray,forEach as each} from "lodash";
+import {assign,toArray,isArray,forEach as each} from "lodash";
 import matchesSelector from "dom-matches";
 import merge from "plain-merge";
 
@@ -7,6 +7,14 @@ export {assign};
 export function forEach(val, fn, ctx) {
 	if (val && typeof val.forEach === "function") val.forEach(fn, ctx);
 	else each(val, fn, ctx);
+}
+
+export function map(val, fn, ctx) {
+	let res = [];
+	forEach(val, function(v, i, l) {
+		res.push(fn.call(ctx, v, i, l));
+	});
+	return res;
 }
 
 // like jQuery's empty(), removes all children
@@ -47,6 +55,10 @@ export function toString(value) {
 	}
 
 	return value;
+}
+
+export function joinValues() {
+	return toArray(arguments).map(toString).join("");
 }
 
 export function matches(node, selector) {

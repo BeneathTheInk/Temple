@@ -9,12 +9,17 @@ export default class With extends Node {
 
 		let exp = this.expression.compile(data);
 
-		this.write([ `Temple.With(`, exp, `, ctx, function(ctx) {` ]).indent();
+		if (!this.attribute) this.push(this.tabs());
+		this.push([ `Temple.With(`, exp, `, ctx, function(ctx) {` ]).indent();
+		if (!this.attribute) this.push("\n");
 		data = resetContextHeader(data);
-		let c = compileGroup(this.children, data);
+		let c = this._sn(data.originalFilename, compileGroup(this.children, data));
 		data.contextHeaders.forEach(this.write, this);
+		if (this.attribute) c = [ " return Temple.utils.joinValues(", c.join(","), "); " ];
 		this.push(c);
-		this.outdent().write(`});`);
+		this.outdent().push(`})`);
+
+		if (!this.attribute) this.write(";");
 
 		return this.end();
 	}

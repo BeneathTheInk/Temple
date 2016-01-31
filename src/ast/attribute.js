@@ -1,7 +1,7 @@
 import * as _ from "lodash";
 import Node from "./node";
 import Expression from "./expression";
-import {header} from "./utils";
+import {header,resetContextHeader} from "./utils";
 
 export default class Attribute extends Node {
 	get reactive() {
@@ -21,15 +21,16 @@ export default class Attribute extends Node {
 				fun = true;
 			} else {
 				let len = this.children.length;
+				data = resetContextHeader(data);
 				str = _.invoke(this.children, "compile", data);
-				str = !len ? null : this._sn(data.originalFilename, str).join(" + ");
-				if (len > 1) str = [`""+ `,str];
+				str = !len ? null : ["Temple.utils.joinValues(",this._sn(data.originalFilename, str).join(","),")"];
+				// if (len > 1) str = [`""+ `,str];
 				fun = len && this.children.some(c => c.reactive);
-				if (fun) str = ["[", str, "]"];
+				// if (fun) str = ["[", str, "]"];
 			}
 
 			if (fun) {
-				str = [ `function(ctx){return `, str, `;}` ];
+				str = [ `function(ctx){`,data.contextHeaders.join("\n"),`return `, str, `;}` ];
 				value = _.uniqueId("ATTR_");
 				header(data, [ `var `, value, `=`, str, `;\n` ]);
 			} else {
