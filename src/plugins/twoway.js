@@ -7,12 +7,15 @@ import { updateAttribute, updateProperty } from "../idom";
 var value_types = [ "radio", "option" ];
 var selection_types = [ "text", "search", "tel", "url", "password" ];
 
+var formBindings = {};
+
 export function plugin(options) {
 	this.use("decorators");
 
 	options = options || {};
 
 	// add methods
+	this._formBindings = {};
 	this.twoway = this.addFormBinding = add;
 	this.getFormBinding = get;
 	this.removeFormBinding = remove;
@@ -37,8 +40,9 @@ export function add(id, getter, onChange) {
 	}
 
 	if (typeof id !== "string") throw new Error("Expecting a string for the form binding ID.");
-	if (this._formBindings == null) this._formBindings = {};
-	if (this._formBindings[id] != null) throw new Error("A form binding with id '" + id + "' already exists.");
+
+	let bindings = this._formBindings || formBindings;
+	if (bindings[id] != null) throw new Error("A form binding with id '" + id + "' already exists.");
 
 	if (_.isObject(getter) && onChange == null) {
 		onChange = getter.change;
@@ -48,7 +52,7 @@ export function add(id, getter, onChange) {
 	if (typeof getter !== "function") throw new Error("Expecting a function or object for the form binding getter.");
 	if (typeof onChange !== "function") onChange = null;
 
-	this._formBindings[id] = {
+	bindings[id] = {
 		get: getter,
 		change: onChange
 	};
@@ -58,19 +62,23 @@ export function add(id, getter, onChange) {
 
 export function get(id) {
 	if (typeof id !== "string") return;
-	var c = this, bindings;
 
-	while (c != null) {
-		bindings = c._formBindings;
-		if (bindings != null && bindings[id] != null) return bindings[id];
-		c = c.parentRange;
+	if (this._formBindings && this._formBindings[id]) {
+		return this._formBindings[id];
 	}
+
+	return formBindings[id];
 }
 
 export function remove(id) {
-	var exists = this._formBindings[id] != null;
-	delete this._formBindings[id];
-	return exists;
+	if (this._formBindings) {
+		if (id == null) this._formBindings = {};
+		else delete this._formBindings[id];
+	} else if (id) {
+		delete formBindings[id];
+	}
+
+	return this;
 }
 
 var type_map = {
@@ -231,20 +239,15 @@ function bindTo(options, lazy, d, id) {
 	});
 }
 
-function valueOf(d, strval) {
+function valueOf(d, val) {
 	var el = d.target,
 		type = getType(el);
 
 	if (!_.contains(value_types, type)) {
-		updateAttribute(el, "value", strval);
+		updateAttribute(el, "value", val);
 		return;
 	}
 
-	var args = [];
-	if (d.render && typeof d.render.arguments === "function") {
-		args = d.render.arguments();
-	}
-
-	el.$bound_value = args.length <= 1 ? args[0] : args;
-	updateProperty(el, "value", strval);
+	el.$bound_value = val;
+	updateProperty(el, "value", val);
 }
