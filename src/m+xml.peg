@@ -223,6 +223,7 @@ section
 	/ eachSection
 	/ renderSection
 	/ withSection
+	/ setSection
 
 sOpen = "{%" ws
 sClose = ws "%}"
@@ -288,6 +289,14 @@ withSection
 			expression: createExpression(exp),
 			children: nodes,
 			attribute: attributeMode
+		});
+	}
+
+setSection
+	= sOpen "set"i ws v:$([a-z]i [a-z0-9_$]i+) ws "=" ws exp:$(sectionChar)* sClose {
+		return createNode("Set", {
+			variable: v,
+			expression: createExpression(exp)
 		});
 	}
 

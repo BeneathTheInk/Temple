@@ -20,6 +20,7 @@ Temple.exec(`
 		<input type="text" name="item-value" autofocus />
 		<button type="submit">Add #{{ items.length + 1 }}</button>
 	</form>
+
 	{% endif %}
 </template>
 
