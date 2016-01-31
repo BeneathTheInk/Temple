@@ -1,6 +1,6 @@
 import * as _ from "lodash";
 import Node from "./node";
-import {getKey,compileGroup,resetKey} from "./utils";
+import {getKey,compileGroup,resetKey,resetContextHeader} from "./utils";
 
 export default class Element extends Node {
 	get reactive() {
@@ -15,9 +15,22 @@ export default class Element extends Node {
 		let childs = this.children;
 		let attrs = this.attributes;
 
-		let body = () => {
-			this.push(_.invoke(attrs, "compile", data));
-			this.push(compileGroup(childs, resetKey(data)));
+
+		let body = (newctx) => {
+			if (newctx) {
+				data = resetContextHeader(data);
+			}
+
+			let c = [].concat(
+				_.invoke(attrs, "compile", data),
+				compileGroup(childs, resetKey(data))
+			);
+
+			if (newctx) {
+				data.contextHeaders.forEach(this.write, this);
+			}
+
+			this.push(c);
 		};
 
 		if (childs.length || attrs.length) {
@@ -26,8 +39,8 @@ export default class Element extends Node {
 				body();
 				this.write(`idom.elementClose(${tagName});`);
 			} else {
-				this.write(`idom.renderElement(${tagName}, ${key || "null"}, function() {`).indent();
-				body();
+				this.write(`Temple.Element(${tagName}, ${key || "null"}, ctx, function(ctx) {`).indent();
+				body(true);
 				this.outdent().write(`});`);
 			}
 		} else {

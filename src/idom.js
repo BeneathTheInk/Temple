@@ -42,13 +42,6 @@ export function autoelement(node, fn) {
 	});
 }
 
-export function renderElement(tagname, key, body) {
-	let node = idom.elementOpen(tagname, key);
-	let comp = autoelement(node, body);
-	idom.elementClose(tagname);
-	return comp;
-}
-
 var execDeletedCallbacks = function(node) {
 	let data = getData(node);
 	let cbs = data.deletedCallbacks;
