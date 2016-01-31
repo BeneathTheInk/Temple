@@ -10,8 +10,9 @@ export default class Each extends Node {
 
 		let exp = this.expression.compile(data);
 		let indexvar = _.uniqueId("index");
+		let vars = JSON.stringify(this.variables || []);
 
-		this.write([ `Temple.Each(`, exp, `, ctx, function(ctx, ${indexvar}) {` ]).indent();
+		this.write([ `Temple.Each(`, exp, `, `, vars, `, ctx, function(ctx, ${indexvar}) {` ]).indent();
 		data = resetContextHeader(data);
 		data = addKey(data, { value: indexvar });
 		let c = compileGroup(this.children, data);

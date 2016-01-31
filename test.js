@@ -25,8 +25,8 @@ Temple.exec(`
 
 <template name="todolist">
 	<ol>
-		{% each items %}
-		<li>{{ this }}</li>
+		{% each item in items %}
+		<li>{{ item }}</li>
 		{% endeach %}
 	</ol>
 </template>

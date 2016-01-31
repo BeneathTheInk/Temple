@@ -262,13 +262,18 @@ ifSection
 	}
 
 eachSection
-	= sOpen "each"i ws exp:$(sectionChar)* sClose nodes:sectionNodes sOpen "endeach"i sClose {
+	= sOpen "each"i ws vars:(l:jsVariable r:(ws "," ws jsVariable)* ws "in" {
+		return [l].concat(_.pluck(r, 3));
+	})? ws exp:$(sectionChar)* sClose nodes:sectionNodes sOpen "endeach"i sClose {
 		return createNode("Each", {
 			expression: createExpression(exp),
 			children: nodes,
+			variables: vars || [],
 			attribute: attributeMode
 		});
 	}
+
+jsVariable = $([a-z_$]i [a-z0-9_$]i*)
 
 renderSection
 	= &{ return !attributeMode; } sOpen "render"i ws exp:$(sectionChar)* sClose {
