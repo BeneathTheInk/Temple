@@ -23,10 +23,10 @@ export default class Attribute extends Node {
 				let len = this.children.length;
 				data = resetContextHeader(data);
 				str = _.invoke(this.children, "compile", data);
-				str = !len ? null : ["Temple.utils.joinValues(",this._sn(data.originalFilename, str).join(","),")"];
-				// if (len > 1) str = [`""+ `,str];
+				str = !len ? null : this._sn(data.originalFilename, str).join(",");
+				if (len > 1) str = ["Temple.utils.joinValues(",str,")"];
 				fun = len && this.children.some(c => c.reactive);
-				// if (fun) str = ["[", str, "]"];
+				if (fun) str = ["[", str, "]"];
 			}
 
 			if (fun) {
