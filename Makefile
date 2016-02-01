@@ -48,31 +48,31 @@ export HEADER
 lib/:
 	mkdir -p $@
 
-lib/temple.js: src/index.js $(wildcard src/*.js src/*/*.js)
+lib/temple.js: src/index.js $(wildcard src/*.js src/*/*.js) lib/
 	# $< -> $@
 	@node -e "$$ROLLUP" > $@
 
-lib/ast.js: src/ast/index.js $(wildcard src/ast/*.js)
+lib/ast.js: src/ast/index.js $(wildcard src/ast/*.js) lib/
 	# $< -> $@
 	@node -e "$$ROLLUP" > $@
 
-lib/m+xml.js: src/m+xml.peg
+lib/m+xml.js: src/m+xml.peg lib/
 	# $< -> $@
 	@$(BIN)/pegjs --allowed-start-rules start $< $@
 
-lib/superfast.js: src/superfast.js
+lib/superfast.js: src/superfast.js lib/
 	# $< -> $@
 	@node -e "$$ROLLUP" > $@
 
 dist/:
 	mkdir -p $@
 
-dist/temple.js: lib/temple.js $(BUILD)
+dist/temple.js: lib/temple.js $(BUILD) dist/
 	# $< -> $@
 	@echo "$$HEADER" > $@
 	@$(BIN)/browserify --standalone Temple $< >> $@
 
-dist/temple.min.js: dist/temple.js
+dist/temple.min.js: dist/temple.js dist/
 	# $< -> $@
 	@echo "$$HEADER" > $@
 	@$(BIN)/uglifyjs $< >> $@
