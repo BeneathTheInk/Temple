@@ -3,6 +3,8 @@ import {SourceNode} from "source-map";
 import detectIndent from "detect-indent";
 
 export default class Script extends Node {
+	get reactive() { return true; }
+
 	compile(data) {
 		this.start(data);
 		this._normalize_indent();
