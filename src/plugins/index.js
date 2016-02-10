@@ -62,10 +62,6 @@ export function get(name) {
 
 // load built in plugins
 import "./decorators";
-// import "./components";
-// import "./partials";
 import "./actions";
 import "./twoway";
-// import "./adoption";
 import "./refs";
-// import "./reactive-proxies.js";

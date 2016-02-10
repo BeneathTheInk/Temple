@@ -70,9 +70,15 @@ Template.prototype.render = function(data, key) {
 	return ctx;
 };
 
+const injectable_nodes = [
+	1,  // Node.ELEMENT_NODE,
+	9,  // Node.DOCUMENT_NODE,
+	11, // Node.DOCUMENT_FRAGMENT_NODE
+];
+
 Template.prototype.paint = function(node, data) {
 	if (typeof node === "string") node = document.querySelector(node);
-	if (!node || node.nodeType !== Node.ELEMENT_NODE) {
+	if (!node || !_.includes(injectable_nodes, node.nodeType)) {
 		throw new Error("Expecting a valid DOM element to paint.");
 	}
 

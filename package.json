@@ -46,6 +46,7 @@
 		"rollup-plugin-babel": "~2.2.0",
 		"rollup-plugin-commonjs": "~1.4.0",
 		"rollup-plugin-npm": "~1.1.0",
+		"tape": "~4.4.0",
 		"uglify-js": "~2.6.1"
 	},
 	"license": "MIT",
