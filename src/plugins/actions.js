@@ -72,7 +72,7 @@ export function defineEvent(event) {
 			}
 
 			// fire the action
-			fireOn.fireAction.apply(fireOn, [ action ].concat(args));
+			return fireOn.fireAction.apply(fireOn, [ action ].concat(args));
 		}
 
 		node = decor.target;
@@ -156,18 +156,21 @@ export function fire(action) {
 	if (!(action instanceof Action)) throw new Error("Expecting action name, object or instance of Action.");
 
 	var name = action.name,
-		args = slice.call(arguments, 1);
+		args = slice.call(arguments, 1),
+		view = this;
 
 	args.unshift(action);
 
 	// runs function, unless propagation is stopped
 	function run(fn) {
-		if (!action.bubbles) return true;
-		fn.apply(view, args);
+		if (fn.apply(view, args) === false) {
+			action.bubbles = false;
+		}
+		
+		return !action.bubbles;
 	}
 
 	// bubble the action up through all the views
-	var view = this;
 	while (action.bubbles && view) {
 		if (view._actions != null && Array.isArray(view._actions[name])) {
 			view._actions[name].some(run);
@@ -181,5 +184,5 @@ export function fire(action) {
 		actions[name].some(run);
 	}
 
-	return this;
+	return Boolean(action.bubbles);
 }
