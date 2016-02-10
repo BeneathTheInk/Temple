@@ -71,7 +71,7 @@ export function defineEvent(event) {
 			action.template = decor.template;
 
 			// fire the action
-			fire(action, null, args);
+			return fire(action, null, args);
 		};
 
 		node = decor.target;
@@ -145,8 +145,11 @@ export function fire(a, b, args) {
 
 	// runs function, unless propagation is stopped
 	function run(fn) {
-		if (!action.bubbles) return true;
-		fn.apply(ctx, args);
+		if (fn.apply(ctx, args) === false) {
+			action.bubbles = false;
+		}
+
+		return !action.bubbles;
 	}
 
 	// bubble the action up through all the contexts
@@ -166,5 +169,5 @@ export function fire(a, b, args) {
 		actions[name].some(run);
 	}
 
-	return action;
+	return Boolean(action.bubbles);
 }
