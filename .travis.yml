@@ -1,6 +1,11 @@
 sudo: false
 language: node_js
 
+addons:
+  apt:
+    packages:
+      - xvfb
+
 cache:
   directories:
     - node_modules
@@ -14,6 +19,11 @@ node_js:
 before_install:
   # install npm@3
   - npm i -g npm@^3.0.0
+
+install:
+  - export DISPLAY=':99.0'
+  - Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+  - npm install
 
 before_script:
   # lint before doing anything
