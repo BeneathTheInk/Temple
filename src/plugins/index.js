@@ -61,7 +61,6 @@ export function get(name) {
 }
 
 // load built in plugins
-
 import decorators from "./decorators";
 import actions from "./actions";
 import twoway from "./twoway";
