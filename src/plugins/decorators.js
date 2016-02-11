@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import {each,isArray,assign} from "lodash";
 import { register } from "./";
 import { currentElement, updateAttribute } from "../idom";
 import Trackr from "trackr";
@@ -21,8 +21,8 @@ register("decorators", plugin);
 export function add(name, fn, options) {
 	if (typeof name === "object") {
 		options = fn;
-		_.each(name, function(fn, n) {
-			if (_.isArray(fn)) add.call(this, n, fn[0], fn[1]);
+		each(name, function(fn, n) {
+			if (isArray(fn)) add.call(this, n, fn[0], fn[1]);
 			else add.call(this, n, fn, options);
 		}, this);
 		return this;
@@ -66,12 +66,12 @@ export function lookup(ctx, name) {
 	let owner = ctx.getTemplateContext();
 	if (owner) {
 		let dec = owner.template.findDecorator(name);
-		if (dec) return _.assign({ owner }, dec);
+		if (dec) return assign({ owner }, dec);
 	}
 
 	// look globally
 	if (decorators[name]) {
-		return _.assign({ owner: global }, decorators[name]);
+		return assign({ owner: global }, decorators[name]);
 	}
 }
 
@@ -90,7 +90,7 @@ export function render(_ctx, name, value) {
 	let isStaticValue = typeof value !== "function";
 	let getValue = () => {
 		let val = isStaticValue ? value : value(ctx);
-		if (!_.isArray(val)) val = [ val ];
+		if (!isArray(val)) val = [ val ];
 		return val;
 	};
 
@@ -105,7 +105,7 @@ export function render(_ctx, name, value) {
 
 	let anim, comp;
 	let cancel = false;
-	let decctx = _.assign({
+	let decctx = assign({
 		target: node,
 		context: ctx
 	}, d);

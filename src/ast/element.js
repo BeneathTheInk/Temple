@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import {invokeMap} from "lodash";
 import Node from "./node";
 import {getKey,compileGroup,resetKey,resetContextHeader} from "./utils";
 
@@ -22,7 +22,7 @@ export default class Element extends Node {
 			}
 
 			let c = [].concat(
-				_.invoke(attrs, "compile", data),
+				invokeMap(attrs, "compile", data),
 				compileGroup(childs, resetKey(data))
 			);
 

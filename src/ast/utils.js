@@ -1,7 +1,7 @@
-import * as _ from "lodash";
+import {isArray,includes,isString,last,assign} from "lodash";
 
 export function header(data, h) {
-	if (_.isArray(data.headers) && !_.includes(data.headers, h)) {
+	if (isArray(data.headers) && !includes(data.headers, h)) {
 		data.headers.push(h);
 	}
 }
@@ -28,7 +28,7 @@ export function compileGroup(nodes, data) {
 
 export function getKey(data) {
 	return (data.key || []).reduce(function(memo, v) {
-		if (_.isString(v) && _.isString(_.last(memo))) {
+		if (isString(v) && isString(last(memo))) {
 			memo.push(memo.pop() + "-" + v);
 		} else {
 			memo.push(v);
@@ -45,21 +45,21 @@ export function getKey(data) {
 
 export function addKey(data, key) {
 	let base = data.key || [];
-	return _.extend({}, data, {
+	return assign({}, data, {
 		key: [].concat(base, key)
 	});
 }
 
 export function resetKey(data) {
-	return _.extend({}, data, { key: [] });
+	return assign({}, data, { key: [] });
 }
 
 export function contextHeader(data, h) {
-	if (_.isArray(data.contextHeaders) && !_.includes(data.contextHeaders, h)) {
+	if (isArray(data.contextHeaders) && !includes(data.contextHeaders, h)) {
 		data.contextHeaders.push(h);
 	}
 }
 
 export function resetContextHeader(data) {
-	return _.extend({}, data, { contextHeaders: [] });
+	return assign({}, data, { contextHeaders: [] });
 }

@@ -1,5 +1,4 @@
-import assign from "lodash/object/assign";
-import pick from "lodash/object/pick";
+import {assign,pick} from "lodash";
 import { SourceNode } from "source-map";
 
 export default class ASTNode {

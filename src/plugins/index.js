@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import {isString,isFunction,isArray} from "lodash";
 
 // declare, but don't set the plugin variable
 // exports and imports are hoisted, so this cannot do anything to the value
@@ -8,7 +8,7 @@ export function load(tpl, plugin, args) {
 	let name;
 	if (plugins == null) plugins = {};
 
-	if (_.isString(plugin)) {
+	if (isString(plugin)) {
 		name = plugin;
 		if (plugins[name] == null)
 			throw new Error("No plugin exists with id '" + name + "'.");
@@ -16,7 +16,7 @@ export function load(tpl, plugin, args) {
 		plugin = plugins[name];
 	}
 
-	if (!_.isFunction(plugin))
+	if (!isFunction(plugin))
 		throw new Error("Expecting string or function for plugin");
 
 	// check if plugin is already loaded on this template
@@ -26,7 +26,7 @@ export function load(tpl, plugin, args) {
 	})) return tpl;
 
 	if (args == null) args = [];
-	if (!_.isArray(args)) args = [ args ];
+	if (!isArray(args)) args = [ args ];
 	tpl._loaded_plugins.push({
 		name: name,
 		plugin: plugin,

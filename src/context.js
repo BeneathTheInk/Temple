@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import {forEach,has} from "lodash";
 import {EventEmitter} from "events";
 import {Variable as ReactiveVar} from "trackr-objects";
 import assignProps from "assign-props";
@@ -50,7 +50,7 @@ assignProps(Context.prototype, {
 
 Context.prototype.set = function(key, value) {
 	if (typeof key === "object") {
-		_.forEach(key, (v, k) => this.set(k, v));
+		forEach(key, (v, k) => this.set(k, v));
 		return this;
 	}
 
@@ -64,7 +64,7 @@ Context.prototype.set = function(key, value) {
 	return this;
 };
 
-Context.prototype.get = function(key) { return _.has(this.s.scope, key) ? this.s.scope[key] : void 0; };
+Context.prototype.get = function(key) { return has(this.s.scope, key) ? this.s.scope[key] : void 0; };
 
 Context.prototype.parentData = function(dist) {
 	if (typeof dist !== "number" || isNaN(dist)) dist = 1;

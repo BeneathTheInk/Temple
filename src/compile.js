@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import {assign,invokeMap} from "lodash";
 import { SourceNode } from "source-map";
 // import * as AST from "./ast";
 
@@ -16,7 +16,7 @@ export function getSource(nodes, src, options) {
 }
 
 export function compile(tree, options) {
-	options = _.extend({
+	options = assign({
 		originalFilename: "template.js"
 	}, options);
 
@@ -26,7 +26,7 @@ export function compile(tree, options) {
 		tree = parse(src, options);
 	}
 
-	let nodes = _.invoke([].concat(tree), "compile", options);
+	let nodes = invokeMap([].concat(tree), "compile", options);
 	return getSource(nodes, src, options);
 }
 

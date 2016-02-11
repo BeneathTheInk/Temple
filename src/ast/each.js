@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import {uniqueId} from "lodash";
 import Node from "./node";
 import {compileGroup,addKey,resetContextHeader} from "./utils";
 
@@ -9,7 +9,7 @@ export default class Each extends Node {
 		this.start(data);
 
 		let exp = this.expression.compile(data);
-		let indexvar = _.uniqueId("index");
+		let indexvar = uniqueId("index");
 		let vars = JSON.stringify(this.variables || []);
 
 		if (!this.attribute) this.push(this.tabs());

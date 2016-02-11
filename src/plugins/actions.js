@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import {isObject,assign,isArray,each,without} from "lodash";
 import { register } from "./";
 
 var decorators = {};
@@ -22,8 +22,8 @@ export class Action {
 
 		if (typeof name === "string") {
 			action = new Action(name, context);
-		} else if (_.isObject(name) && !(name instanceof Action)) {
-			action = _.extend(new Action(), action);
+		} else if (isObject(name) && !(name instanceof Action)) {
+			action = assign(new Action(), action);
 		} else {
 			action = name;
 		}
@@ -58,7 +58,7 @@ defineEvent([
 ]);
 
 export function defineEvent(event) {
-	if (_.isArray(event)) return event.forEach(defineEvent);
+	if (isArray(event)) return event.forEach(defineEvent);
 
 	decorators["on-" + event] = function(decor, key) {
 		let node, args;
@@ -87,7 +87,7 @@ export function defineEvent(event) {
 // Msutache Instance Methods
 export function add(name, fn) {
 	if (typeof name === "object" && fn == null) {
-		_.each(name, function(fn, n) { add.call(this, n, fn); }, this);
+		each(name, function(fn, n) { add.call(this, n, fn); }, this);
 		return this;
 	}
 
@@ -121,13 +121,13 @@ export function remove(name, fn) {
 	}
 
 	else if (name == null) {
-		_.each(obj, function(d, n) {
+		each(obj, function(d, n) {
 			obj[n] = d.filter(function(f) { return f !== fn; });
 		});
 	}
 
 	else if (obj[name] != null) {
-		obj[name] = _.without(obj[name], fn);
+		obj[name] = without(obj[name], fn);
 	}
 
 	return this;

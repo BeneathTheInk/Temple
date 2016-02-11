@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import {forEach,without} from "lodash";
 import * as idom from "incremental-dom/index.js";
 import { notifications } from "incremental-dom/src/notifications";
 import { updateAttribute } from 'incremental-dom/src/attributes';
@@ -52,7 +52,7 @@ var execDeletedCallbacks = function(node) {
 };
 
 notifications.nodesDeleted = function(nodes) {
-	_.forEach(nodes, (node) => {
+	forEach(nodes, (node) => {
 		if (node.childNodes) notifications.nodesDeleted(node.childNodes);
 		execDeletedCallbacks(node);
 	});
@@ -71,7 +71,7 @@ export function onDestroy(node, fn) {
 export function removeDestroyListener(node, fn) {
 	let data = getData(node);
 	if (data.deletedCallbacks) {
-		data.deletedCallbacks = _.without(data.deletedCallbacks, fn);
+		data.deletedCallbacks = without(data.deletedCallbacks, fn);
 	}
 }
 

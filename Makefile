@@ -16,7 +16,7 @@ require("rollup").rollup({
 			skip: [
 				"source-map", "lodash", "trackr", "trackr-objects",
 				"assign-props", "dom-matches", "raf", "detect-indent",
-				"backbone-extend-standalone", "plain-merge"
+				"backbone-extend-standalone", "plain-merge", "events"
 			]
 		}),
 		require("rollup-plugin-babel")({
@@ -38,7 +38,7 @@ endef
 export ROLLUP
 
 define HEADER
-/* Temple v$(shell node -e 'process.stdout.write(require("./package.json").version)')
+/* Temple v$(shell node -e 'process.stdout.write(require("./package.json").version || "dev-build")')
  * Copyright (c) $(shell date +'%Y') Tyler Johnson. License MIT
  */
 

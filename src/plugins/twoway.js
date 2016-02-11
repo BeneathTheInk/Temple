@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import {isObject,each,includes,toArray,isNumber,isDate,pick,assign,defer} from "lodash";
 import { register } from "./";
 import { toString } from "../utils";
 import Trackr from "trackr";
@@ -32,8 +32,8 @@ export default plugin;
 register("twoway", plugin);
 
 export function add(id, getter, onChange) {
-	if (_.isObject(id)) {
-		_.each(id, function(v, k) {
+	if (isObject(id)) {
+		each(id, function(v, k) {
 			add.call(this, k, v);
 		}, this);
 		return this;
@@ -44,7 +44,7 @@ export function add(id, getter, onChange) {
 	let bindings = this._formBindings || formBindings;
 	if (bindings[id] != null) throw new Error("A form binding with id '" + id + "' already exists.");
 
-	if (_.isObject(getter) && onChange == null) {
+	if (isObject(getter) && onChange == null) {
 		onChange = getter.change;
 		getter = getter.get;
 	}
@@ -94,7 +94,7 @@ function getType(el) {
 	switch (el.tagName.toLowerCase()) {
 		case "input":
 			for (var type in type_map) {
-				if (_.includes(type_map[type], el.type)) return type;
+				if (includes(type_map[type], el.type)) return type;
 			}
 			break;
 
@@ -135,7 +135,7 @@ function getNodeValue(node, type) {
 			break;
 
 		case "file":
-			val = !node.multiple ? node.files[0] : _.toArray(node.files);
+			val = !node.multiple ? node.files[0] : toArray(node.files);
 			break;
 
 		case "radio":
@@ -161,7 +161,7 @@ function setNodeValue(el, val, type, live) {
 	switch (type) {
 		case "number":
 			setLiveValue(live, el, function() {
-				updateProperty(el, _.isNumber(val) ? "valueAsNumber" : "value", val);
+				updateProperty(el, isNumber(val) ? "valueAsNumber" : "value", val);
 			});
 			break;
 
@@ -177,12 +177,12 @@ function setNodeValue(el, val, type, live) {
 
 		case "date":
 			setLiveValue(live, el, function() {
-				updateProperty(el, _.isDate(val) ? "valueAsDate" : "value", val);
+				updateProperty(el, isDate(val) ? "valueAsDate" : "value", val);
 			});
 			break;
 
 		case "select":
-			_.toArray(el.querySelectorAll("option")).forEach(function(opt) {
+			toArray(el.querySelectorAll("option")).forEach(function(opt) {
 				updateProperty(opt, "selected", opt.$bound_value === val);
 			});
 			break;
@@ -198,15 +198,15 @@ function bindTo(options, lazy, d, id) {
 	if (fbind == null) return;
 
 	let el = d.target;
-	let args = _.toArray(arguments).slice(4);
+	let args = toArray(arguments).slice(4);
 	let type = getType(el);
 	let onChange;
-	let twctx = _.pick(d, "context", "template", "target");
+	let twctx = pick(d, "context", "template", "target");
 
 	// detect changes to the input's value
 	if (typeof fbind.change === "function") {
 		onChange = function(e) {
-			fbind.change.apply(_.assign(twctx, {
+			fbind.change.apply(assign(twctx, {
 				original: e
 			}), [getNodeValue(el, type)].concat(args));
 		};
@@ -231,7 +231,7 @@ function bindTo(options, lazy, d, id) {
 
 	// reactively set the value on the input
 	// deferred so value decorators run
-	_.defer(function() {
+	defer(function() {
 		if (stopped) return;
 		nodeValueComp = Trackr.autorun(function() {
 			setNodeValue(el, fbind.get.apply(twctx, args), type, options.live);
@@ -243,7 +243,7 @@ function valueOf(d, val) {
 	var el = d.target,
 		type = getType(el);
 
-	if (!_.includes(value_types, type)) {
+	if (!includes(value_types, type)) {
 		updateAttribute(el, "value", val);
 		return;
 	}

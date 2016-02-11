@@ -1,5 +1,4 @@
 import Node from "./node";
-// import * as _ from "lodash";
 import {addKey} from "./utils";
 
 export default class If extends Node {

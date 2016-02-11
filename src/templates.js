@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import {toArray,includes,has,assign} from "lodash";
 import Context from "./context";
 import {EventEmitter} from "events";
 import Trackr from "trackr";
@@ -47,7 +47,7 @@ Template.prototype.initialize = function(){};
 
 // plugin proxy for contexts
 Template.prototype.use = function use(p) {
-	return loadPlugin(this, p, _.toArray(arguments).slice(1));
+	return loadPlugin(this, p, toArray(arguments).slice(1));
 };
 
 Template.prototype.createContext = function(data, parent) {
@@ -78,7 +78,7 @@ const injectable_nodes = [
 
 Template.prototype.paint = function(node, data) {
 	if (typeof node === "string") node = document.querySelector(node);
-	if (!node || !_.includes(injectable_nodes, node.nodeType)) {
+	if (!node || !includes(injectable_nodes, node.nodeType)) {
 		throw new Error("Expecting a valid DOM element to paint.");
 	}
 
@@ -148,7 +148,7 @@ export function registerType(type, props) {
 	if (typeof type !== "string" || !type) {
 		throw new Error("Expecting non-empty string for type.");
 	}
-	if (_.has(types, type)) {
+	if (has(types, type)) {
 		throw new Error(`Template type '${type}' already exists.`);
 	}
 
@@ -156,10 +156,10 @@ export function registerType(type, props) {
 		props = { initialize: props };
 	}
 
-	props = _.assign({}, props, { type });
+	props = assign({}, props, { type });
 
 	let T = Template;
-	if (props.extends && _.has(types, props.extends)) {
+	if (props.extends && has(types, props.extends)) {
 		T = types[props.extends];
 		delete props.extends;
 	}
@@ -194,7 +194,7 @@ export function create(name, type, render) {
 	}
 
 	if (typeof type === "function") [render,type] = [type,null];
-	if (type && !_.has(types, type)) {
+	if (type && !has(types, type)) {
 		throw new Error(`Template type ${type} does not exist.`);
 	}
 
