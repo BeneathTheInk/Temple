@@ -25,7 +25,7 @@ test("=== Scripts ===", function(_t) {
 
 	test("parses and executes a root script tag", function(t) {
 		/* jshint -W054 */
-		t.plan(4);
+		t.plan(1);
 		var state = { ran: false };
 		(new Function("Temple", "state", Temple.compile("<script>state.ran = true;</script>")))(Temple, state);
 		t.ok(state.ran, "executed the script");
