@@ -1,4 +1,5 @@
 # Temple
+[![Build Status](https://travis-ci.org/BeneathTheInk/Temple.svg?branch=master)](https://travis-ci.org/BeneathTheInk/Temple)
 
 A JavaScript view framework.
 
