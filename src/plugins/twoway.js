@@ -94,7 +94,7 @@ function getType(el) {
 	switch (el.tagName.toLowerCase()) {
 		case "input":
 			for (var type in type_map) {
-				if (_.contains(type_map[type], el.type)) return type;
+				if (_.includes(type_map[type], el.type)) return type;
 			}
 			break;
 
@@ -243,7 +243,7 @@ function valueOf(d, val) {
 	var el = d.target,
 		type = getType(el);
 
-	if (!_.contains(value_types, type)) {
+	if (!_.includes(value_types, type)) {
 		updateAttribute(el, "value", val);
 		return;
 	}

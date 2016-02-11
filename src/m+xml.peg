@@ -44,7 +44,7 @@ start = ws nodes:(
 	/ templateNode
 	/ commentNode ) ws)* {
 		return createNode("Root", {
-			children: _.pluck(nodes, 0)
+			children: _.map(nodes, 0)
 		});
 	}
 
@@ -265,7 +265,7 @@ ifSection
 
 eachSection
 	= sOpen "each"i ws vars:(l:jsVariable r:(ws "," ws jsVariable)* ws "in" {
-		return [l].concat(_.pluck(r, 3));
+		return [l].concat(_.map(r, 3));
 	})? ws exp:$(sectionChar)* sClose nodes:sectionNodes sOpen "endeach"i sClose {
 		return createNode("Each", {
 			expression: createExpression(exp),

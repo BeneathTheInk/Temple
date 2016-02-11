@@ -1,7 +1,7 @@
 import * as _ from "lodash";
 
 export function header(data, h) {
-	if (_.isArray(data.headers) && !_.contains(data.headers, h)) {
+	if (_.isArray(data.headers) && !_.includes(data.headers, h)) {
 		data.headers.push(h);
 	}
 }
@@ -55,7 +55,7 @@ export function resetKey(data) {
 }
 
 export function contextHeader(data, h) {
-	if (_.isArray(data.contextHeaders) && !_.contains(data.contextHeaders, h)) {
+	if (_.isArray(data.contextHeaders) && !_.includes(data.contextHeaders, h)) {
 		data.contextHeaders.push(h);
 	}
 }

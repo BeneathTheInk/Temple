@@ -1,6 +1,5 @@
 {
 	"name": "templejs",
-	"version": "0.7.0-alpha.2",
 	"description": "A reactive Mustache view framework.",
 	"author": "Beneath the Ink <info@beneaththeink.com>",
 	"contributors": [
@@ -16,10 +15,10 @@
 	},
 	"scripts": {
 		"lint": "jshint src/ test/",
-		"test": "gulp compile && node test/index.js",
-		"test-browser": "gulp compile && browserify test/index.js --debug | browser-run",
+		"test": "make && node test/index.js",
+		"test-browser": "make && browserify test/index.js --debug | browser-run",
 		"build": "make build-dist",
-		"prepublish": "npm run lint && npm run build"
+		"semantic-release": "semantic-release pre && npm publish && semantic-release post"
 	},
 	"main": "./lib/temple.js",
 	"jsnext:main": "./src/index.js",
@@ -31,7 +30,7 @@
 		"dom-matches": "~2.0.0",
 		"incremental-dom": "~0.3.0",
 		"jsep": "~0.3.0",
-		"lodash": "~3.10.1",
+		"lodash": "~4.x",
 		"plain-merge": "~2.0.0",
 		"raf": "~3.1.0",
 		"source-map": "~0.5.3",
@@ -39,15 +38,15 @@
 		"trackr-objects": "~0.3.7"
 	},
 	"devDependencies": {
-		"babel-preset-es2015-rollup": "~1.0.0",
-		"browserify": "~12.0.1",
+		"babel-preset-es2015-rollup": "~1.1.1",
+		"browserify": "~13.0.0",
 		"pegjs": "~0.9.0",
-		"rollup": "~0.21.2",
-		"rollup-plugin-babel": "~2.2.0",
-		"rollup-plugin-commonjs": "~1.4.0",
-		"rollup-plugin-npm": "~1.1.0",
+		"rollup": "~0.25.3",
+		"rollup-plugin-babel": "~2.3.9",
+		"rollup-plugin-npm": "~1.4.0",
 		"tape": "~4.4.0",
-		"uglify-js": "~2.6.1"
+		"uglify-js": "~2.6.1",
+		"semantic-release": "^4.3.5"
 	},
 	"license": "MIT",
 	"keywords": [
