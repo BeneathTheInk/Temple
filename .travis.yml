@@ -29,9 +29,6 @@ before_script:
   # lint before doing anything
   - npm run lint
 
-  # build the source
-  - npm run build
-
 script: npm run $COMMAND
 
 env:
