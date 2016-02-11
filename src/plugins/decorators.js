@@ -1,5 +1,4 @@
 import {each,isArray,assign} from "lodash";
-import { register } from "./";
 import { currentElement, updateAttribute } from "../idom";
 import Trackr from "trackr";
 import raf from "raf";
@@ -15,7 +14,6 @@ export function plugin() {
 }
 
 export default plugin;
-register("decorators", plugin);
 
 // creates a decorator
 export function add(name, fn, options) {

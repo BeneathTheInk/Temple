@@ -1,5 +1,4 @@
 import {isObject,each,includes,toArray,isNumber,isDate,pick,assign,defer} from "lodash";
-import { register } from "./";
 import { toString } from "../utils";
 import Trackr from "trackr";
 import { updateAttribute, updateProperty } from "../idom";
@@ -29,7 +28,6 @@ export function plugin(options) {
 }
 
 export default plugin;
-register("twoway", plugin);
 
 export function add(id, getter, onChange) {
 	if (isObject(id)) {

@@ -61,7 +61,13 @@ export function get(name) {
 }
 
 // load built in plugins
-import "./decorators";
-import "./actions";
-import "./twoway";
-import "./refs";
+
+import decorators from "./decorators";
+import actions from "./actions";
+import twoway from "./twoway";
+import refs from "./refs";
+
+register("decorators", decorators);
+register("actions", actions);
+register("twoway", twoway);
+register("refs", refs);

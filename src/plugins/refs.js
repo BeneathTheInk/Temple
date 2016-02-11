@@ -1,5 +1,4 @@
 import { has, contains } from "lodash";
-import { register } from "./";
 
 export function plugin() {
 	this.use("decorators");
@@ -7,7 +6,6 @@ export function plugin() {
 }
 
 export default plugin;
-register("refs", plugin);
 
 var warned = [];
 

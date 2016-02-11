@@ -1,5 +1,4 @@
 import {isObject,assign,isArray,each,without} from "lodash";
-import { register } from "./";
 
 var decorators = {};
 var actions = {};
@@ -46,7 +45,6 @@ export function plugin() {
 }
 
 export default plugin;
-register("actions", plugin);
 
 // standard dom events
 defineEvent([
