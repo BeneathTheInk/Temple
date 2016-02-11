@@ -40,13 +40,14 @@
 	"devDependencies": {
 		"babel-preset-es2015-rollup": "~1.1.1",
 		"browserify": "~13.0.0",
+		"jshint": "~2.9.1",
 		"pegjs": "~0.9.0",
 		"rollup": "~0.25.3",
 		"rollup-plugin-babel": "~2.3.9",
 		"rollup-plugin-npm": "~1.4.0",
+		"semantic-release": "^4.3.5",
 		"tape": "~4.4.0",
-		"uglify-js": "~2.6.1",
-		"semantic-release": "^4.3.5"
+		"uglify-js": "~2.6.1"
 	},
 	"license": "MIT",
 	"keywords": [
