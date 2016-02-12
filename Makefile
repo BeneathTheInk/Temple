@@ -6,8 +6,9 @@ build: $(BUILD)
 build-dist: $(DIST)
 
 define ROLLUP
+var path = require("path");
 require("rollup").rollup({
-	entry: "$<",
+	entry: path.resolve("$<"),
 	plugins: [
 		require("rollup-plugin-npm")({
 			jsnext: true,
@@ -26,9 +27,11 @@ require("rollup").rollup({
 	]
 }).then(function(bundle) {
 	var result = bundle.generate({
-		format: "cjs"
+		format: "cjs",
+		sourceMap: true,
+		sourceMapFile: path.resolve("$@")
 	});
-	process.stdout.write(result.code);
+	process.stdout.write(result.code + "\n//# sourceMappingURL=" + result.map.toUrl());
 }).catch(function(e) {
 	process.nextTick(function() {
 		throw e;
@@ -78,6 +81,6 @@ dist/temple.min.js: dist/temple.js dist/
 	@$(BIN)/uglifyjs $< >> $@
 
 clean:
-	rm -rf lib/ dist/
+	rm -rf lib/ dist/ coverage/
 
 .PHONY: build

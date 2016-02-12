@@ -1,5 +1,6 @@
 # Temple
-[![Build Status](https://travis-ci.org/BeneathTheInk/Temple.svg?branch=master)](https://travis-ci.org/BeneathTheInk/Temple)
+
+[![Build Status](https://travis-ci.org/BeneathTheInk/Temple.svg?branch=master)](https://travis-ci.org/BeneathTheInk/Temple) [![Coverage Status](https://coveralls.io/repos/github/BeneathTheInk/Temple/badge.svg?branch=master)](https://coveralls.io/github/BeneathTheInk/Temple?branch=master)
 
 A JavaScript view framework.
 

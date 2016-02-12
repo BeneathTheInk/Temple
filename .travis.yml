@@ -35,6 +35,7 @@ env:
   matrix:
     - COMMAND='test'
     - COMMAND='test-browser'
+    - COMMAND='report-coverage'
 
 after_success:
   - npm run semantic-release
