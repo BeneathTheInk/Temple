@@ -1,5 +1,5 @@
-var Temple = require("../../");
-var test = require("tape");
+import * as Temple from "templejs";
+import test from "tape";
 
 test("=== Templates ===", function(_t) {
 	var test = _t.test;

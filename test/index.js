@@ -1,11 +1,7 @@
-require("./parser");
-
-if (process.browser) {
-	require("./dom");
-}
+import "./parser";
+import test from "tape";
 
 // push code coverage details back to the server
-var test = require("tape");
 test.onFinish(function() {
 	if (typeof window !== "undefined" && window.__coverage__) {
 		var xhr = new XMLHttpRequest();

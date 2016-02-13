@@ -1,8 +1,9 @@
 import {assign,invokeMap} from "lodash";
 import { SourceNode } from "source-map";
+import {parse} from "./m+xml.pegjs";
 // import * as AST from "./ast";
 
-var parse = require("./m+xml").parse;
+// var parse = require("./m+xml").parse;
 var url = "sourceMappingURL=data:application/json;charset=utf-8;base64,";
 
 export function getSource(nodes, src, options) {

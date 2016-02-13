@@ -1,4 +1,4 @@
-import { has, contains } from "lodash";
+import { has, includes } from "lodash";
 
 export function plugin() {
 	this.use("decorators");
@@ -10,7 +10,7 @@ export default plugin;
 var warned = [];
 
 export function warnOnce(msg) {
-	if (contains(warned, msg)) return;
+	if (includes(warned, msg)) return;
 	console.warn(msg);
 	warned.push(msg);
 }

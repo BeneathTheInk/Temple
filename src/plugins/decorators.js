@@ -1,4 +1,4 @@
-import {each,isArray,assign} from "lodash";
+import {forEach,isArray,assign} from "lodash";
 import { currentElement, updateAttribute } from "../idom";
 import Trackr from "trackr";
 import raf from "raf";
@@ -19,7 +19,7 @@ export default plugin;
 export function add(name, fn, options) {
 	if (typeof name === "object") {
 		options = fn;
-		each(name, function(fn, n) {
+		forEach(name, function(fn, n) {
 			if (isArray(fn)) add.call(this, n, fn[0], fn[1]);
 			else add.call(this, n, fn, options);
 		}, this);

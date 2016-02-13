@@ -1,7 +1,7 @@
 {
-	var ast = require("./ast");
-	var _ = require("lodash");
-	var jsep = require("jsep");
+	// var ast = require("./ast");
+	// var _ = require("lodash");
+	// var jsep = require("jsep");
 
 	options = _.assign({
 		strict: true

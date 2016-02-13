@@ -1,4 +1,4 @@
-import {isObject,assign,isArray,each,without} from "lodash";
+import {isObject,assign,isArray,forEach,without} from "lodash";
 
 var decorators = {};
 var actions = {};
@@ -85,7 +85,7 @@ export function defineEvent(event) {
 // Msutache Instance Methods
 export function add(name, fn) {
 	if (typeof name === "object" && fn == null) {
-		each(name, function(fn, n) { add.call(this, n, fn); }, this);
+		forEach(name, function(fn, n) { add.call(this, n, fn); }, this);
 		return this;
 	}
 
@@ -119,7 +119,7 @@ export function remove(name, fn) {
 	}
 
 	else if (name == null) {
-		each(obj, function(d, n) {
+		forEach(obj, function(d, n) {
 			obj[n] = d.filter(function(f) { return f !== fn; });
 		});
 	}

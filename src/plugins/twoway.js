@@ -1,4 +1,4 @@
-import {isObject,each,includes,toArray,isNumber,isDate,pick,assign,defer} from "lodash";
+import {isObject,forEach,includes,toArray,isDate,pick,assign,defer} from "lodash";
 import { toString } from "../utils";
 import Trackr from "trackr";
 import { updateAttribute, updateProperty } from "../idom";
@@ -31,7 +31,7 @@ export default plugin;
 
 export function add(id, getter, onChange) {
 	if (isObject(id)) {
-		each(id, function(v, k) {
+		forEach(id, function(v, k) {
 			add.call(this, k, v);
 		}, this);
 		return this;
@@ -159,7 +159,7 @@ function setNodeValue(el, val, type, live) {
 	switch (type) {
 		case "number":
 			setLiveValue(live, el, function() {
-				updateProperty(el, isNumber(val) ? "valueAsNumber" : "value", val);
+				updateProperty(el, typeof val === "number" ? "valueAsNumber" : "value", val);
 			});
 			break;
 

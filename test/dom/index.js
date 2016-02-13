@@ -1,2 +1,2 @@
-require("./template");
-require("./script");
+import "./template";
+import "./script";

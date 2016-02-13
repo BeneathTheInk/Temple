@@ -1,1 +1,1 @@
-require("./root.js");
+import "./root.js";

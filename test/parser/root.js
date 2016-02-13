@@ -1,5 +1,5 @@
-var Temple = require("../../");
-var test = require("tape");
+import * as Temple from "templejs";
+import test from "tape";
 
 test("empty string produces a root node", function(t) {
 	t.plan(3);
