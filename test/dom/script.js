@@ -7,10 +7,10 @@ test("=== Scripts ===", function(_t) {
 	test("parses and executes a root script tag", function(t) {
 		/* jshint -W054 */
 		t.plan(1);
-		global._test_state = { ran: false };
+		window._test_state = { ran: false };
 		Temple.exec("<script>_test_state.ran = true;</script>");
-		t.ok(global._test_state.ran, "executed the script");
-		delete global._test_state;
+		t.ok(window._test_state.ran, "executed the script");
+		delete window._test_state;
 	});
 
 	_t.end();

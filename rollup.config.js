@@ -23,10 +23,11 @@ const resolve = _resolve({
 });
 
 const commonOpts = {
-   include: [ "src/*.pegjs" ],
-   extensions: [ ".pegjs", ".js" ],
+   include: [ /*"src/*.pegjs"*/ ],
+   exclude: [ "src/**" ],
+   extensions: [ /*".pegjs",*/ ".js" ],
    namedExports: {
-	   "src/m+xml.pegjs": [ "parse" ]
+	//    "src/m+xml.pegjs": [ "parse" ]
    }
 };
 
@@ -51,19 +52,27 @@ const plugins = [
 	{
 		transform: function(code, id) {
 			if (path.extname(id) !== ".pegjs") return;
+			let parts = code.split("#####");
+			let source = pegjs.buildParser(parts[parts.length > 1 ? 1 : 0], {
+				output: "source",
+				optimize: "size"
+			});
 
 			return {
-				code: "module.exports = " + pegjs.buildParser(code, { output: "source", optimize: "size" }),
+				code: `${parts.length > 1 ? parts[0] : ""}
+const parser = ${source};
+export default parser;
+export var parse = parser.parse;`,
 				map: { mappings: "" }
 			};
 		}
 	},
 	json(),
+	commonjs(commonOpts),
 	babel({
-		exclude: [ "node_modules/**", "**/*.pegjs" ],
+		exclude: [ "node_modules/**"/*, "*.pegjs" */ ],
 		include: [ "node_modules/incremental-dom/**", "src/**" ]
-	}),
-	commonjs(commonOpts)
+	})
 ];
 
 if (process.env.TARGET !== "common") {

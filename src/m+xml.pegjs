@@ -1,9 +1,10 @@
-{
-	// var ast = require("./ast");
-	// var _ = require("lodash");
-	// var jsep = require("jsep");
+import * as ast from "./ast";
+import {assign,map} from "lodash";
+import jsep from "jsep";
+#####
 
-	options = _.assign({
+{
+	options = assign({
 		strict: true
 	}, options);
 
@@ -44,7 +45,7 @@ start = ws nodes:(
 	/ templateNode
 	/ commentNode ) ws)* {
 		return createNode("Root", {
-			children: _.map(nodes, 0)
+			children: map(nodes, 0)
 		});
 	}
 
@@ -164,7 +165,7 @@ attributes = (attribute)*
 attribute
 	= key:attributeName value:("=" ws attributeValue ws)? {
 		value = value != null ? value[2] : void 0;
-		return createNode("Attribute", _.assign({
+		return createNode("Attribute", assign({
 			name: key
 		}, value));
 	}
@@ -265,7 +266,7 @@ ifSection
 
 eachSection
 	= sOpen "each"i ws vars:(l:jsVariable r:(ws "," ws jsVariable)* ws "in" {
-		return [l].concat(_.map(r, 3));
+		return [l].concat(map(r, 3));
 	})? ws exp:$(sectionChar)* sClose nodes:sectionNodes sOpen "endeach"i sClose {
 		return createNode("Each", {
 			expression: createExpression(exp),

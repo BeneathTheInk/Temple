@@ -22,14 +22,28 @@ temple.js: src/index.js $(SRC)
 	# $< -> $@
 	@$(BIN)/rollup $< -c -f cjs > $@
 
+define NODE_EVAL
+var i = "";
+process.stdin.on("data", function(c) {
+	i += c.toString();
+}).on("end", function() {
+	eval(i);
+});
+endef
+export NODE_EVAL
+
 test: export TARGET=test
 test: test/index.js
-	@$(BIN)/rollup $< -c -f iife | $(BIN)/tape-run
+	@$(BIN)/rollup $< -c -f iife -m inline | node -e "$$NODE_EVAL"
+
+test-browser: export TARGET=test
+test-browser: test/browser.js
+	@$(BIN)/rollup $< -c -f iife -m inline | $(BIN)/tape-run
 
 clean:
 	rm -rf temple* dist/
 
-.PHONY: build test
+.PHONY: build test test-browser
 
 # build: $(BUILD)
 # build-dist: $(DIST)

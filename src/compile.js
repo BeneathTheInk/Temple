@@ -1,6 +1,7 @@
 import {assign,invokeMap} from "lodash";
 import { SourceNode } from "source-map";
 import {parse} from "./m+xml.pegjs";
+import * as Temple from "./";
 // import * as AST from "./ast";
 
 // var parse = require("./m+xml").parse;
@@ -35,7 +36,7 @@ export function exec(tpl, options) {
 	/* jshint -W054 */
 	var r = compile(tpl, options);
 	// console.log(r);
-	return (new Function("Temple", r))(require("../"));
+	return (new Function("Temple", r))(Temple);
 }
 
 // export function compileHTML(html, options) {

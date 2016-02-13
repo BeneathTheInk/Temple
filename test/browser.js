@@ -1,2 +1,2 @@
 import "./index.js";
-import "./dom.js";
+import "./dom";
