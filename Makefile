@@ -2,8 +2,12 @@ BIN = ./node_modules/.bin
 SRC = $(wildcard src/* src/*/*)
 
 build: temple.js temple.es6.js dist/temple.js dist/temple.min.js
+
 test: test-basic test-full test-dist
+	make clean-self
+	
 test-coverage: test-basic test-dist coverage
+	make clean-self
 
 clean:
 	rm -rf temple* dist/ coverage/
@@ -32,9 +36,11 @@ temple-tests.full.js: test/full.js temple.js
 temple.cov.js: temple.js
 	$(BIN)/istanbul instrument $< > $@
 
-install-self:
-	rm -f node_modules/templejs
+install-self: clean-self
 	ln -s ../ node_modules/templejs
+
+clean-self:
+	rm -f node_modules/templejs
 
 test-basic: temple-tests.basic.js install-self
 	node $<
@@ -52,4 +58,4 @@ coverage: temple-tests.full.js temple.cov.js
 report-coverage: coverage
 	$(BIN)/istanbul-coveralls --no-rm
 
-.PHONY: build test test-coverage clean test-basic test-full test-dist report-coverage install-self
+.PHONY: build test test-coverage clean test-basic test-full test-dist report-coverage install-self clean-self
