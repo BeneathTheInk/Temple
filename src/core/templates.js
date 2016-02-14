@@ -4,7 +4,7 @@ import {EventEmitter} from "events";
 import Trackr from "trackr";
 import {patch} from "./idom";
 import {Map as ReactiveMap} from "trackr-objects";
-import { load as loadPlugin } from "./plugins";
+import { load as loadPlugin } from "../plugins";
 import subclass from "backbone-extend-standalone";
 
 export var templates = {};

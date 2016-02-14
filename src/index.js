@@ -1,8 +1,8 @@
-import * as idom from "./idom";
-import * as utils from "./utils";
+import * as idom from "./core/idom";
+import * as utils from "./core/utils";
 import Trackr from "trackr";
 import { Map, List, Variable } from "trackr-objects";
-import Context from "./context";
+import Context from "./core/context";
 import * as AST from "./ast";
 import pkg from "../package.json";
 
@@ -10,12 +10,11 @@ import * as plugins from "./plugins";
 import * as decorators from "./plugins/decorators";
 import * as actions from "./plugins/actions";
 
-export const version = pkg.version || "dev-build";
+export const version = pkg.version || "edge";
 
-export * from "./templates";
-export * from "./compile";
-export * from "./builtins";
-// export {parse} from "./m+xml.pegjs";
+export * from "./core/templates";
+export * from "./core/compile";
+export * from "./core/builtins";
 
 export {
 	Context, idom, utils, Map, List, Variable,

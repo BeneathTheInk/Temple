@@ -1,7 +1,7 @@
 import {isObject,forEach,includes,toArray,isDate,pick,assign,defer} from "lodash";
-import { toString } from "../utils";
+import { toString } from "../core/utils";
 import Trackr from "trackr";
-import { updateAttribute, updateProperty } from "../idom";
+import { updateAttribute, updateProperty } from "../core/idom";
 
 var value_types = [ "radio", "option" ];
 var selection_types = [ "text", "search", "tel", "url", "password" ];

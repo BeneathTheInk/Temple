@@ -1,8 +1,8 @@
 import {forEach,isArray,assign} from "lodash";
-import { currentElement, updateAttribute } from "../idom";
+import { currentElement, updateAttribute } from "../core/idom";
 import Trackr from "trackr";
 import raf from "raf";
-import Context from "../context";
+import Context from "../core/context";
 
 var decorators = {};
 

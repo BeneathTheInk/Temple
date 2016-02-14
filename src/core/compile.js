@@ -1,7 +1,7 @@
 import {assign,map} from "lodash";
 import {parse as baseParse} from "./m+xml.pegjs";
-import * as Temple from "./";
-import Root from "./ast/root";
+import * as Temple from "../";
+import Root from "../ast/root";
 
 const smfurl = "sourceMappingURL=";
 const datauri = "data:application/json;charset=utf-8;base64,";
@@ -44,7 +44,8 @@ export function compile(files, options) {
 
 	out.toString = function(smf) {
 		return this.code + "//# " + smfurl +
-			(smf || datauri + toBase64(this.map.toString()));
+			(typeof smf === "string" ? smf :
+				datauri + toBase64(this.map.toString()));
 	};
 
 	return out;

@@ -1,11 +1,11 @@
 BIN = ./node_modules/.bin
 SRC = $(wildcard src/* src/*/*)
 
-build: temple.js temple.es6.js dist/temple.js dist/temple.min.js
+build: temple.js temple.cli.js temple.es6.js dist/temple.js dist/temple.min.js
 
 test: test-basic test-full test-dist
 	make clean-self
-	
+
 test-coverage: test-basic test-dist coverage
 	make clean-self
 
@@ -22,6 +22,9 @@ dist/temple.min.js: dist/temple.js dist
 	$(BIN)/uglifyjs $< -m > $@
 
 temple.js: src/index.js $(SRC)
+	TARGET=node $(BIN)/rollup $< -c > $@
+
+temple.cli.js: src/cli.js $(SRC)
 	TARGET=node $(BIN)/rollup $< -c > $@
 
 temple.es6.js: src/index.js $(SRC)

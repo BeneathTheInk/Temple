@@ -1,5 +1,5 @@
 import Node from "./node";
-import {containsEntities} from "../utils";
+import {containsEntities} from "../core/utils";
 
 export default class Text extends Node {
 	compile(data) {

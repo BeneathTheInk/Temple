@@ -21,6 +21,7 @@
 		"semantic-release": "semantic-release pre && npm publish && semantic-release post"
 	},
 	"main": "temple.js",
+	"bin": "temple.cli.js",
 	"jsnext:main": "temple.es6.js",
 	"superfast": "./lib/superfast.js",
 	"dependencies": {
@@ -33,18 +34,18 @@
 		"raf": "~3.1.0",
 		"source-map": "~0.5.3",
 		"trackr": "~2.0.2",
-		"trackr-objects": "~0.3.7"
+		"trackr-objects": "~0.3.7",
+		"fs-promise": "~0.4.1",
+		"minimist": "~1.2.0"
 	},
 	"devDependencies": {
 		"babel-plugin-lodash": "~2.0.1",
 		"babel-preset-es2015-rollup": "~1.1.1",
 		"browserify": "~13.0.0",
-		"fs-promise": "~0.4.1",
 		"incremental-dom": "~0.3.0",
 		"istanbul": "~0.4.2",
 		"istanbul-coveralls": "~1.0.3",
 		"jshint": "~2.9.1",
-		"minimist": "~1.2.0",
 		"pegjs": "~0.9.0",
 		"random-port": "~0.1.0",
 		"rollup": "~0.25.4",
