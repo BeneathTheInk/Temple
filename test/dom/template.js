@@ -1,4 +1,4 @@
-import * as Temple from "templejs";
+var Temple = require("templejs");
 import test from "tape";
 
 test("=== Templates ===", function(_t) {

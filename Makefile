@@ -1,124 +1,52 @@
 BIN = ./node_modules/.bin
-# BUILD = lib/ lib/temple.js lib/ast.js lib/m+xml.js lib/superfast.js
-# DIST = dist/ dist/temple.js dist/temple.min.js
 SRC = $(wildcard src/* src/*/*)
+TEST = $(wildcard test/* test/*/*)
 
-build: dist/temple.js dist/temple.min.js temple.js
+build: temple.js temple.es6.js dist/temple.js dist/temple.min.js
+test: test-basic test-full
+
+clean:
+	rm -rf temple* dist/ coverage/
 
 dist:
 	mkdir -p dist
 
-dist/temple.js: export TARGET=full
 dist/temple.js: src/index.js $(SRC) dist
-	# $< -> $@
-	@$(BIN)/rollup $< -c -f umd -n Temple -m $@.map -o $@
+	TARGET=browser $(BIN)/rollup $< -c -m inline > $@
 
 dist/temple.min.js: dist/temple.js dist
-	# $< -> $@
-	@$(BIN)/uglifyjs $< > $@
+	$(BIN)/uglifyjs $< -m > $@
 
-temple.js: export TARGET=common
 temple.js: src/index.js $(SRC)
-	# $< -> $@
-	@$(BIN)/rollup $< -c -f cjs > $@
+	TARGET=node $(BIN)/rollup $< -c > $@
 
-define NODE_EVAL
-var i = "";
-process.stdin.on("data", function(c) {
-	i += c.toString();
-}).on("end", function() {
-	eval(i);
-});
-endef
-export NODE_EVAL
+temple.es6.js: src/index.js $(SRC)
+	TARGET=next $(BIN)/rollup $< -c > $@
 
-test: export TARGET=test
-test: test/index.js
-	@$(BIN)/rollup $< -c -f iife -m inline | node -e "$$NODE_EVAL"
+temple-tests.basic.js: test/index.js $(TEST) temple.js
+	TARGET=node TEST=1 $(BIN)/rollup $< -c > $@
 
-test-browser: export TARGET=test
-test-browser: test/browser.js
-	@$(BIN)/rollup $< -c -f iife -m inline | $(BIN)/tape-run
+temple-tests.full.js: test/full.js $(TEST) temple.js
+	TARGET=node TEST=1 $(BIN)/rollup $< -c > $@
 
-clean:
-	rm -rf temple* dist/
+temple.cov.js: temple.js
+	$(BIN)/istanbul instrument $< > $@
 
-.PHONY: build test test-browser
+install-self:
+	rm -f node_modules/templejs
+	ln -s ../ node_modules/templejs
 
-# build: $(BUILD)
-# build-dist: $(DIST)
+test-basic: temple-tests.basic.js install-self
+	node $<
 
-# define ROLLUP
-# var path = require("path");
-# require("rollup").rollup({
-# 	entry: path.resolve("$<"),
-# 	plugins: [
-# 		require("rollup-plugin-npm")({
-# 			jsnext: true,
-# 			main: true,
-# 			builtins: false,
-# 			skip: [
-# 				"source-map", "lodash", "trackr", "trackr-objects",
-# 				"assign-props", "dom-matches", "raf", "detect-indent",
-# 				"backbone-extend-standalone", "plain-merge", "events"
-# 			]
-# 		}),
-# 		require("rollup-plugin-babel")({
-# 			exclude: [ "node_modules/**" ],
-# 			include: [ "node_modules/incremental-dom/**", "src/**" ]
-# 		})
-# 	]
-# }).then(function(bundle) {
-# 	var result = bundle.generate({
-# 		format: "cjs",
-# 		sourceMap: true,
-# 		sourceMapFile: path.resolve("$@")
-# 	});
-# 	process.stdout.write(result.code + "\n//# sourceMappingURL=" + result.map.toUrl());
-# }).catch(function(e) {
-# 	process.nextTick(function() {
-# 		throw e;
-# 	});
-# });
-# endef
-# export ROLLUP
+test-full: temple-tests.full.js install-self
+	$(BIN)/browserify $< --debug | $(BIN)/tape-run
 
-define HEADER
-/* Temple v$(shell node -e 'process.stdout.write(require("./package.json").version || "dev-build")')
- * Copyright (c) $(shell date +'%Y') Tyler Johnson. License MIT
- */
+coverage: temple-tests.full.js temple.cov.js
+	$(BIN)/browserify $< -r ./temple.cov.js:templejs --debug | node ./bin/browser-coverage.js
+	$(BIN)/istanbul report --root coverage lcov
 
-endef
-export HEADER
+report-coverage: coverage
+	$(BIN)/istanbul-coveralls --no-rm
 
-# lib/:
-# 	mkdir -p $@
-#
-# lib/temple.js: src/index.js $(wildcard src/*.js src/*/*.js) lib/
-# 	# $< -> $@
-# 	@node -e "$$ROLLUP" > $@
-#
-# lib/ast.js: src/ast/index.js $(wildcard src/ast/*.js) lib/
-# 	# $< -> $@
-# 	@node -e "$$ROLLUP" > $@
-#
-# lib/m+xml.js: src/m+xml.pegjs lib/
-# 	# $< -> $@
-# 	@$(BIN)/pegjs --allowed-start-rules start $< $@
-#
-# lib/superfast.js: src/superfast.js lib/
-# 	# $< -> $@
-# 	@node -e "$$ROLLUP" > $@
-
-# dist/:
-# 	mkdir -p $@
-#
-# dist/temple.js: lib/temple.js $(BUILD) dist/
-# 	# $< -> $@
-# 	@echo "$$HEADER" > $@
-# 	@$(BIN)/browserify --standalone Temple $< >> $@
-#
-# dist/temple.min.js: dist/temple.js dist/
-# 	# $< -> $@
-# 	@echo "$$HEADER" > $@
-# 	@$(BIN)/uglifyjs $< >> $@
+.PHONY: build test clean test-basic test-full report-coverage install-self

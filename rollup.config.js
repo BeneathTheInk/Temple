@@ -4,7 +4,6 @@ import babel from "rollup-plugin-babel";
 import pegjs from "pegjs";
 import json from "rollup-plugin-json";
 import path from "path";
-// import include from "rollup-plugin-includepaths";
 import builtins from "browserify/lib/builtins.js";
 import inject from "rollup-plugin-inject";
 import {has,forEach} from "lodash";
@@ -22,30 +21,17 @@ const resolve = _resolve({
 	browser: true
 });
 
-const commonOpts = {
-   include: [ /*"src/*.pegjs"*/ ],
-   exclude: [ "src/**" ],
-   extensions: [ /*".pegjs",*/ ".js" ],
-   namedExports: {
-	//    "src/m+xml.pegjs": [ "parse" ]
-   }
-};
-
-if (process.env.TARGET !== "common") {
-	commonOpts.include.push("node_modules/**");
-	commonOpts.namedExports["source-map/lib/util.js"] = [ "createMap" ];
-	commonOpts.namedExports.events = [ "EventEmitter" ];
-}
+const relPath = /^\.{0,2}\//;
+const incremental = /^incremental-dom/;
 
 const plugins = [
 	{
 		resolveId: function(id, p) {
-			if (process.env.TARGET === "common" &&
-				!/^incremental-dom/.test(id) &&
-				!/^\.{0,2}\//.test(id)) return null;
+			if ((process.env.TARGET === "node" ||
+				process.env.TARGET === "next") &&
+				!incremental.test(id) && !relPath.test(id)) return null;
 
 			if (has(builtins, id)) return builtins[id];
-			if (id === "templejs") return path.resolve("src/index.js");
 			return resolve.resolveId(id, p);
 		}
 	},
@@ -67,19 +53,36 @@ export var parse = parser.parse;`,
 			};
 		}
 	},
-	json(),
-	commonjs(commonOpts),
-	babel({
-		exclude: [ "node_modules/**"/*, "*.pegjs" */ ],
-		include: [ "node_modules/incremental-dom/**", "src/**" ]
-	})
+	json()
 ];
 
-if (process.env.TARGET !== "common") {
+if (process.env.TARGET !== "next") {
+	plugins.push(babel({
+		exclude: [ "node_modules/**" ],
+		include: [ "node_modules/incremental-dom/**", "src/**", "test/**" ]
+	}));
+}
+
+if (process.env.TARGET !== "node" && process.env.TARGET !== "next") {
+	plugins.push(commonjs({
+		include: [ "node_modules/**" ],
+		exclude: [ "src/**", "test/**" ],
+		extensions: [ ".js" ],
+		namedExports: {
+			"source-map/lib/util.js": [ "createMap" ],
+			events: [ "EventEmitter" ]
+		}
+	}));
+
 	plugins.push(inject({
 		process: builtins._process,
 		Buffer: [ builtins.buffer, "Buffer" ]
 	}));
 }
 
-export default { plugins };
+export default {
+	format: process.env.TARGET === "node" ? "cjs" :
+		process.env.TARGET === "next" ? "es6" : "umd",
+	moduleName: "Temple",
+	plugins
+};

@@ -17,8 +17,7 @@ node_js:
   - '5'
 
 before_install:
-  # install npm@3
-  - npm i -g npm@^3.0.0
+  - npm i -g npm@latest
 
 install:
   - export DISPLAY=':99.0'
@@ -26,19 +25,13 @@ install:
   - npm install
 
 before_script:
-  # lint before doing anything
   - npm run lint
 
-script: npm run $COMMAND
-
-env:
-  matrix:
-    - COMMAND='test'
-    - COMMAND='test-browser'
-    - COMMAND='report-coverage'
+script: make test-basic coverage
 
 after_success:
-  - travis-after-all && npm run semantic-release
+  - make report-coverage
+  - npm run semantic-release
 
 branches:
   only:

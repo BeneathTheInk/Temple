@@ -1,12 +1,9 @@
-import {toArray,isArray,forEach as each} from "lodash";
+import {toArray,isArray,forEach as _each} from "lodash";
 import matchesSelector from "dom-matches";
-// import merge from "plain-merge";
-
-// export assign;
 
 export function forEach(val, fn, ctx) {
 	if (val && typeof val.forEach === "function") val.forEach(fn, ctx);
-	else each(val, fn, ctx);
+	else _each(val, fn, ctx);
 }
 
 export function map(val, fn, ctx) {
