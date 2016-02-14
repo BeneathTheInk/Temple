@@ -1,6 +1,6 @@
 import fs from "fs-promise";
 import path from "path";
-import {fromPairs,map} from "lodash";
+import {fromPairs} from "lodash";
 
 function fetchFile(f) {
 	return fs.readFile(path.resolve(f), {
