@@ -25,7 +25,8 @@ temple.js: src/index.js $(SRC)
 	TARGET=node $(BIN)/rollup $< -c > $@
 
 temple.cli.js: src/cli.js $(SRC)
-	TARGET=node $(BIN)/rollup $< -c > $@
+	echo "#!/usr/bin/env node\n" > $@
+	TARGET=node $(BIN)/rollup $< -c >> $@
 
 temple.es6.js: src/index.js $(SRC)
 	TARGET=es6 $(BIN)/rollup $< -c > $@

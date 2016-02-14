@@ -25,7 +25,6 @@ export default function(argv, Temple) {
 	if (!process.stdin.isTTY) p.push(fetchStdin());
 
 	return Promise.all(p).then(r => {
-		console.error(map(r,0));
 		let result = Temple.compile(fromPairs(r));
 		let mapFile = argv["source-map"];
 		let output = argv.output ? path.resolve(argv.output) : null;
@@ -44,7 +43,10 @@ export default function(argv, Temple) {
 		}
 
 		if (output) return fs.writeFile(output, code);
-		else console.log(code);
+		else {
+			console.log(code);
+			process.exit(0);
+		}
 	}).catch(e => {
 		console.error(e.stack || e);
 		process.exit(1);
