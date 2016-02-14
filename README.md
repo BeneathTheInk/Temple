@@ -23,4 +23,4 @@ Some helpful links:
 - [API Documentation](#)
 - [Examples](#)
 
-All contributions are welcome! Please submit an [issue](https://github.com/BeneathTheInk/Temple/issues/new) or [pull-request](https://github.com/BeneathTheInk/Temple/pulls). If you have questions or need help, please join me on [Gitter](https://gitter.im/BeneathTheInk/Temple).
+All contributions are welcome! Please submit an [issue](https://github.com/BeneathTheInk/Temple/issues/new) or [pull-request](https://github.com/BeneathTheInk/Temple/pulls). If you need help, join me on [Gitter](https://gitter.im/BeneathTheInk/Temple).

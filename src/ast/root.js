@@ -4,6 +4,7 @@ import {header} from "./utils";
 
 export default class Root extends Node {
 	compile(data) {
+		data = data || {};
 		var oheads = data.headers;
 		data.headers = [];
 
@@ -11,7 +12,7 @@ export default class Root extends Node {
 		header(data, "var Template = {};\n");
 		header(data, "var idom = Temple.idom;\n");
 		header(data, "var decorators = Temple.decorators;\n");
-		this.push(invokeMap(this.children, "compile", data));
+		this.push(invokeMap(this.files, "compile", data));
 
 		if (data.exports === "es6") {
 			this.write("export default Template;");

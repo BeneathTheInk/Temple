@@ -3,8 +3,12 @@ import { SourceNode } from "source-map";
 
 export default class ASTNode {
 	constructor(line, col, props) {
-		this._line = line;
-		this._column = col;
+		if (typeof line === "object" && col == null && props == null) {
+			[props,line] = [line,null];
+		}
+
+		this._line = typeof line === "number" ? line : 0;
+		this._column =  typeof col === "number" ? col : 0;
 		assign(this, props);
 	}
 

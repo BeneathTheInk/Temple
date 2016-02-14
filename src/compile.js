@@ -1,42 +1,60 @@
-import {assign,invokeMap} from "lodash";
-import { SourceNode } from "source-map";
-import {parse} from "./m+xml.pegjs";
+import {assign,map} from "lodash";
+import {parse as baseParse} from "./m+xml.pegjs";
 import * as Temple from "./";
-// import * as AST from "./ast";
+import Root from "./ast/root";
 
-// var parse = require("./m+xml").parse;
-var url = "sourceMappingURL=data:application/json;charset=utf-8;base64,";
+const smfurl = "sourceMappingURL=";
+const datauri = "data:application/json;charset=utf-8;base64,";
 
-export function getSource(nodes, src, options) {
-	let source = new SourceNode(null, null, options.originalFilename, nodes);
-	if (!options.sourceMap) return source.toString();
+var toBase64;
+if (typeof window !== "undefined" && typeof window.btoa === "function") {
+	toBase64 = window.btoa;
+} else toBase64 = function(str) {
+	return new Buffer(str, "utf-8").toString("base64");
+};
 
-	if (src) source.setSourceContent(options.originalFilename, src);
-	let result = source.toStringWithSourceMap();
-	let map64 = new Buffer(result.map.toString(), "utf-8").toString("base64");
-	return result.code + "//# " + url + map64;
+function parseFile(src, name, options) {
+	if (typeof name === "number") name = `template${name}.js`;
+
+	return baseParse(src, assign({
+		originalFilename: name
+	}, options));
 }
 
-export function compile(tree, options) {
-	options = assign({
-		originalFilename: "template.js"
-	}, options);
+export function parse(files, options) {
+	if (typeof files === "string") files = [ files ];
+	files = map(files, (src, name) => parseFile(src, name, options));
+	return new Root({ files });
+}
 
-	let src;
-	if (typeof tree === "string") {
-		src = tree;
-		tree = parse(src, options);
-	}
+export function compile(files, options) {
+	if (typeof files === "string") files = [ files ];
 
-	let nodes = invokeMap([].concat(tree), "compile", options);
-	return getSource(nodes, src, options);
+	files = map(files, (file, index) => {
+		if (typeof file === "string") {
+			file = parseFile(file, index, options);
+		}
+
+		return file;
+	});
+
+	let root = new Root({ files });
+	let source = root.compile(options);
+	let out = source.toStringWithSourceMap();
+
+	out.toString = function(smf) {
+		return this.code + "//# " + smfurl +
+			(smf || datauri + toBase64(this.map.toString()));
+	};
+
+	return out;
 }
 
 export function exec(tpl, options) {
 	/* jshint -W054 */
 	var r = compile(tpl, options);
 	// console.log(r);
-	return (new Function("Temple", r))(Temple);
+	return (new Function("Temple", r.code))(Temple);
 }
 
 // export function compileHTML(html, options) {

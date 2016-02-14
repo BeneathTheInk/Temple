@@ -44,7 +44,9 @@ start = ws nodes:(
 	( scriptNode
 	/ templateNode
 	/ commentNode ) ws)* {
-		return createNode("Root", {
+		return createNode("File", {
+			filename: options.originalFilename,
+			source: text(),
 			children: map(nodes, 0)
 		});
 	}

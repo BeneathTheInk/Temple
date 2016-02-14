@@ -15,7 +15,7 @@ export const version = pkg.version || "dev-build";
 export * from "./templates";
 export * from "./compile";
 export * from "./builtins";
-export {parse} from "./m+xml.pegjs";
+// export {parse} from "./m+xml.pegjs";
 
 export {
 	Context, idom, utils, Map, List, Variable,
