@@ -1,6 +1,6 @@
 # Temple
 
-[![Build Status](https://travis-ci.org/BeneathTheInk/Temple.svg?branch=master)](https://travis-ci.org/BeneathTheInk/Temple) [![Coverage Status](https://coveralls.io/repos/github/BeneathTheInk/Temple/badge.svg?branch=master)](https://coveralls.io/github/BeneathTheInk/Temple?branch=master) [![npm](https://img.shields.io/npm/v/templejs.svg)](http://ghub.io/templejs)
+[![Build Status](https://travis-ci.org/BeneathTheInk/Temple.svg?branch=master)](https://travis-ci.org/BeneathTheInk/Temple) [![Coverage Status](https://coveralls.io/repos/github/BeneathTheInk/Temple/badge.svg?branch=master)](https://coveralls.io/github/BeneathTheInk/Temple?branch=master) [![npm](https://img.shields.io/npm/v/templejs.svg)](http://ghub.io/templejs) [![Dependency Status](https://david-dm.org/beneaththeink/temple.svg)](https://david-dm.org/beneaththeink/temple)
 
 A JavaScript view framework.
 
