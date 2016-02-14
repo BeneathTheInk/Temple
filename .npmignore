@@ -4,3 +4,4 @@ Makefile
 /docs
 /coverage
 rollup.config.js
+/bin
