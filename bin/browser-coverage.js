@@ -2,6 +2,7 @@ var run = require('tape-run');
 var http = require("http");
 var minimist = require("minimist");
 var fs = require("fs");
+var randomPort = require("random-port");
 
 var argv = minimist(process.argv.slice(2));
 
@@ -26,6 +27,7 @@ var server = http.createServer(function(req, res) {
 			try { fs.mkdirSync("coverage"); }
 			catch(e) { if (e.code !== "EEXIST") throw e; }
 			fs.writeFileSync("coverage/coverage.json", src);
+			console.error("Recieved coverage details.");
 		} catch(e) {
 			res.statusCode = 500;
 		}
@@ -34,8 +36,9 @@ var server = http.createServer(function(req, res) {
 	});
 });
 
-server.listen(5000);
-
-process.stdin
-	.pipe(run(argv))
-	.pipe(process.stdout);
+randomPort(function(port) {
+	server.listen(port);
+	var runner = run(argv);
+	runner.write("var COVERAGE_PORT = "+JSON.stringify(port)+";");
+	process.stdin.pipe(runner).pipe(process.stdout);
+});
