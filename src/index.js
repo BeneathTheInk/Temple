@@ -1,6 +1,6 @@
 import * as idom from "./idom";
 import * as utils from "./utils";
-import _Trackr from "trackr";
+import Trackr from "trackr";
 import { Map, List, Variable } from "trackr-objects";
 import Context from "./context";
 import * as AST from "./ast";
@@ -17,10 +17,7 @@ export * from "./compile";
 export * from "./builtins";
 export {parse} from "./m+xml.pegjs";
 
-// avoids a rollup bug: https://github.com/rollup/rollup/issues/513
-export var Trackr = _Trackr;
-
 export {
 	Context, idom, utils, Map, List, Variable,
-	plugins, decorators, actions, AST
+	plugins, decorators, actions, AST, Trackr
 };
