@@ -1,6 +1,5 @@
 BIN = ./node_modules/.bin
 SRC = $(wildcard src/* src/*/*)
-# TEST = $(wildcard test/* test/*/*)
 
 build: temple.js temple.es6.js dist/temple.js dist/temple.min.js
 test: test-basic test-full test-dist
@@ -13,7 +12,7 @@ dist:
 	mkdir -p dist
 
 dist/temple.js: src/index.js $(SRC) dist
-	TARGET=browser $(BIN)/rollup $< -c -m inline > $@
+	TARGET=browser $(BIN)/rollup $< -c -m $@.map -o $@
 
 dist/temple.min.js: dist/temple.js dist
 	$(BIN)/uglifyjs $< -m > $@
@@ -53,4 +52,4 @@ coverage: temple-tests.full.js temple.cov.js
 report-coverage: coverage
 	$(BIN)/istanbul-coveralls --no-rm
 
-.PHONY: build test clean test-basic test-full report-coverage install-self
+.PHONY: build test test-coverage clean test-basic test-full test-dist report-coverage install-self
