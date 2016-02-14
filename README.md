@@ -1,5 +1,7 @@
 # Temple
 
+[![Join the chat at https://gitter.im/BeneathTheInk/Temple](https://badges.gitter.im/BeneathTheInk/Temple.svg)](https://gitter.im/BeneathTheInk/Temple?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 A JavaScript view framework.
 
 * __Reactive__ - Powered by [Trackr](https://github.com/beneaththeink/trackr), Temple automatically updates the DOM as data changes.
