@@ -8,7 +8,7 @@ export function forEach(val, fn, ctx) {
 
 export function map(val, fn, ctx) {
 	let res = [];
-	forEach(val, function(v, i, l) {
+	forEach(val, (v, i, l) => {
 		res.push(fn.call(ctx, v, i, l));
 	});
 	return res;

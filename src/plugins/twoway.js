@@ -31,9 +31,7 @@ export default plugin;
 
 export function add(id, getter, onChange) {
 	if (isObject(id)) {
-		forEach(id, function(v, k) {
-			add.call(this, k, v);
-		}, this);
+		forEach(id, (v, k) => add.call(this, k, v));
 		return this;
 	}
 

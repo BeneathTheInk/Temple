@@ -19,10 +19,10 @@ export default plugin;
 export function add(name, fn, options) {
 	if (typeof name === "object") {
 		options = fn;
-		forEach(name, function(fn, n) {
+		forEach(name, (fn, n) => {
 			if (isArray(fn)) add.call(this, n, fn[0], fn[1]);
 			else add.call(this, n, fn, options);
-		}, this);
+		});
 		return this;
 	}
 

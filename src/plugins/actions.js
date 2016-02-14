@@ -85,7 +85,7 @@ export function defineEvent(event) {
 // Msutache Instance Methods
 export function add(name, fn) {
 	if (typeof name === "object" && fn == null) {
-		forEach(name, function(fn, n) { add.call(this, n, fn); }, this);
+		forEach(name, (fn, n) => add.call(this, n, fn));
 		return this;
 	}
 
