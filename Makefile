@@ -21,7 +21,7 @@ temple.js: src/index.js $(SRC)
 	TARGET=node $(BIN)/rollup $< -c > $@
 
 temple.es6.js: src/index.js $(SRC)
-	TARGET=next $(BIN)/rollup $< -c > $@
+	TARGET=es6 $(BIN)/rollup $< -c > $@
 
 temple-tests.basic.js: test/index.js $(TEST) temple.js
 	TARGET=node TEST=1 $(BIN)/rollup $< -c > $@

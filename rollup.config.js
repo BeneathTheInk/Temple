@@ -27,7 +27,7 @@ const incremental = /^incremental-dom/;
 const plugins = [
 	{
 		resolveId: function(id, p) {
-			if (p && (process.env.TARGET === "node" || process.env.TARGET === "next") &&
+			if (p && (process.env.TARGET === "node" || process.env.TARGET === "es6") &&
 				!incremental.test(id) && !relPath.test(id)) return false;
 
 			if (has(builtins, id)) return builtins[id];
@@ -55,14 +55,14 @@ export var parse = parser.parse;`,
 	json()
 ];
 
-if (process.env.TARGET !== "next") {
+if (process.env.TARGET !== "es6") {
 	plugins.push(babel({
 		exclude: [ "node_modules/**" ],
 		include: [ "node_modules/incremental-dom/**", "src/**", "test/**" ]
 	}));
 }
 
-if (process.env.TARGET !== "node" && process.env.TARGET !== "next") {
+if (process.env.TARGET !== "node" && process.env.TARGET !== "es6") {
 	plugins.push(commonjs({
 		include: [ "node_modules/**" ],
 		exclude: [ "src/**", "test/**" ],
@@ -81,7 +81,7 @@ if (process.env.TARGET !== "node" && process.env.TARGET !== "next") {
 
 export default {
 	format: process.env.TARGET === "node" ? "cjs" :
-		process.env.TARGET === "next" ? "es6" : "umd",
+		process.env.TARGET === "es6" ? "es6" : "umd",
 	moduleName: "Temple",
 	onwarn: function(){},
 	plugins
