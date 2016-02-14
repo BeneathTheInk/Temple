@@ -27,9 +27,8 @@ const incremental = /^incremental-dom/;
 const plugins = [
 	{
 		resolveId: function(id, p) {
-			if ((process.env.TARGET === "node" ||
-				process.env.TARGET === "next") &&
-				!incremental.test(id) && !relPath.test(id)) return null;
+			if (p && (process.env.TARGET === "node" || process.env.TARGET === "next") &&
+				!incremental.test(id) && !relPath.test(id)) return false;
 
 			if (has(builtins, id)) return builtins[id];
 			return resolve.resolveId(id, p);
@@ -84,5 +83,6 @@ export default {
 	format: process.env.TARGET === "node" ? "cjs" :
 		process.env.TARGET === "next" ? "es6" : "umd",
 	moduleName: "Temple",
+	onwarn: function(){},
 	plugins
 };
