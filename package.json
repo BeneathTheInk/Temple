@@ -14,7 +14,7 @@
 		"url": "https://github.com/BeneathTheInk/Temple.git"
 	},
 	"scripts": {
-		"lint": "jshint src/ test/",
+		"lint": "jshint src/",
 		"test": "make test",
 		"build": "make build",
 		"prepublish": "make clean && make",
@@ -28,10 +28,8 @@
 		"backbone-extend-standalone": "~0.1.2",
 		"detect-indent": "~4.0.0",
 		"dom-matches": "~2.0.0",
-		"incremental-dom": "~0.3.0",
 		"jsep": "~0.3.0",
 		"lodash": "4.x",
-		"plain-merge": "~2.0.0",
 		"raf": "~3.1.0",
 		"source-map": "~0.5.3",
 		"trackr": "~2.0.2",
@@ -41,6 +39,8 @@
 		"babel-plugin-lodash": "~2.0.1",
 		"babel-preset-es2015-rollup": "~1.1.1",
 		"browserify": "~13.0.0",
+		"fs-promise": "~0.4.1",
+		"incremental-dom": "~0.3.0",
 		"istanbul": "~0.4.2",
 		"istanbul-coveralls": "~1.0.3",
 		"jshint": "~2.9.1",

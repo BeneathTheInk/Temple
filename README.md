@@ -9,12 +9,18 @@ Yet another JavaScript view framework.
 * __Modular & Extensible__ - All templates are encapsulated, reusable components.
 * __Stateless__ - Without embedded view state, templates stay simple, robust, and flexible.
 
----
+To get started with Temple quickly:
 
-- [Installation](#)
-- [Syntax Reference](#)
+```sh
+npm install templejs -g
+templejs playground
+```
+
+Some helpful links:
+
+- [Playground](#)
+- [Template Syntax Reference](#)
 - [API Documentation](#)
 - [Examples](#)
 
-All contributions are welcome! Please submit an [issue](https://github.com/BeneathTheInk/Temple/issues/new) or [pull-request](https://github.com/BeneathTheInk/Temple/pulls).
-If you have questions or need help, please join me on [Gitter](https://gitter.im/BeneathTheInk/Temple), or create an [issue](https://github.com/BeneathTheInk/Temple/issues/new).
+All contributions are welcome! Please submit an [issue](https://github.com/BeneathTheInk/Temple/issues/new) or [pull-request](https://github.com/BeneathTheInk/Temple/pulls). If you have questions or need help, please join me on [Gitter](https://gitter.im/BeneathTheInk/Temple).

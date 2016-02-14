@@ -1,6 +1,5 @@
 /* globals COVERAGE_PORT */
 
-import "./parser";
 import test from "tape";
 
 // push code coverage details back to the server

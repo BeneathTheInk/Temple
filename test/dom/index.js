@@ -1,2 +1,0 @@
-import "./template";
-import "./script";

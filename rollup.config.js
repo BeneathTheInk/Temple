@@ -7,6 +7,7 @@ import path from "path";
 import builtins from "browserify/lib/builtins.js";
 import inject from "rollup-plugin-inject";
 import {has,forEach} from "lodash";
+import buildDOMTests from "./test/utils/build-dom-tests.js";
 
 const emptyModule = require.resolve("browserify/lib/_empty.js");
 const rollupEmptyModule = require.resolve("rollup-plugin-node-resolve/src/empty.js");
@@ -23,8 +24,25 @@ const resolve = _resolve({
 
 const relPath = /^\.{0,2}\//;
 const incremental = /^incremental-dom/;
+const domtest = /^\$DOMTEST:(.*)/;
 
 const plugins = [
+	{
+		resolveId: function(id, p) {
+			// return process.env.TEST && domtest.test(id) ? id : null;
+
+			if (!process.env.TEST) return;
+			let m = id.match(domtest);
+			if (!m) return;
+			return "$DOMTEST:" + path.resolve(path.dirname(p), m[1]);
+		},
+		load: function(id) {
+			if (!process.env.TEST) return;
+			let m = id.match(domtest);
+			if (!m) return;
+			return buildDOMTests(m[1]);
+		}
+	},
 	{
 		resolveId: function(id, p) {
 			if (p && (process.env.TARGET === "node" || process.env.TARGET === "es6") &&

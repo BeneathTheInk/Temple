@@ -1,2 +1,2 @@
-import "./index.js";
-import "./dom";
+import "./basic";
+import "$DOMTEST:./dom";

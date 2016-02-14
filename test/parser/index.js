@@ -1,1 +1,3 @@
-import "./root.js";
+import "./root";
+import "./html";
+import "./section-tags";
