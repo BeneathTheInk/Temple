@@ -36,9 +36,11 @@ export default function(argv, Temple) {
 		} else {
 			if (mapFile === "inline") mapFile = null;
 			code = result.toString(mapFile);
+			
 			if (typeof mapFile === "string") {
-				if (!output) throw new Error("You must specify an --output (-o) option when creating a file with a sourcemap");
-				p.push(fs.writeFile(path.resolve(path.dirname(output), mapFile), result.map.toString()));
+				if (output) mapFile = path.resolve(path.dirname(output), mapFile);
+				else mapFile = path.resolve(mapFile);
+				p.push(fs.writeFile(mapFile, result.map.toString()));
 			}
 		}
 
