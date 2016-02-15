@@ -25,9 +25,6 @@ var argv = minimist(process.argv.slice(2), {
 		v: "version", V: "version",
 		m: "source-map",
 		o: "output"
-	},
-	default: {
-		open: true
 	}
 });
 

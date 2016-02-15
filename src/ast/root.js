@@ -40,8 +40,7 @@ export default class Root extends Node {
 				break;
 
 			case "iife":
-				output.prepend(`\tvar Template = {};\n`);
-				output.prepend(`(function() {\n`);
+				output.prepend(`(function() {\n\tvar Template = {};\n`);
 				output.add(`\n\treturn Template;\n}());`);
 				break;
 
