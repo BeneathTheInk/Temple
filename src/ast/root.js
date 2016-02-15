@@ -9,24 +9,46 @@ export default class Root extends Node {
 		data.headers = [];
 
 		this.start(data);
-		header(data, "var Template = {};\n");
+
 		header(data, "var idom = Temple.idom;\n");
 		header(data, "var decorators = Temple.decorators;\n");
 		this.push(invokeMap(this.files, "compile", data));
 
-		if (data.exports === "es6") {
-			this.write("export default Template;");
-		} else if (data.exports === "cjs") {
-			this.write("module.exports = Template;");
-		} else if (data.exports === "none") {
-			// print nothing
-		} else {
-			this.write("return Template;");
-		}
-
 		let output = this.end();
 		if (data.headers.length) output.prepend("\n").prepend(data.headers);
 		data.headers = oheads;
+
+		switch(data.export) {
+			case "es6":
+				output.prepend(`export const Template = {};\n`);
+				output.prepend(`import * as Temple from "templejs";\n`);
+				break;
+
+			case "cjs":
+				output.prepend(`var Template = module.exports = {};\n`);
+				output.prepend(`var Temple = require("templejs");\n`);
+				break;
+
+			case "umd":
+				output.prepend(`(function (global, factory) {
+					typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require("templejs")) :
+					typeof define === 'function' && define.amd ? define(["templejs"], factory) :
+					(factory(global.Temple));
+				}(this, function(Temple) {
+					var Template = {};\n\n`.replace(/^\t{4}/gm, ""));
+				output.add(`\n\treturn Template;\n}));`);
+				break;
+
+			case "iife":
+				output.prepend(`\tvar Template = {};\n`);
+				output.prepend(`(function() {\n`);
+				output.add(`\n\treturn Template;\n}());`);
+				break;
+
+			default:
+				output.prepend(`var Template = {};\n`);
+				break;
+		}
 
 		return output;
 	}
