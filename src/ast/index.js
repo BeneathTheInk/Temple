@@ -16,10 +16,11 @@ import Comment from "./comment";
 import Expression from "./expression";
 import Literal from "./literal";
 import Set from "./set";
+import Style from "./style";
 
 export {
 	Node,
-	Root, File, Template, Script,
+	Root, File, Template, Script, Style,
 	Element, Text, Attribute,
 	If, Branch, Each, With, Set, Render,
 	Interpolator, Expression, Literal,

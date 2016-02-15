@@ -41,7 +41,9 @@ import jsep from "jsep";
 
 	var rawNodes = assign({
 		script: "Script",
-		$script: "Script"
+		$script: "Script",
+		style: "Style",
+		$style: "Style"
 	}, options.rawNodes);
 	var rawTags = Object.keys(rawNodes);
 	var currentRawTag;
