@@ -16,15 +16,20 @@ var commands = {
 // command aliases
 commands.build = commands.compile;
 commands.start = commands.exec = commands.run;
+commands.open = function(argv) {
+	argv.open = true;
+	return commands.run.apply(this, arguments);
+};
 
 var argv = minimist(process.argv.slice(2), {
 	string: [ "output", "export" ],
-	boolean: [ "help", "version", "open" ],
+	boolean: [ "help", "version", "open", "watch" ],
 	alias: {
 		h: "help", H: "help",
 		v: "version", V: "version",
 		m: "source-map",
-		o: "output"
+		o: "output",
+		w: "watch"
 	}
 });
 

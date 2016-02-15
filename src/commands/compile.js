@@ -1,11 +1,83 @@
 import fs from "fs-promise";
 import path from "path";
-import {compile, panic} from "./utils";
+import chokidar from "chokidar";
+import {fromPairs} from "lodash";
+
+function fetchFile(f) {
+	return fs.readFile(path.resolve(f), {
+		encoding: "utf-8"
+	}).then(src => {
+		return [f, src];
+	});
+}
+
+function fetchStdin() {
+	return new Promise((resolve, reject) => {
+		let src = "";
+		process.stdin.setEncoding("utf-8");
+		process.stdin.on("data", (d) => src += d);
+		process.stdin.on("end", () => resolve(["_input.js",src]));
+		process.stdin.on("error", reject);
+	});
+}
+
+function panic(e) {
+	console.error(e.stack || e);
+}
+
+export function compile(argv, Temple, onBuild) {
+	let timeout;
+	let building = false;
+	let files = argv._.map(f => path.resolve(f));
+
+	function build() {
+		if (building) return invalidate();
+		building = true;
+		let done = () => building = false;
+
+		let p = files.map(fetchFile);
+		if (!process.stdin.isTTY) p.push(fetchStdin());
+
+		return Promise.all(p).then(r => {
+			return Temple.compile(fromPairs(r), {
+				export: argv.export
+			});
+		}).then(result => {
+			done();
+			if (onBuild) onBuild(result);
+			return result;
+		}, e => {
+			done();
+			throw e;
+		});
+	}
+
+	function invalidate() {
+		if (timeout) return;
+		timeout = setTimeout(() => {
+			timeout = null;
+			build().catch(panic);
+		}, 500);
+	}
+
+	if (argv.watch) {
+		let watcher = chokidar.watch(files, {
+			ignoreInitial: true,
+			persistent: true
+		});
+
+		watcher.on("all", invalidate);
+		watcher.on("error", (e) => {
+			panic(e);
+			process.exit(1);
+		});
+	}
+
+	return build();
+}
 
 export default function(argv, Temple) {
-	return compile(Temple, argv._, {
-		export: argv.export
-	}).then(result => {
+	return compile(argv, Temple, result => {
 		let mapFile = argv["source-map"];
 		let output = argv.output ? path.resolve(argv.output) : null;
 		let p = [];
@@ -25,8 +97,9 @@ export default function(argv, Temple) {
 		}
 
 		if (output) return fs.writeFile(output, code);
-
 		console.log(code);
-		process.exit(0);
-	}).catch(panic);
+	}).catch(e => {
+		panic(e);
+		if (!argv.watch) process.exit(1);
+	});
 }
