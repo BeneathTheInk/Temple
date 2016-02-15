@@ -24,7 +24,7 @@ dist/temple.min.js: dist/temple.js dist
 temple.js: src/index.js $(SRC)
 	TARGET=node $(BIN)/rollup $< -c > $@
 
-temple.cli.js: src/cli.js $(SRC)
+temple.cli.js: src/cli.js $(SRC) temple.js
 	echo "#!/usr/bin/env node\n" > $@
 	TARGET=node $(BIN)/rollup $< -c >> $@
 

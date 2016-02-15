@@ -6,23 +6,28 @@ var Temple = require("./");
 import help from "./commands/help";
 import version from "./commands/version";
 import compile from "./commands/compile";
+import run from "./commands/run";
 
 var commands = {
 	help, version,
-	compile
+	compile, run
 };
 
 // command aliases
 commands.build = commands.compile;
+commands.start = commands.exec = commands.run;
 
 var argv = minimist(process.argv.slice(2), {
-	string: [ "output" ],
-	boolean: [ "help", "version" ],
+	string: [ "output", "export" ],
+	boolean: [ "help", "version", "open" ],
 	alias: {
 		h: "help", H: "help",
 		v: "version", V: "version",
 		m: "source-map",
 		o: "output"
+	},
+	default: {
+		open: true
 	}
 });
 

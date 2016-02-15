@@ -29,14 +29,15 @@
 		"backbone-extend-standalone": "~0.1.2",
 		"detect-indent": "~4.0.0",
 		"dom-matches": "~2.0.0",
+		"fs-promise": "~0.4.1",
 		"jsep": "~0.3.0",
 		"lodash": "4.x",
+		"minimist": "~1.2.0",
+		"open": "0.0.5",
 		"raf": "~3.1.0",
 		"source-map": "~0.5.3",
 		"trackr": "~2.0.2",
-		"trackr-objects": "~0.3.7",
-		"fs-promise": "~0.4.1",
-		"minimist": "~1.2.0"
+		"trackr-objects": "~0.3.7"
 	},
 	"devDependencies": {
 		"babel-plugin-lodash": "~2.0.1",
