@@ -1,5 +1,5 @@
 import * as ast from "../ast";
-import {assign,map} from "lodash";
+import {assign,map,includes} from "lodash";
 import jsep from "jsep";
 #####
 
@@ -38,10 +38,29 @@ import jsep from "jsep";
 	var attributeMode = false;
 	function enterAttribute() { attributeMode = true; }
 	function exitAttribute() { attributeMode = false; }
+
+	var rawNodes = assign({
+		script: "Script",
+		$script: "Script"
+	}, options.rawNodes);
+	var rawTags = Object.keys(rawNodes);
+	var currentRawTag;
+
+	function createRawNode(tag, attrs, value) {
+		let astType = rawNodes[tag];
+		if (!astType) {
+			throw new Error("Unknown raw node tag '" + tag + "'");
+		}
+		return createNode(astType, {
+			tagname: tag,
+			attributes: attrs,
+			value: value
+		});
+	}
 }
 
 start = ws nodes:(
-	( scriptNode
+	( rawElementNode
 	/ templateNode
 	/ commentNode ) ws)* {
 		return createNode("File", {
@@ -104,7 +123,7 @@ html = nodes:
 	( commentNode
 	/ section
 	/ interpolator
-	/ scriptNode
+	/ rawElementNode
 	/ elementNode
 	/ notClosingTag )* { return combineText(nodes); }
 
@@ -119,20 +138,20 @@ commentNode = value:
 		return createNode("Comment", { value: value });
 	}
 
-// script elements
-scriptNode
-	= "<" ws "script" attrs:(attribute)* ">" v:$(!"</script>" .)* "</script>" {
-		return createNode("Script", {
-			attributes: attrs,
-			value: v
-		});
+rawElementNode
+	= "<" tagname:tagname &{
+		currentRawTag = tagname;
+		return includes(rawTags, tagname);
+	} attrs:attributes ">" v:$(!(rawElementClosingTag) .)* rawElementClosingTag &{
+		currentRawTag = null;
+		return true;
+	} {
+		return createRawNode(tagname, attrs, v);
 	}
-	/ "<" ws "$script" attrs:(attribute)* ">" v:$(!"</$script>" .)* "</$script>" {
-		return createNode("Script", {
-			attributes: attrs,
-			value: v
-		});
-	}
+
+rawElementClosingTag = "</" t:tagname &{
+	return t === currentRawTag;
+} ">"
 
 // Element Nodes
 elementNode
