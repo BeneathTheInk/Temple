@@ -20,12 +20,12 @@ function fetchStdin() {
 	});
 }
 
-export function compile(Temple, files) {
+export function compile(Temple, files, options) {
 	let p = files.map(fetchFile);
 	if (!process.stdin.isTTY) p.push(fetchStdin());
 
 	return Promise.all(p).then(r => {
-		return Temple.compile(fromPairs(r));
+		return Temple.compile(fromPairs(r), options);
 	});
 }
 

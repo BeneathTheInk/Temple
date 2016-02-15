@@ -3,7 +3,9 @@ import path from "path";
 import {compile, panic} from "./utils";
 
 export default function(argv, Temple) {
-	return compile(Temple, argv._).then(result => {
+	return compile(Temple, argv._, {
+		export: argv.export
+	}).then(result => {
 		let mapFile = argv["source-map"];
 		let output = argv.output ? path.resolve(argv.output) : null;
 		let p = [];
