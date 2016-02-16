@@ -4,7 +4,6 @@ import Trackr from "trackr";
 import Context from "./core/context";
 import * as AST from "./ast";
 import pkg from "../package.json";
-import stylesheet from "./core/style";
 
 import * as plugins from "./plugins";
 import * as decorators from "./plugins/decorators";
@@ -19,5 +18,5 @@ export * from "./core/builtins";
 
 export {
 	Trackr, Context, AST, idom, utils,
-	stylesheet, plugins, decorators, actions
+	plugins, decorators, actions
 };
