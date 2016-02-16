@@ -21,9 +21,9 @@ export default class Each extends Node {
 		data.contextHeaders.forEach(this.write, this);
 		if (this.attribute) c = [ " return Temple.utils.joinValues(", c.join(","), "); " ];
 		this.push(c);
-		this.outdent().push(`})`);
-		if (!this.attribute) this.write(";");
-		else this.push(`.join("")`);
+		this.outdent();
+		if (!this.attribute) this.write("});");
+		else this.push(`}).join("")`);
 
 		return this.end();
 	}
