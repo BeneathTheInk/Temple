@@ -5,6 +5,7 @@ import { Map, List, Variable } from "trackr-objects";
 import Context from "./core/context";
 import * as AST from "./ast";
 import pkg from "../package.json";
+import stylesheet from "./core/style";
 
 import * as plugins from "./plugins";
 import * as decorators from "./plugins/decorators";
@@ -18,5 +19,5 @@ export * from "./core/builtins";
 
 export {
 	Context, idom, utils, Map, List, Variable,
-	plugins, decorators, actions, AST, Trackr
+	stylesheet,	plugins, decorators, actions, AST, Trackr
 };
