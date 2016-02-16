@@ -1,4 +1,4 @@
-import {invokeMap,assign} from "lodash";
+import {invokeMap,assign,map} from "lodash";
 import Node from "./node";
 
 export default class File extends Node {
@@ -8,6 +8,15 @@ export default class File extends Node {
 		}, data);
 
 		this.start(data);
+
+		if (this.styles.length) {
+			this.write("(function() {").indent();
+			this.write(`var style = document.createElement("style");`);
+			this.write(`style.innerHTML = ${JSON.stringify(map(this.styles, "value").join("\n"))};`);
+			this.write(`document.head.appendChild(style);`);
+			this.outdent().write("}());\n");
+		}
+
 		this.push(invokeMap(this.children, "compile", data));
 
 		let source = this.end();

@@ -16,12 +16,12 @@ export default class Root extends Node {
 
 		switch(data.export) {
 			case "es6":
-				output.prepend(`export const Template = {};\n`);
+				output.prepend(`export const Template = {};\n\n`);
 				output.prepend(`import * as Temple from "templejs";\n`);
 				break;
 
 			case "cjs":
-				output.prepend(`var Template = module.exports = {};\n`);
+				output.prepend(`var Template = module.exports = {};\n\n`);
 				output.prepend(`var Temple = require("templejs");\n`);
 				break;
 
@@ -36,12 +36,12 @@ export default class Root extends Node {
 				break;
 
 			case "iife":
-				output.prepend(`(function() {\n\tvar Template = {};\n`);
+				output.prepend(`(function() {\n\tvar Template = {};\n\n`);
 				output.add(`\n\treturn Template;\n}());`);
 				break;
 
 			default:
-				output.prepend(`var Template = {};\n`);
+				output.prepend(`var Template = {};\n\n`);
 				break;
 		}
 

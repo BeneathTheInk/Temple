@@ -1,4 +1,4 @@
-import * as ast from "../ast";
+import * as AST from "../ast";
 import {assign,map,includes} from "lodash";
 import jsep from "jsep";
 #####
@@ -10,7 +10,7 @@ import jsep from "jsep";
 
 	function createNode(type, props) {
 		var loc = location();
-		return new ast[type](loc.start.line, loc.start.column, props);
+		return new AST[type](loc.start.line, loc.start.column, props);
 	}
 
 	function combineText(nodes, type) {
@@ -65,10 +65,16 @@ start = ws nodes:(
 	( rawElementNode
 	/ templateNode
 	/ commentNode ) ws)* {
+		var [children,styles] = map(nodes, 0).reduce(function(m,n) {
+			m[n instanceof AST.Style ? 1 : 0].push(n);
+			return m;
+		},[[],[]]);
+
 		return createNode("File", {
 			filename: options.originalFilename,
 			source: text(),
-			children: map(nodes, 0)
+			children: children,
+			styles: styles
 		});
 	}
 
