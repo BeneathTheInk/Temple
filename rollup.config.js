@@ -5,9 +5,9 @@ import pegjs from "pegjs";
 import json from "rollup-plugin-json";
 import path from "path";
 import builtins from "browserify/lib/builtins.js";
-import inject from "rollup-plugin-inject";
 import {has,forEach} from "lodash";
 import buildDOMTests from "./test/utils/build-dom-tests.js";
+import replace from 'rollup-plugin-replace';
 
 const emptyModule = require.resolve("browserify/lib/_empty.js");
 const rollupEmptyModule = require.resolve("rollup-plugin-node-resolve/src/empty.js");
@@ -91,9 +91,8 @@ if (process.env.TARGET !== "node" && process.env.TARGET !== "es6") {
 		}
 	}));
 
-	plugins.push(inject({
-		process: builtins._process,
-		Buffer: [ builtins.buffer, "Buffer" ]
+	plugins.push(replace({
+		"process.env.NODE_ENV": JSON.stringify("production")
 	}));
 }
 
