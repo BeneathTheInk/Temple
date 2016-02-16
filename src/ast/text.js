@@ -12,7 +12,7 @@ export default class Text extends Node {
 			safe = `Temple.utils.decodeEntities(${safe})`;
 		}
 
-		this.write(`idom.text(${safe});`);
+		this.write(`Temple.idom.text(${safe});`);
 		return this.end();
 	}
 }

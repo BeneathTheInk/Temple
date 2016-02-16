@@ -1,7 +1,5 @@
-import {invokeMap,uniqueId} from "lodash";
+import {invokeMap} from "lodash";
 import Node from "./node";
-import Expression from "./expression";
-import {header,resetContextHeader} from "./utils";
 
 export default class Attribute extends Node {
 	get reactive() {
@@ -11,34 +9,34 @@ export default class Attribute extends Node {
 	compile(data) {
 		this.start(data);
 
-		let value;
+		let fun;
+		let value = this._sn(data.originalFilename, "");
+		let len = this.children.length;
 
-		if (this.children) {
-			let str, fun;
+		if (len) {
+			value.add(invokeMap(this.children, "compile", data)).join(",");
+			fun = this.children.some(c => c.reactive);
+			if (len > 1) value.prepend("[").add("]");
 
-			if (this.children instanceof Expression) {
-				str = this.children.compile(data);
-				fun = true;
-			} else {
-				let len = this.children.length;
-				data = resetContextHeader(data);
-				str = invokeMap(this.children, "compile", data);
-				str = !len ? null : this._sn(data.originalFilename, str).join(",");
-				if (len > 1) str = ["Temple.utils.joinValues(",str,")"];
-				fun = len && this.children.some(c => c.reactive);
-				if (fun) str = ["[", str, "]"];
+			if (fun && this.type === "string") {
+				if (len > 1) value.add(`.map(Temple.utils.toString).join("")`);
+				else value.prepend(`Temple.utils.toString(`).add(`)`);
 			}
-
-			if (fun) {
-				str = [ `function(ctx){`,data.contextHeaders.join("\n"),`return `, str, `;}` ];
-				value = uniqueId("ATTR_");
-				header(data, [ `var `, value, `=`, str, `;\n` ]);
-			} else {
-				value = str;
-			}
+		} else {
+			value = null;
 		}
 
-		this.write([ `decorators.render(ctx, ${JSON.stringify(this.name)}`, (value != null ? [", ", value] : ""), `);` ]);
+		this.push([ this.tabs(), `Temple.decorators.render(ctx, ${JSON.stringify(this.name)}` ]);
+
+		if (fun) {
+			this.push(`, function(ctx) {\n`).indent();
+			this.write([ "return ", value, ";" ]);
+			this.outdent().push([ this.tabs(), `}` ]);
+		} else if (value) {
+			this.push([ ", ", value ]);
+		}
+
+		this.push(`);\n`);
 
 		return this.end();
 	}

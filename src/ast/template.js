@@ -1,5 +1,5 @@
 import Node from "./node";
-import {compileGroup,addKey,resetContextHeader} from "./utils";
+import {compileGroup,addKey} from "./utils";
 
 export default class Template extends Node {
 	compile(data) {
@@ -8,11 +8,8 @@ export default class Template extends Node {
 		let safetype = this.type ? JSON.stringify(this.type) : null;
 
 		this.write(`Template[${safename}] = Temple.create(${safename}, ${safetype ? safetype + ", " : ""}function(ctx, key) {`).indent();
-		data = resetContextHeader(data);
 		data = addKey(data, { value: "key" });
-		let c = compileGroup(this.children, data);
-		data.contextHeaders.forEach(this.write, this);
-		this.push(c);
+		this.push(compileGroup(this.children, data));
 		this.outdent().write("});\n");
 
 		if (this.plugins && this.plugins.length) {

@@ -7,7 +7,7 @@ export default class Interpolator extends Node {
 
 	compile(data) {
 		this.start(data);
-		this.write(`idom.autotext(${this.expression.compile(assign({ asFn: true }, data))});`);
+		this.write(`Temple.idom.autotext(${this.expression.compile(assign({ asFn: true }, data))});`);
 		return this.end();
 	}
 }

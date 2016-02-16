@@ -53,13 +53,3 @@ export function addKey(data, key) {
 export function resetKey(data) {
 	return assign({}, data, { key: [] });
 }
-
-export function contextHeader(data, h) {
-	if (isArray(data.contextHeaders) && !includes(data.contextHeaders, h)) {
-		data.contextHeaders.push(h);
-	}
-}
-
-export function resetContextHeader(data) {
-	return assign({}, data, { contextHeaders: [] });
-}

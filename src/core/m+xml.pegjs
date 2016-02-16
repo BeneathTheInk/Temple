@@ -186,10 +186,19 @@ attributes = (attribute)*
 
 // Element Attribute
 attribute
-	= key:attributeName value:("=" ws attributeValue ws)? {
-		value = value != null ? value[2] : void 0;
+	= key:attributeName value:("=" ws &{
+		enterAttribute();
+		return true;
+	} v:attributeValue ws {
+		return v;
+	})? &{
+		exitAttribute();
+		return true;
+	} {
 		return createNode("Attribute", assign({
-			name: key
+			name: key,
+			children: [],
+			type: "empty"
 		}, value));
 	}
 
@@ -201,42 +210,39 @@ attributeNode
 	/ variable
 
 attributeValue
-	= &{
-		enterAttribute();
-		return true;
-	} nodes:(
+	= children:(
 		"{" exp:$(!"}" .)* "}" {
-			var e = createExpression(exp);
-			var root = { type: "ArrayExpression" };
+			var e = jsep(exp);
+			var exps = e.type === "Compound" ? e.body : [e];
 
-			if (e.tree.type === "Compound") {
-				root.elements = e.tree.body;
-			} else {
-				root.elements = [e.tree];
-			}
-
-			e.tree = root;
-			return e;
+			return {
+				type: "expression",
+				children: exps.map(function(e) {
+					return createNode("Expression", { tree: e });
+				})
+			};
 		}
 
 		/ "\"" n:( attributeNode / $(!"\"" .))* "\"" {
-			return combineText(n, "Literal");
+			return {
+				children: combineText(n, "Literal"),
+				type: "string"
+			};
 		}
 
 		/ "'" n:( attributeNode / $(!"'" .))* "'" {
-			return combineText(n, "Literal");
+			return {
+				children: combineText(n, "Literal"),
+				type: "string"
+			};
 		}
-	) &{
-		exitAttribute();
-		return true;
-	} {
+	) {
 		var t = text();
 		t = t.substr(1, t.length - 2);
 
-		return {
-			children: nodes,
+		return assign({
 			value: t
-		};
+		}, children);
 	}
 
 /*

@@ -1,5 +1,5 @@
 import Node from "./node";
-import {compileGroup,resetContextHeader} from "./utils";
+import {compileGroup} from "./utils";
 
 export default class With extends Node {
 	get reactive() { return true; }
@@ -12,9 +12,7 @@ export default class With extends Node {
 		if (!this.attribute) this.push(this.tabs());
 		this.push([ `Temple.With(`, exp, `, ctx, function(ctx) {` ]).indent();
 		if (!this.attribute) this.push("\n");
-		data = resetContextHeader(data);
 		let c = this._sn(data.originalFilename, compileGroup(this.children, data));
-		data.contextHeaders.forEach(this.write, this);
 		if (this.attribute) c = [ " return Temple.utils.joinValues(", c.join(","), "); " ];
 		this.push(c);
 		this.outdent().push(`})`);

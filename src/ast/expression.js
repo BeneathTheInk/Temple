@@ -1,31 +1,21 @@
 import Node from "./node";
-import {header,hash,contextHeader} from "./utils";
+
+// method to run to query the context
+const CONTEXT_LOOKUP = "ctx.lookup";
 
 export default class Expression extends Node {
-	get reactive() { return true; }
+	get reactive() { return !Expression.isStatic(this.tree); }
 
 	compile(data) {
 		this.start(data);
 		let exp = Expression.render(this.tree);
-		let v = ("EXP_" + hash(exp)).replace("-", "_");
 
-		if (Expression.isStatic(this.tree)) {
-			if (data.asFn) {
-				header(data, `var ${v} = function(){return ${exp};};\n`);
-				this.push(`${v}`);
-			} else {
-				this.push(exp);
-			}
+		if (data.asFn) {
+			this.push(`function() {\n`).indent();
+			this.write(`return ${exp};`);
+			this.outdent().push([ this.tabs(), `}` ]);
 		} else {
-			header(data, `var ${v} = function(c){return ${exp};};\n`);
-
-			if (data.asFn) {
-				let cv = "B" + v;
-				contextHeader(data, `var ${cv} = function(){return ${v}(ctx);};`);
-				this.push(cv);
-			} else {
-				this.push(`${v}(ctx)`);
-			}
+			this.push(exp);
 		}
 
 		return this.end();
@@ -69,10 +59,10 @@ export default class Expression extends Node {
 			}
 
 			case "Identifier": // plain varable
-				return `c.lookup(${JSON.stringify(tree.name)})`;
+				return `${CONTEXT_LOOKUP}(${JSON.stringify(tree.name)})`;
 
 			case "ThisExpression": // plain varable
-				return `c.lookup()`;
+				return `${CONTEXT_LOOKUP}()`;
 
 			case "MemberExpression": {// object property
 				let out = _render(tree.object);
@@ -88,7 +78,7 @@ export default class Expression extends Node {
 			case "CallExpression": { // function call
 				let out = _render(tree.callee);
 				if (tree.callee.type === "MemberExpression") out += "(";
-				else out += ".call(c.lookup()" + (tree.arguments.length ? ", " : "");
+				else out += `.call(${CONTEXT_LOOKUP}()` + (tree.arguments.length ? ", " : "");
 				out += tree.arguments.map(_render).join(", ") + ")";
 				return out;
 			}

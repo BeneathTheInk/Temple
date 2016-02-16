@@ -17,12 +17,12 @@ import Expression from "./expression";
 import Literal from "./literal";
 import Set from "./set";
 import Style from "./style";
+import * as utils from "./utils";
 
 export {
-	Node,
-	Root, File, Template, Script, Style,
+	utils, Node, Root, File,
+	Comment, Template, Script, Style,
 	Element, Text, Attribute,
 	If, Branch, Each, With, Set, Render,
-	Interpolator, Expression, Literal,
-	Comment
+	Interpolator, Expression, Literal
 };
