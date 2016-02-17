@@ -23,7 +23,7 @@ export default function(argv, Temple) {
 	app.use(express.static(__dirname + "/dist"));
 	app.get("/template.js", (req, res) => res.type("js").send(source));
 
-	argv.export = "iife";
+	argv.format = "iife";
 	argv.watch = true;
 
 	return compile(argv, Temple, result => {

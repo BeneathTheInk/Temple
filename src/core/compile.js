@@ -33,6 +33,12 @@ export function parse(files, options) {
 	return new Root({ files });
 }
 
+function srcToString(smf) {
+	return this.code + "//# " + smfurl +
+		(typeof smf === "string" ? smf :
+			datauri + toBase64(this.map.toString()));
+}
+
 export function compile(files, options) {
 	if (typeof files === "string") files = [ files ];
 
@@ -45,16 +51,12 @@ export function compile(files, options) {
 	});
 
 	let root = new Root({ files });
-	let source = root.compile(options);
-	let out = source.toStringWithSourceMap();
 
-	out.toString = function(smf) {
-		return this.code + "//# " + smfurl +
-			(typeof smf === "string" ? smf :
-				datauri + toBase64(this.map.toString()));
-	};
-
-	return out;
+	return root.compile(assign({ parse: parseFile }, options)).then(source => {
+		let out = source.toStringWithSourceMap();
+		out.toString = srcToString;
+		return out;
+	});
 }
 
 export function exec(tpl, options) {

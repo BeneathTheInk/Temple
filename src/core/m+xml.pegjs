@@ -63,18 +63,21 @@ import jsep from "jsep";
 
 start = ws nodes:(
 	( rawElementNode
+	/ includeNode
 	/ templateNode
 	/ commentNode ) ws)* {
-		var [children,styles] = map(nodes, 0).reduce(function(m,n) {
-			m[n instanceof AST.Style ? 1 : 0].push(n);
+		var [children,styles,includes] = map(nodes, 0).reduce(function(m,n) {
+			m[n instanceof AST.Style ? 1 :
+				n instanceof AST.Include ? 2 : 0].push(n);
 			return m;
-		},[[],[]]);
+		},[[],[],[]]);
 
 		return createNode("File", {
 			filename: options.originalFilename,
 			source: text(),
 			children: children,
-			styles: styles
+			styles: styles,
+			includes: includes
 		});
 	}
 
@@ -85,7 +88,7 @@ templateNode "template"
 	= "<" ws "template" attrs:attributes ">" nodes:html "</template>" {
 		var name, type, plugins = [];
 
-		attrs.forEach(function(a) {
+		attrs = attrs.filter(function(a) {
 			switch (a.name) {
 				case "name":
 					name = a.value;
@@ -98,6 +101,9 @@ templateNode "template"
 				case "use":
 					plugins.push(a.value);
 					break;
+
+				default:
+					return true;
 			}
 		});
 
@@ -105,7 +111,32 @@ templateNode "template"
 			name: name,
 			type: type,
 			children: nodes,
-			plugins: plugins
+			plugins: plugins,
+			attributes: attrs
+		});
+	}
+
+/*
+Include
+*/
+includeNode "include"
+	= "<" ws "include" attrs:attributes "/>" {
+		var src;
+
+		attrs = attrs.filter(function(a) {
+			switch (a.name) {
+				case "src":
+					src = a.value;
+					break;
+
+				default:
+					return true;
+			}
+		});
+
+		return createNode("Include", {
+			src: src,
+			attributes: attrs
 		});
 	}
 

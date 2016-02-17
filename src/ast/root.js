@@ -1,50 +1,93 @@
-import {invokeMap} from "lodash";
+import {map,assign,includes} from "lodash";
 import Node from "./node";
+import fs from "fs-promise";
+import path from "path";
 
 export default class Root extends Node {
+	_load_files(files, data, complete=[]) {
+		let togo = files.slice(0);
+
+		let next = () => {
+			if (!togo.length) return Promise.resolve();
+			let file = togo.shift();
+
+			// don't process this file if it was already processed
+			if (includes(complete, file.filename)) return next();
+			complete.push(file.filename);
+
+			// convert include nodes into file paths
+			return Promise.all(map(file.includes, "src").map(s => {
+				return path.resolve(path.dirname(file.filename), s);
+			}).filter(s => {
+				// don't add already included files
+				return !includes(complete, s);
+			}).map(fpath => {
+				// get the includes's source
+				return Promise.all([
+					fpath,
+					fs.readFile(fpath, { encoding: "utf-8" })
+				]);
+			})).then(includes => {
+				// parse includes and recursively load
+				return this._load_files(includes.map(([fpath,src]) => {
+					return data.parse(src, fpath);
+				}), data, complete);
+			}).then(() => {
+				// finally compile the file in question
+				this.push(file.compile(data));
+			});
+		};
+
+		return next();
+	}
+
 	compile(data) {
-		data = data || {};
-		var oheads = data.headers;
-		data.headers = [];
+		data = assign({}, data, {
+			headers: []
+		});
 
 		this.start(data);
-		this.push(invokeMap(this.files, "compile", data));
 
-		let output = this.end();
-		if (data.headers.length) output.prepend("\n").prepend(data.headers);
-		data.headers = oheads;
-
-		switch(data.export) {
+		switch(data.format) {
 			case "es6":
-				output.prepend(`export const Template = {};\n\n`);
-				output.prepend(`import * as Temple from "templejs";\n`);
+				this.write(`import * as Temple from "templejs";\n`);
 				break;
 
 			case "cjs":
-				output.prepend(`var Template = module.exports = {};\n\n`);
-				output.prepend(`var Temple = require("templejs");\n`);
+				this.write(`var Temple = require("templejs");\n`);
 				break;
 
 			case "umd":
-				output.prepend(`(function (global, factory) {
-					typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require("templejs")) :
-					typeof define === 'function' && define.amd ? define(["templejs"], factory) :
-					(factory(global.Temple));
-				}(this, function(Temple) {
-					var Template = {};\n\n`.replace(/^\t{4}/gm, ""));
-				output.add(`\n\treturn Template;\n}));\n`);
+				this.write(`(function (global, factory) {`).indent();
+				this.write(`typeof exports === 'object' && typeof module !== 'undefined' ? factory(require("templejs")) :`);
+				this.write(`typeof define === 'function' && define.amd ? define(["templejs"], factory) :`);
+				this.write(`(factory(global.Temple));`);
+				this.outdent().write(`}(this, function(Temple) {\n`).indent();
 				break;
 
 			case "iife":
-				output.prepend(`(function() {\n\tvar Template = {};\n\n`);
-				output.add(`\n\treturn Template;\n}());\n`);
-				break;
-
-			default:
-				output.prepend(`var Template = {};\n\n`);
+				this.write(`(function() {\n`).indent();
 				break;
 		}
 
-		return output;
+		return this._load_files(this.files, data).then(() => {
+			switch(data.format) {
+				case "umd":
+					this.outdent().write(`}));`);
+					break;
+
+				case "iife":
+					this.outdent().write(`}());`);
+					break;
+			}
+
+			let output = this.end();
+
+			if (data.headers.length) {
+				output.prepend("\n").prepend(data.headers);
+			}
+
+			return output;
+		});
 	}
 }

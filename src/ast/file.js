@@ -9,6 +9,10 @@ export default class File extends Node {
 
 		this.start(data);
 
+		this.write(`/* ${this.filename} */`);
+		this.write(`(function() {`).indent();
+		this.write(`var Template = {};\n`);
+
 		if (this.styles.length) {
 			this.write("(function() {").indent();
 			this.write(`var style = document.createElement("style");`);
@@ -18,6 +22,7 @@ export default class File extends Node {
 		}
 
 		this.push(invokeMap(this.children, "compile", data));
+		this.outdent().write(`}());\n`);
 
 		let source = this.end();
 		if (this.source) source.setSourceContent(data.originalFilename, this.source);
