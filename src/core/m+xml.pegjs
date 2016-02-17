@@ -203,14 +203,13 @@ elementNode "element"
 			children: []
 		});
 	}
-	/ "<" starttag:tagname attrs:attributes ">" nodes:html "</" endtag:tagname ">" {
-		starttag = starttag;
-		endtag = endtag;
-
-		if (starttag !== endtag) {
-			throw new Error("Element tag mismatch: " + starttag + " !== " + endtag);
+	/ "<" starttag:tagname attrs:attributes ">" nodes:html ("</" t:tagname ">" {
+		if (starttag !== t) {
+			throw expected("</" + starttag + ">");
 		}
 
+		return t;
+	}) {
 		return createNode("Element", {
 			tagname: starttag,
 			attributes: attrs,
