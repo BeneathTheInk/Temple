@@ -50,13 +50,13 @@ test-basic: temple-tests.basic.js install-self
 	node $<
 
 test-full: temple-tests.full.js install-self
-	$(BIN)/browserify $< --debug | $(BIN)/tape-run
+	$(BIN)/browserify $< -i fs-promise --debug | $(BIN)/tape-run
 
 test-dist: temple-tests.full.js dist/temple.js
-	$(BIN)/browserify $< -r ./dist/temple.js:templejs --debug | $(BIN)/tape-run
+	$(BIN)/browserify $< -i fs-promise -r ./dist/temple.js:templejs --debug | $(BIN)/tape-run
 
 coverage: temple-tests.full.js temple.cov.js
-	$(BIN)/browserify $< -r ./temple.cov.js:templejs --debug | node ./bin/browser-coverage.js
+	$(BIN)/browserify $< -i fs-promise -r ./temple.cov.js:templejs --debug | node ./bin/browser-coverage.js
 	$(BIN)/istanbul report --root coverage lcov
 
 report-coverage: coverage

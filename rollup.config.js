@@ -5,7 +5,7 @@ import pegjs from "pegjs";
 import json from "rollup-plugin-json";
 import path from "path";
 import builtins from "browserify/lib/builtins.js";
-import {has,forEach} from "lodash";
+import {has,forEach,includes} from "lodash";
 import buildDOMTests from "./test/utils/build-dom-tests.js";
 import replace from 'rollup-plugin-replace';
 
@@ -15,6 +15,8 @@ const rollupEmptyModule = require.resolve("rollup-plugin-node-resolve/src/empty.
 forEach(builtins, function(p, id) {
 	if (p === emptyModule) builtins[id] = rollupEmptyModule;
 });
+
+const emptyModules = [ "fs-promise" ];
 
 const resolve = _resolve({
 	jsnext: false,
@@ -46,8 +48,12 @@ const plugins = [
 			if (p && (process.env.TARGET === "node" || process.env.TARGET === "es6") &&
 				!incremental.test(id) && !relPath.test(id)) return false;
 
+			if (includes(emptyModules, id)) return id;
 			if (has(builtins, id)) return builtins[id];
 			return resolve.resolveId(id, p);
+		},
+		load: function(id) {
+			if (includes(emptyModules, id)) return "export default {};";
 		}
 	},
 	{
