@@ -29,8 +29,6 @@ const domtest = /^\$DOMTEST:(.*)/;
 const plugins = [
 	{
 		resolveId: function(id, p) {
-			// return process.env.TEST && domtest.test(id) ? id : null;
-
 			if (!process.env.TEST) return;
 			let m = id.match(domtest);
 			if (!m) return;
