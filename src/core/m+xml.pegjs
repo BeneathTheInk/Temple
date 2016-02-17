@@ -81,7 +81,7 @@ start = ws nodes:(
 /*
 Templates
 */
-templateNode
+templateNode "template"
 	= "<" ws "template" attrs:attributes ">" nodes:html "</template>" {
 		var name, type, plugins = [];
 
@@ -112,7 +112,8 @@ templateNode
 /*
 Interpolator
 */
-variable = value:
+variable "interpolator"
+	= value:
 	( "{-" v:$(!"-}" .)* "-}" { return v; }
 	/ "{{" v:$(!"}}" .)* "}}"  { return v; } ) {
 		return createExpression(value);
@@ -140,13 +141,14 @@ tagname = ws k:$[a-z0-9\-$]i+ ws { return k.toLowerCase(); }
 notClosingTag = $(!("</" tagname ">") !"{%" !"{{" .)
 
 // Comment Nodes
-commentNode = value:
+commentNode "comment"
+	= value:
 	( "<!--" v:$(!"-->" .)* "-->" { return v; }
 	/ "{#" v:$(!"#}" .)* "#}" { return v; }) {
 		return createNode("Comment", { value: value });
 	}
 
-rawElementNode
+rawElementNode "raw tag"
 	= "<" tagname:tagname &{
 		currentRawTag = tagname;
 		return includes(rawTags, tagname);
@@ -162,7 +164,7 @@ rawElementClosingTag = "</" t:tagname &{
 } ">"
 
 // Element Nodes
-elementNode
+elementNode "element"
 	= "<" tagname:tagname attrs:attributes "/>" {
 		return createNode("Element", {
 			tagname: tagname,
@@ -191,7 +193,7 @@ Attributes
 attributes = (attribute)*
 
 // Element Attribute
-attribute
+attribute "attribute"
 	= key:attributeName value:("=" ws &{
 		enterAttribute();
 		return true;
@@ -271,7 +273,7 @@ sectionNodes
 	}
 	/ html
 
-ifSection
+ifSection "if section"
 	= sOpen "if"i ws exp:$(sectionChar)* sClose nodes:sectionNodes
 	elsifs:(sOpen "else"i gws "if"i ws exp:$(sectionChar)* sClose nodes:sectionNodes { return [exp,nodes]; })*
 	els:(sOpen "else"i sClose nodes:sectionNodes { return nodes; })?
@@ -299,7 +301,7 @@ ifSection
 		});
 	}
 
-eachSection
+eachSection "each section"
 	= sOpen "each"i ws vars:(l:jsVariable r:(ws "," ws jsVariable)* ws "in" {
 		return [l].concat(map(r, 3));
 	})? ws exp:$(sectionChar)* sClose nodes:sectionNodes sOpen "endeach"i sClose {
@@ -313,14 +315,14 @@ eachSection
 
 jsVariable = $([a-z_$]i [a-z0-9_$]i*)
 
-renderSection
+renderSection "render section"
 	= &{ return !attributeMode; } sOpen "render"i ws exp:$(sectionChar)* sClose {
 		return createNode("Render", {
 			expression: createExpression(exp)
 		});
 	}
 
-withSection
+withSection "with section"
 	= sOpen "with"i ws exp:$(sectionChar)* sClose nodes:sectionNodes sOpen "endwith"i sClose {
 		return createNode("With", {
 			expression: createExpression(exp),
@@ -329,7 +331,7 @@ withSection
 		});
 	}
 
-setSection
+setSection "set section"
 	= sOpen "set"i ws v:$([a-z]i [a-z0-9_$]i+) ws "=" ws exp:$(sectionChar)* sClose {
 		return createNode("Set", {
 			variable: v,

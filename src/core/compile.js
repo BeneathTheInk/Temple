@@ -16,9 +16,15 @@ if (typeof window !== "undefined" && typeof window.btoa === "function") {
 function parseFile(src, name, options) {
 	if (typeof name === "number") name = `template${name}.js`;
 
-	return baseParse(src, assign({
-		originalFilename: name
-	}, options));
+	try {
+		return baseParse(src, assign({
+			originalFilename: name
+		}, options));
+	} catch(e) {
+		e.filename = name;
+		e.source = src;
+		throw e;
+	}
 }
 
 export function parse(files, options) {

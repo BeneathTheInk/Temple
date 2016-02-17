@@ -27,6 +27,7 @@
 	"dependencies": {
 		"assign-props": "~1.1.2",
 		"backbone-extend-standalone": "~0.1.2",
+		"chalk": "~1.1.1",
 		"chokidar": "~1.4.2",
 		"dom-matches": "~2.0.0",
 		"express": "~4.13.4",

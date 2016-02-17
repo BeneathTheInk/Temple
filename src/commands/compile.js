@@ -1,7 +1,8 @@
 import fs from "fs-promise";
 import path from "path";
 import chokidar from "chokidar";
-import {fromPairs} from "lodash";
+import {fromPairs,repeat} from "lodash";
+import chalk from "chalk";
 
 function fetchFile(f) {
 	return fs.readFile(path.resolve(f), {
@@ -21,8 +22,25 @@ function fetchStdin() {
 	});
 }
 
+export function printError(e) {
+	if (e.location) {
+		console.error("\n" + chalk.bold(e.name) + "\n");
+		let line = e.location.start.line;
+		let col = e.location.start.column;
+		let file = path.relative(process.cwd(), e.filename);
+		console.error("  " + chalk.underline(`${file}:${line}:${col}\n`));
+		let lines = e.source.split(/\r?\n/g);
+		console.error("  " + line + ": " + lines[line - 1]);
+		console.error("  " + repeat(" ", line.toString().length + 2 + (col - 1)) + chalk.red("⇧") + "\n");
+		console.error("  " + e.message + "\n");
+	} else {
+		console.error(e.stack || e);
+	}
+}
+
 function panic(e) {
-	console.error(e.stack || e);
+	printError(e);
+	process.exit(1);
 }
 
 export function compile(argv, Temple, onBuild) {
@@ -56,7 +74,7 @@ export function compile(argv, Temple, onBuild) {
 		if (timeout) return;
 		timeout = setTimeout(() => {
 			timeout = null;
-			build().catch(panic);
+			build().catch(printError);
 		}, 500);
 	}
 
@@ -67,10 +85,7 @@ export function compile(argv, Temple, onBuild) {
 		});
 
 		watcher.on("all", invalidate);
-		watcher.on("error", (e) => {
-			panic(e);
-			process.exit(1);
-		});
+		watcher.on("error", panic);
 	}
 
 	return build();
@@ -99,7 +114,7 @@ export default function(argv, Temple) {
 		if (output) return fs.writeFile(output, code);
 		console.log(code);
 	}).catch(e => {
-		panic(e);
+		printError(e);
 		if (!argv.watch) process.exit(1);
 	});
 }

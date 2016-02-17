@@ -1,4 +1,4 @@
-import {compile} from "./compile";
+import {compile,printError} from "./compile";
 import open from "open";
 import express from "express";
 
@@ -39,10 +39,8 @@ export default function(argv, Temple) {
 		});
 
 		server.on("error", (e) => {
-			console.error(e);
+			printError(e);
 			process.exit(1);
 		});
-	}).catch((e) => {
-		console.error(e.stack || e);
-	});
+	}).catch(printError);
 }
