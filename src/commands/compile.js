@@ -31,7 +31,7 @@ export function printError(e) {
 		console.error("  " + chalk.underline(`${file}:${line}:${col}\n`));
 		let lines = e.source.split(/\r?\n/g);
 		console.error("  " + line + ": " + lines[line - 1]);
-		console.log("  " + repeat(" ", line.toString().length + 2) + lines[line - 1].substr(0, col).replace(/\S/g," ") + chalk.red("⇧") + "\n");
+		console.log("  " + repeat(" ", line.toString().length + 2) + lines[line - 1].substr(0, col).replace(/\S/g," ") + chalk.red("\u2191") + "\n");
 		console.error("  " + e.message + "\n");
 	} else {
 		console.error(e.stack || e);
