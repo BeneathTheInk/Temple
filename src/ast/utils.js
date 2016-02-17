@@ -26,6 +26,19 @@ export function compileGroup(nodes, data) {
 	});
 }
 
+export function compileGroupAsync(nodes, data) {
+	nodes = nodes.slice(0);
+	let out = [];
+	let next = () => {
+		return !nodes.length ? Promise.resolve() :
+			nodes.shift().compile(data).then(o => {
+				out.push(o);
+				return next();
+			});
+	};
+	return next().then(() => out);
+}
+
 export function getKey(data) {
 	return (data.key || []).reduce(function(memo, v) {
 		if (isString(v) && isString(last(memo))) {
