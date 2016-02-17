@@ -58,7 +58,8 @@ export function compile(argv, Temple, onBuild) {
 
 		return Promise.all(p).then(r => {
 			return Temple.compile(fromPairs(r), {
-				format: argv.format
+				format: argv.format,
+				async: true
 			});
 		}).then(result => {
 			done();

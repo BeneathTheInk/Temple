@@ -39,7 +39,13 @@ function srcToString(smf) {
 			datauri + toBase64(this.map.toString()));
 }
 
-export function compile(files, options) {
+function processOut(source) {
+	let out = source.toStringWithSourceMap();
+	out.toString = srcToString;
+	return out;
+}
+
+export function compile(files, options, cb) {
 	if (typeof files === "string") files = [ files ];
 
 	files = map(files, (file, index) => {
@@ -51,12 +57,20 @@ export function compile(files, options) {
 	});
 
 	let root = new Root({ files });
+	let data = assign({ parse: parseFile }, options);
+	let hasCb = typeof cb === "function";
 
-	return root.compile(assign({ parse: parseFile }, options)).then(source => {
-		let out = source.toStringWithSourceMap();
-		out.toString = srcToString;
-		return out;
-	});
+	if (hasCb || data.async) {
+		return root.compile(data).then(processOut).then((res) => {
+			if (hasCb) cb(null, res);
+			return res;
+		}, (e) => {
+			if (hasCb) cb(e);
+			throw e;
+		});
+	} else {
+		return processOut(root.compile(data));
+	}
 }
 
 export function exec(tpl, options) {

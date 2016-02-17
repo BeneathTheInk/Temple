@@ -1,4 +1,4 @@
-import {assign} from "lodash";
+import {invokeMap,assign} from "lodash";
 import Node from "./node";
 import {compileGroupAsync} from "./utils";
 
@@ -33,26 +33,32 @@ export default class Root extends Node {
 				break;
 		}
 
-		return compileGroupAsync(this.files, data).then((src) => {
-			this.push(src);
+		if (data.async) {
+			return compileGroupAsync(this.files, data).then(this._finish.bind(this, data));
+		} else {
+			return this._finish(data, invokeMap(this.files, "compile", data));
+		}
+	}
 
-			switch(data.format) {
-				case "umd":
-					this.outdent().write(`}));`);
-					break;
+	_finish(data, src) {
+		this.push(src);
 
-				case "iife":
-					this.outdent().write(`}());`);
-					break;
-			}
+		switch(data.format) {
+			case "umd":
+				this.outdent().write(`}));`);
+				break;
 
-			let output = this.end();
+			case "iife":
+				this.outdent().write(`}());`);
+				break;
+		}
 
-			if (data.headers.length) {
-				output.prepend("\n").prepend(data.headers);
-			}
+		let output = this.end();
 
-			return output;
-		});
+		if (data.headers.length) {
+			output.prepend("\n").prepend(data.headers);
+		}
+
+		return output;
 	}
 }

@@ -12,30 +12,36 @@ export default class File extends Node {
 
 		this.start(data);
 
-		return compileGroupAsync(this.includes, data).then((src) => {
-			this.push(src);
+		if (data.async) {
+			return compileGroupAsync(this.includes, data).then(this._finish.bind(this, data));
+		} else {
+			return this._finish(data, invokeMap(this.includes, "compile", data));
+		}
+	}
 
-			if (data.originalFilename) {
-				this.write(`/* ${data.originalFilename} */`);
-			}
+	_finish(data, src) {
+		this.push(src);
 
-			this.write(`(function() {`).indent();
-			this.write(`var Template = {};\n`);
+		if (data.originalFilename) {
+			this.write(`/* ${data.originalFilename} */`);
+		}
 
-			if (this.styles.length) {
-				this.write("(function() {").indent();
-				this.write(`var style = document.createElement("style");`);
-				this.write(`style.innerHTML = ${JSON.stringify(map(this.styles, "value").join("\n"))};`);
-				this.write(`document.head.appendChild(style);`);
-				this.outdent().write("}());\n");
-			}
+		this.write(`(function() {`).indent();
+		this.write(`var Template = {};\n`);
 
-			this.push(invokeMap(this.children, "compile", data));
-			this.outdent().write(`}());\n`);
+		if (this.styles.length) {
+			this.write("(function() {").indent();
+			this.write(`var style = document.createElement("style");`);
+			this.write(`style.innerHTML = ${JSON.stringify(map(this.styles, "value").join("\n"))};`);
+			this.write(`document.head.appendChild(style);`);
+			this.outdent().write("}());\n");
+		}
 
-			let source = this.end();
-			if (this.source) source.setSourceContent(data.originalFilename, this.source);
-			return source;
-		});
+		this.push(invokeMap(this.children, "compile", data));
+		this.outdent().write(`}());\n`);
+
+		let source = this.end();
+		if (this.source) source.setSourceContent(data.originalFilename, this.source);
+		return source;
 	}
 }
