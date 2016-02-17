@@ -1,0 +1,11 @@
+{
+	"eqnull": true,
+	"latedef": "nofunc",
+	"undef": true,
+	"unused": true,
+	"devel": true,
+	"globals": {
+		"Temple": true,
+		"Template": true
+	}
+}
