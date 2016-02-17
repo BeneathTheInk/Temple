@@ -32,12 +32,12 @@ export default class Root extends Node {
 					(factory(global.Temple));
 				}(this, function(Temple) {
 					var Template = {};\n\n`.replace(/^\t{4}/gm, ""));
-				output.add(`\n\treturn Template;\n}));`);
+				output.add(`\n\treturn Template;\n}));\n`);
 				break;
 
 			case "iife":
 				output.prepend(`(function() {\n\tvar Template = {};\n\n`);
-				output.add(`\n\treturn Template;\n}());`);
+				output.add(`\n\treturn Template;\n}());\n`);
 				break;
 
 			default:
