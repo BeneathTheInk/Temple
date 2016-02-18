@@ -30,9 +30,25 @@ export function printError(e) {
 		let file = path.relative(process.cwd(), e.filename);
 		console.error("  " + chalk.underline(`${file}:${line}:${col}\n`));
 		let lines = e.source.split(/\r?\n/g);
-		console.error("  " + line + ": " + lines[line - 1]);
-		console.log("  " + repeat(" ", line.toString().length + 2) + lines[line - 1].substr(0, col).replace(/\S/g," ") + chalk.red("\u2191") + "\n");
-		console.error("  " + e.message + "\n");
+
+		let numoffset = (line + 3).toString().length;
+
+		for (let i = 3; i > 0; i--) {
+			if ((line - i) <= 0) continue;
+			let l = (line - i).toString();
+			console.error("  " + repeat(" ", numoffset - l.length) + l + ": " + lines[l - 1]);
+		}
+
+		console.error("  " + repeat(" ", numoffset - line.toString().length) + line + ": " + lines[line - 1]);
+		console.error("  " + repeat(" ", numoffset + 2) + lines[line - 1].substr(0, col - 1).replace(/\S/g," ") + chalk.red("\u2191"));
+
+		for (let i = 1; i <= 3; i++) {
+			if ((line + i) > lines.length) continue;
+			let l = (line + i).toString();
+			console.error("  " + repeat(" ", numoffset - l.length) + l + ": " + lines[l - 1]);
+		}
+
+		console.error(chalk.red("\n  " + e.message + "\n"));
 	} else {
 		console.error(e.stack || e);
 	}
