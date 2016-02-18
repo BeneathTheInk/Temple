@@ -5,8 +5,7 @@ import {compileGroupAsync} from "./utils";
 export default class Root extends Node {
 	compile(data) {
 		data = assign({}, data, {
-			included: [],
-			headers: []
+			included: []
 		});
 
 		this.start(data);
@@ -54,11 +53,6 @@ export default class Root extends Node {
 		}
 
 		let output = this.end();
-
-		if (data.headers.length) {
-			output.prepend("\n").prepend(data.headers);
-		}
-
 		output.includes = data.included;
 		return output;
 	}

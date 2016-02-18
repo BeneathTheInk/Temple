@@ -5,7 +5,8 @@ import Node from "./node";
 export default class File extends Node {
 	compile(data) {
 		data = assign({}, data, {
-			originalFilename: this.filename || uniqueId("template_")
+			originalFilename: this.filename || uniqueId("template_"),
+			headers: []
 		});
 		if (!data.included) data.included = [];
 		data.included.push(data.originalFilename);
@@ -20,14 +21,7 @@ export default class File extends Node {
 	}
 
 	_finish(data, src) {
-		this.push(src);
-
-		if (data.originalFilename) {
-			this.write(`/* ${data.originalFilename} */`);
-		}
-
-		this.write(`(function() {`).indent();
-		this.write(`var Template = {};\n`);
+		this.indent();
 
 		if (this.styles.length) {
 			this.write("(function() {").indent();
@@ -38,9 +32,14 @@ export default class File extends Node {
 		}
 
 		this.push(invokeMap(this.children, "compile", data));
-		this.outdent().write(`}());\n`);
+		this.outdent();
 
+		let tabs = this.tabs();
 		let source = this.end();
+		if (data.headers.length) source.prepend([data.headers,"\n"]);
+		source.prepend([tabs,`(function() {\n`]).add([tabs,`}());\n\n`]);
+		if (data.originalFilename) source.prepend([tabs,`/* ${data.originalFilename} */\n`]);
+		source.prepend(src);
 		if (this.source) source.setSourceContent(data.originalFilename, this.source);
 		return source;
 	}
