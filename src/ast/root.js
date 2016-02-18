@@ -28,7 +28,7 @@ export default class Root extends Node {
 				break;
 
 			case "iife":
-				this.write(`(function() {\n`).indent();
+				this.write(`(function(Temple) {\n`).indent();
 				break;
 		}
 
@@ -48,7 +48,7 @@ export default class Root extends Node {
 				break;
 
 			case "iife":
-				this.outdent().write(`}());`);
+				this.outdent().write(`}(Temple));`);
 				break;
 		}
 
