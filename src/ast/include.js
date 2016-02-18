@@ -11,7 +11,7 @@ export default class Include extends Node {
 	compile(data) {
 		let fpath = this.resolve(data.originalFilename);
 
-		if (includes(data.includes, fpath)) {
+		if (includes(data.included, fpath)) {
 			let empty = this._sn(data.originalFilename, "");
 			return data.async ? Promise.resolve(empty) : empty;
 		}

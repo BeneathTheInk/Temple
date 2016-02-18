@@ -59,6 +59,7 @@ export default class Root extends Node {
 			output.prepend("\n").prepend(data.headers);
 		}
 
+		output.includes = data.included;
 		return output;
 	}
 }

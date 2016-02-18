@@ -12,12 +12,15 @@ function fetchFile(f) {
 	});
 }
 
+var STDIN;
+
 function fetchStdin() {
+	if (STDIN != null) return Promise.resolve([ "_input.js", STDIN ]);
 	return new Promise((resolve, reject) => {
 		let src = "";
 		process.stdin.setEncoding("utf-8");
 		process.stdin.on("data", (d) => src += d);
-		process.stdin.on("end", () => resolve(["_input.js",src]));
+		process.stdin.on("end", () => resolve([ "_input.js", STDIN = src ]));
 		process.stdin.on("error", reject);
 	});
 }
@@ -60,9 +63,11 @@ function panic(e) {
 }
 
 export function compile(argv, Temple, onBuild) {
-	let timeout;
+	let timeout, watcher;
 	let building = false;
 	let files = argv._.map(f => path.resolve(f));
+	let watchedFiles = files.slice(0);
+	let hasStdin = !process.stdin.isTTY;
 
 	function build() {
 		if (building) return invalidate();
@@ -70,7 +75,7 @@ export function compile(argv, Temple, onBuild) {
 		let done = () => building = false;
 
 		let p = files.map(fetchFile);
-		if (!process.stdin.isTTY) p.push(fetchStdin());
+		if (hasStdin) p.push(fetchStdin());
 
 		return Promise.all(p).then(r => {
 			return Temple.compile(fromPairs(r), {
@@ -79,6 +84,10 @@ export function compile(argv, Temple, onBuild) {
 			});
 		}).then(result => {
 			done();
+			if (watcher) {
+				watcher.unwatch(watchedFiles);
+				watcher.add(watchedFiles = result.includes);
+			}
 			if (onBuild) onBuild(result);
 			return result;
 		}, e => {
@@ -96,7 +105,7 @@ export function compile(argv, Temple, onBuild) {
 	}
 
 	if (argv.watch) {
-		let watcher = chokidar.watch(files, {
+		watcher = chokidar.watch(watchedFiles, {
 			ignoreInitial: true,
 			persistent: true
 		});

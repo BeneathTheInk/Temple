@@ -7,8 +7,8 @@ export default class File extends Node {
 		data = assign({}, data, {
 			originalFilename: this.filename || uniqueId("template_")
 		});
-		if (!data.includes) data.includes = [];
-		data.includes.push(data.originalFilename);
+		if (!data.included) data.included = [];
+		data.included.push(data.originalFilename);
 
 		this.start(data);
 

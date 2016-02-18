@@ -41,6 +41,7 @@ function srcToString(smf) {
 
 function processOut(source) {
 	let out = source.toStringWithSourceMap();
+	out.includes = source.includes;
 	out.toString = srcToString;
 	return out;
 }
