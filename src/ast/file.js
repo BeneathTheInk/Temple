@@ -22,8 +22,6 @@ export default class File extends Node {
 
 	_finish(data, src) {
 		this.indent();
-		this.write(`var idom = Temple.idom;\n`);
-		this.write(`var decorators = Temple.decorators;\n`);
 
 		if (this.styles.length) {
 			this.write("(function() {").indent();
@@ -34,11 +32,12 @@ export default class File extends Node {
 		}
 
 		this.push(invokeMap(this.children, "compile", data));
+		let etabs = this.tabs();
 		this.outdent();
 
 		let tabs = this.tabs();
 		let source = this.end();
-		if (data.headers.length) source.prepend([data.headers,"\n"]);
+		if (data.headers.length) source.prepend([data.headers.map(h => etabs + h),"\n"]);
 		source.prepend([tabs,`(function() {\n`]).add([tabs,`}());\n\n`]);
 		if (data.originalFilename) source.prepend([tabs,`/* ${data.originalFilename} */\n`]);
 		source.prepend(src);

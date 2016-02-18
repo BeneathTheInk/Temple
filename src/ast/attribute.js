@@ -1,5 +1,6 @@
 import {invokeMap} from "lodash";
 import Node from "./node";
+import {header} from "./utils";
 
 export default class Attribute extends Node {
 	get reactive() {
@@ -26,6 +27,7 @@ export default class Attribute extends Node {
 			value = null;
 		}
 
+		header(data, "var decorators = Temple.decorators;\n");
 		this.push([ this.tabs(), `decorators.render(ctx, ${JSON.stringify(this.name)}` ]);
 
 		if (fun) {

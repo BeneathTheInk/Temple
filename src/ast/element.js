@@ -1,6 +1,6 @@
 import {invokeMap} from "lodash";
 import Node from "./node";
-import {getKey,compileGroup,resetKey} from "./utils";
+import {getKey,compileGroup,resetKey,header} from "./utils";
 
 export default class Element extends Node {
 	get reactive() {
@@ -21,6 +21,8 @@ export default class Element extends Node {
 				compileGroup(childs, resetKey(data))
 			));
 		};
+
+		header(data, "var idom = Temple.idom;\n");
 
 		if (childs.length || attrs.length) {
 			if (!this.reactive) {
