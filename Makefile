@@ -3,10 +3,10 @@ SRC = $(wildcard src/* src/*/*)
 
 build: temple.js temple.cli.js temple.es6.js dist/temple.js dist/temple.min.js
 
-test: test-basic test-full test-dist
+test: test-basic test-full test-dist test-dist-min
 	make clean-self
 
-test-coverage: test-basic test-dist coverage
+test-coverage: test-basic test-dist test-dist-min coverage
 	make clean-self
 
 clean:
@@ -19,7 +19,7 @@ dist/temple.js: src/index.js $(SRC) dist
 	TARGET=browser $(BIN)/rollup $< -c -m $@.map -o $@
 
 dist/temple.min.js: dist/temple.js dist
-	$(BIN)/uglifyjs $< -m > $@
+	$(BIN)/uglifyjs $< -m -c warnings=false > $@
 
 temple.js: src/index.js $(SRC)
 	TARGET=node $(BIN)/rollup $< -c > $@
@@ -55,6 +55,9 @@ test-full: temple-tests.full.js install-self
 test-dist: temple-tests.full.js dist/temple.js
 	$(BIN)/browserify $< -i fs-promise -r ./dist/temple.js:templejs --debug | $(BIN)/tape-run
 
+test-dist-min: temple-tests.full.js dist/temple.min.js
+	$(BIN)/browserify $< -i fs-promise -r ./dist/temple.min.js:templejs --debug | $(BIN)/tape-run
+
 coverage: temple-tests.full.js temple.cov.js
 	$(BIN)/browserify $< -i fs-promise -r ./temple.cov.js:templejs --debug | node ./bin/browser-coverage.js
 	$(BIN)/istanbul report --root coverage lcov
@@ -62,4 +65,4 @@ coverage: temple-tests.full.js temple.cov.js
 report-coverage: coverage
 	$(BIN)/istanbul-coveralls --no-rm
 
-.PHONY: build test test-coverage clean test-basic test-full test-dist report-coverage install-self clean-self
+.PHONY: build test test-coverage clean test-basic test-full test-dist test-dist-min report-coverage install-self clean-self

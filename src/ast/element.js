@@ -24,16 +24,16 @@ export default class Element extends Node {
 
 		if (childs.length || attrs.length) {
 			if (!this.reactive) {
-				this.write(`Temple.idom.elementOpen(${tagName}${key ? ", " + key : ""});`);
+				this.write(`idom.elementOpen(${tagName}${key ? ", " + key : ""});`);
 				body();
-				this.write(`Temple.idom.elementClose(${tagName});`);
+				this.write(`idom.elementClose(${tagName});`);
 			} else {
 				this.write(`Temple.Element(${tagName}, ${key || "null"}, ctx, function(ctx) {`).indent();
 				body();
 				this.outdent().write(`});`);
 			}
 		} else {
-			this.write(`Temple.idom.elementVoid(${tagName}${key ? ", " + key : ""});`);
+			this.write(`idom.elementVoid(${tagName}${key ? ", " + key : ""});`);
 		}
 
 		return this.end();

@@ -22,6 +22,8 @@ export default class File extends Node {
 
 	_finish(data, src) {
 		this.indent();
+		this.write(`var idom = Temple.idom;\n`);
+		this.write(`var decorators = Temple.decorators;\n`);
 
 		if (this.styles.length) {
 			this.write("(function() {").indent();

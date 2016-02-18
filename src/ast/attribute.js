@@ -26,7 +26,7 @@ export default class Attribute extends Node {
 			value = null;
 		}
 
-		this.push([ this.tabs(), `Temple.decorators.render(ctx, ${JSON.stringify(this.name)}` ]);
+		this.push([ this.tabs(), `decorators.render(ctx, ${JSON.stringify(this.name)}` ]);
 
 		if (fun) {
 			this.push(`, function(ctx) {\n`).indent();
