@@ -10,7 +10,8 @@ import jsep from "jsep";
 
 	function createNode(type, props) {
 		var loc = location();
-		return new AST[type](loc.start.line, loc.start.column, props);
+		if (typeof type !== "function") type = AST[type];
+		return new type(loc.start.line, loc.start.column, props);
 	}
 
 	function combineText(nodes, type) {
@@ -41,9 +42,7 @@ import jsep from "jsep";
 
 	var rawNodes = assign({
 		script: "Script",
-		$script: "Script",
 		style: "Style",
-		$style: "Style"
 	}, options.rawNodes);
 	var rawTags = Object.keys(rawNodes);
 	var currentRawTag;
@@ -181,16 +180,19 @@ commentNode "comment"
 
 rawElementNode "raw tag"
 	= "<" tagname:tagname &{
+		if (tagname[0] === "$") tagname = tagname.substr(1);
 		currentRawTag = tagname;
 		return includes(rawTags, tagname);
 	} attrs:attributes ">" v:$(!(rawElementClosingTag) .)* rawElementClosingTag &{
 		currentRawTag = null;
 		return true;
 	} {
+		if (tagname[0] === "$") tagname = tagname.substr(1);
 		return createRawNode(tagname, attrs, v);
 	}
 
 rawElementClosingTag = "</" t:tagname &{
+	if (t[0] === "$") t = t.substr(1);
 	return t === currentRawTag;
 } ">"
 
