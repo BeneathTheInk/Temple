@@ -1,0 +1,55 @@
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.3/ace.js"></script>
+
+<template name="editor">
+	{% with buttonCtx %}
+	{% render "button-bar" %}
+	{% endwith %}
+
+	<div class="ace-editor" ace-editor={content}></div>
+</template>
+
+<script>
+Template.editor.helpers({
+	buttonCtx: {
+		contentView: "editor-navbar"
+	}
+});
+
+Template.editor.decorate("ace-editor", function(d, content) {
+	if (typeof ace === "undefined") return setTimeout(function() {
+		d.comp.invalidate();
+	}, 500);
+
+	var editor = ace.edit(d.target);
+	editor.setTheme("ace/theme/monokai");
+    var session = editor.getSession()
+	session.setUseWorker(false);
+	session.setMode("ace/mode/html");
+
+	Trackr.autorun(function() {
+		if (!editor.isFocused()) editor.setValue(content.get(), -1);
+	});
+
+	editor.on("change", _.debounce(function() {
+		content.set(editor.getValue());
+	}, 1000));
+
+	d.comp.onInvalidate(function() {
+		editor.destroy();
+	});
+});
+</script>
+
+<template name="editor-navbar">
+	<a href="#" class="btn"><i class="icon icon-caret-down"></i></a>
+	<input type="text" class="btn-input" value="cli-test.html" />
+	<a href="#" class="btn btn-right"><i class="icon icon-download"></i></a>
+	<a href="#" class="btn btn-right"><i class="icon icon-save"></i></a>
+</template>
+
+<style>
+.ace-editor {
+	width: 100%;
+	height: 100%;
+}
+</style>

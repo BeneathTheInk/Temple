@@ -1,10 +1,42 @@
 <include src="header.html" />
+<include src="editor.html" />
+<include src="preview.html" />
+<include src="button-bar.html" />
+
+<script type="text/javascript" src="https://use.fonticons.com/7a9027f4.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.5.0/lodash.min.js"></script>
 
 <template name="layout">
 	{% render "header" %}
-	<br/>hello
+	<div class="content-box editor-box">{% render "editor" %}</div>
+	<div class="content-box preview-box">{% render "preview" %}</div>
 </template>
 
+<style>
+body, html {
+	height: 100%;
+	font-family: sans-serif;
+}
+
+*, *:before, *:after {
+	box-sizing: border-box;
+}
+
+.content-box {
+	float: left;
+	width: 50%;
+	height: 100%;
+	position: relative;
+	padding-top: 50px;
+}
+
+.content-box:nth-of-type(1) {
+	border-right: 2px solid #cccccc;
+}
+</style>
+
 <script>
-Temple.paint("layout", "body", {});
+Temple.paint("layout", "body", {
+	content: new Temple.Variable("")
+});
 </script>

@@ -1,0 +1,63 @@
+
+<template name="preview">
+	{% with buttonCtx %}
+	{% render "button-bar" %}
+	{% endwith %}
+
+	<iframe class="preview" preview-content={content}></iframe>
+</template>
+
+<script>
+Template.preview.helpers({
+	buttonCtx: {
+		contentView: "preview-navbar"
+	}
+});
+
+Template.preview.decorate("preview-content", function(d, content) {
+	var win, doc;
+	var iframe = d.target;
+
+	// extract iframe document
+	win = iframe.contentWindow || iframe;
+	if (iframe.contentDocument) doc = iframe.contentDocument;
+	else doc = win.document;
+
+	// firefox needs us to write immediately so it can load properly
+	doc.write("");
+	doc.close();
+
+	Trackr.autorun(function() {
+		doc.open();
+		doc.write([
+			"<!DOCTYPE html>",
+			"<html lang=\"en-US\">",
+			"	<head>",
+			"		<meta charset=\"UTF-8\" />",
+			"		<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />",
+			"	</head>",
+			"	<body>",
+			"		<script type=\"text/javascript\" src=\"/temple.js\"></scr" + "ipt>",
+			"		<script type=\"text/javascript\">",
+			Temple.compile(content.get()).toString(),
+			"		</scr" + "ipt>",
+			"	</body>",
+			"</html>"
+		].join("\n"));
+		doc.close();
+	});
+});
+</script>
+
+<template name="preview-navbar">
+	<a href="#" class="btn btn-right"><i class="icon icon-reload"></i></a>
+</template>
+
+<style>
+iframe.preview {
+	border: none;
+	width: 100%;
+	height: 100%;
+	display: block;
+}
+</style>
