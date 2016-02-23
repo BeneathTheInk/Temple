@@ -1,3 +1,6 @@
+<script>
+var reloadPreview = new Trackr.Dependency();
+</script>
 
 <template name="preview">
 	{% with buttonCtx %}
@@ -28,6 +31,7 @@ Template.preview.decorate("preview-content", function(d, content) {
 	doc.close();
 
 	Trackr.autorun(function() {
+		reloadPreview.depend();
 		doc.open();
 		doc.write([
 			"<!DOCTYPE html>",
@@ -49,9 +53,16 @@ Template.preview.decorate("preview-content", function(d, content) {
 });
 </script>
 
-<template name="preview-navbar">
-	<a href="#" class="btn btn-right"><i class="icon icon-reload"></i></a>
+<template name="preview-navbar" use="actions">
+	<a href="#" class="btn btn-right" on-click="reload-preview"><i class="icon icon-refresh"></i></a>
 </template>
+
+<script>
+Template["preview-navbar"].actions("reload-preview", function(e) {
+	e.original.preventDefault();
+	reloadPreview.changed();
+});
+</script>
 
 <style>
 iframe.preview {

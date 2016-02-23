@@ -25,6 +25,7 @@ Template.editor.decorate("ace-editor", function(d, content) {
     var session = editor.getSession()
 	session.setUseWorker(false);
 	session.setMode("ace/mode/html");
+	session.setUseWrapMode(true);
 
 	Trackr.autorun(function() {
 		if (!editor.isFocused()) editor.setValue(content.get(), -1);
@@ -40,12 +41,60 @@ Template.editor.decorate("ace-editor", function(d, content) {
 });
 </script>
 
-<template name="editor-navbar">
-	<a href="#" class="btn"><i class="icon icon-caret-down"></i></a>
-	<input type="text" class="btn-input" value="cli-test.html" />
-	<a href="#" class="btn btn-right"><i class="icon icon-download"></i></a>
-	<a href="#" class="btn btn-right"><i class="icon icon-save"></i></a>
+<template name="editor-navbar" use="actions">
+	<div class="dropdown btn" on-click="toggle-dropdown">
+		<span class="handle"><i class="icon icon-caret-down"></i></span>
+		<span class="value">cli-test.html</span>
+		<div class="dropdown-menu">
+			<a href="#" on-click={'select-item','cli-test.html'}>cli-test.html</a>
+			<a href="#">welcome.html</a>
+			<a href="#">list.html</a>
+		</div>
+	</div>
+	<a href="#" class="btn btn-right"><i class="icon icon-share"></i> Share</a>
+	<a href="#" class="btn btn-right"><i class="icon icon-reset icon-fw"></i> Start Over</a>
 </template>
+
+<script>
+function closest(node, selector) {
+	while (node) {
+		if (node.nodeType === Node.ELEMENT_NODE) {
+			if (selector.nodeType === Node.ELEMENT_NODE) {
+				if (selector === node) return node;
+			} else if (typeof selector === "string") {
+				if (node.matches(selector)) return node;
+			}
+		}
+
+		node = node.parentNode;
+	}
+}
+
+Template["editor-navbar"].actions("select-item", function(e, item) {
+	e.original.preventDefault();
+	console.log(item);
+});
+
+Template["editor-navbar"].actions("toggle-dropdown", function(e) {
+	// don't prevent default on menu item
+	if (!closest(e.original.target, ".dropdown-menu a")) {
+		e.original.preventDefault();
+	}
+
+	var dropdown = e.target;
+	dropdown.classList.toggle("open");
+
+	setTimeout(function() {
+		var onclick;
+		document.addEventListener("click", onclick = function(e) {
+			document.removeEventListener("click", onclick);
+			if (!closest(e.target, dropdown)) {
+				dropdown.classList.remove("open");
+			}
+		});
+	}, 0);
+});
+</script>
 
 <style>
 .ace-editor {
