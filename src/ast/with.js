@@ -15,9 +15,10 @@ export default class With extends Node {
 		let c = this._sn(data.originalFilename, compileGroup(this.children, data));
 		if (this.attribute) c = [ " return Temple.utils.joinValues(", c.join(","), "); " ];
 		this.push(c);
-		this.outdent().push(`})`);
+		this.outdent();
 
-		if (!this.attribute) this.write(";");
+		if (!this.attribute) this.write("});");
+		else this.push(`})`);
 
 		return this.end();
 	}
