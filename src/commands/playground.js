@@ -1,7 +1,7 @@
 import playground from "../playground";
 import {printError} from "./compile";
 
-export default function(argv, Temple) {
+export default function(argv) {
 	let server = playground.listen(argv.port || 6392, "127.0.0.1", () => {
 		let addr = server.address();
 		let url = `http://${addr.address}:${addr.port}`;

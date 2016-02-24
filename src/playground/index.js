@@ -46,6 +46,6 @@ app.get("/examples", (req, res, next) => {
 		.catch(next);
 });
 
-app.get("/examples/:name", (req, res, next) => {
+app.get("/examples/:name", (req, res) => {
 	res.type("text").sendFile(path.join(examplesDir, req.params.name));
 });
