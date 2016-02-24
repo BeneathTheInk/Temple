@@ -1,5 +1,5 @@
 BIN = ./node_modules/.bin
-SRC = $(wildcard src/* src/*/*)
+SRC = $(wildcard src/* src/*/* src/*/*/*)
 
 build: temple.js temple.cli.js temple.es6.js temple.playground.js dist/temple.js dist/temple.min.js
 

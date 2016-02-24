@@ -36,7 +36,9 @@ body, html {
 </style>
 
 <script>
-Temple.paint("layout", "body", {
-	content: new Temple.Variable("")
+window.addEventListener("load", function() {
+	Temple.paint("layout", "body", {
+		content: new Temple.Variable("")
+	});
 });
 </script>

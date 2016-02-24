@@ -38,6 +38,8 @@ Template.editor.decorate("ace-editor", function(d, content) {
 	d.comp.onInvalidate(function() {
 		editor.destroy();
 	});
+}, {
+	defer: true
 });
 </script>
 
@@ -46,9 +48,9 @@ Template.editor.decorate("ace-editor", function(d, content) {
 		<span class="handle"><i class="icon icon-caret-down"></i></span>
 		<span class="value">cli-test.html</span>
 		<div class="dropdown-menu">
-			<a href="#" on-click={'select-item','cli-test.html'}>cli-test.html</a>
-			<a href="#">welcome.html</a>
-			<a href="#">list.html</a>
+			{% each ex in examples %}
+			<a href="#" on-click={'select-item',ex}>{{ ex }}</a>
+			{% endeach %}
 		</div>
 	</div>
 	<a href="#" class="btn btn-right"><i class="icon icon-share"></i> Share</a>
@@ -56,6 +58,29 @@ Template.editor.decorate("ace-editor", function(d, content) {
 </template>
 
 <script>
+var examples = new Temple.List();
+
+Template["editor-navbar"].helpers({
+	examples: examples
+});
+
+function updateExamples() {
+	var req = new XMLHttpRequest();
+
+	req.addEventListener("load", function() {
+		examples.splice(0, examples.length);
+		if (Array.isArray(req.response)) {
+			examples.push.apply(examples, req.response);
+		}
+	});
+
+	req.open("GET", "/examples");
+	req.responseType = "json";
+	req.send();
+}
+
+document.addEventListener("DOMContentLoaded", updateExamples);
+
 function closest(node, selector) {
 	while (node) {
 		if (node.nodeType === Node.ELEMENT_NODE) {
