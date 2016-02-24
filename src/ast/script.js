@@ -36,7 +36,7 @@ export default class Script extends Node {
 			let column = this._column || 1;
 
 			this.value.split(/\r?\n/g).forEach((l, i) => {
-				this.push(new SourceNode(i + line, i === 0 ? column : 1, data.originalFilename, l + "\n"));
+				this.push(new SourceNode(i + line, i === 0 ? column : 1, data.filename, l + "\n"));
 			});
 		}
 

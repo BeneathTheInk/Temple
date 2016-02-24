@@ -9,10 +9,10 @@ export default class Include extends Node {
 	}
 
 	compile(data) {
-		let fpath = this.resolve(data.originalFilename);
+		let fpath = this.resolve(data.filename);
 
 		if (includes(data.included, fpath)) {
-			let empty = this._sn(data.originalFilename, "");
+			let empty = this._sn(data.filename, "");
 			return data.async ? Promise.resolve(empty) : empty;
 		}
 

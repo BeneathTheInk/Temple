@@ -18,7 +18,7 @@ function parseFile(src, name, options) {
 
 	try {
 		return baseParse(src, assign({
-			originalFilename: name
+			filename: name
 		}, options));
 	} catch(e) {
 		e.filename = name;

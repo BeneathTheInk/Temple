@@ -74,12 +74,12 @@ export default class ASTNode {
 		if (chunk) this.write(chunk);
 		var w = this._writer;
 		delete this._writer;
-		return this._sn(w.data.originalFilename, w.chunks);
+		return this._sn(w.data.filename, w.chunks);
 	}
 
 	compile() {
 		throw new Error("Not implemented.");
-		// return this._sn(data.originalFilename);
+		// return this._sn(data.filename);
 	}
 
 	toJSON() {

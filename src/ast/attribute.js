@@ -11,7 +11,7 @@ export default class Attribute extends Node {
 		this.start(data);
 
 		let fun;
-		let value = this._sn(data.originalFilename, "");
+		let value = this._sn(data.filename, "");
 		let len = this.children.length;
 
 		if (len) {

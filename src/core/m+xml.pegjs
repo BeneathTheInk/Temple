@@ -72,7 +72,7 @@ start = ws nodes:(
 		},[[],[],[]]);
 
 		return createNode("File", {
-			filename: options.originalFilename,
+			filename: options.filename,
 			source: text(),
 			children: children,
 			styles: styles,

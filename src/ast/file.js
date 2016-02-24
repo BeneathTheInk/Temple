@@ -5,11 +5,11 @@ import Node from "./node";
 export default class File extends Node {
 	compile(data) {
 		data = assign({}, data, {
-			originalFilename: this.filename || uniqueId("template_"),
+			filename: this.filename || uniqueId("template_"),
 			headers: []
 		});
 		if (!data.included) data.included = [];
-		data.included.push(data.originalFilename);
+		data.included.push(data.filename);
 
 		this.start(data);
 
@@ -39,9 +39,9 @@ export default class File extends Node {
 		let source = this.end();
 		if (data.headers.length) source.prepend([data.headers.map(h => etabs + h),"\n"]);
 		source.prepend([tabs,`(function() {\n`]).add([tabs,`}());\n\n`]);
-		if (data.originalFilename) source.prepend([tabs,`/* ${data.originalFilename} */\n`]);
+		if (data.filename) source.prepend([tabs,`/* ${data.filename} */\n`]);
 		source.prepend(src);
-		if (this.source) source.setSourceContent(data.originalFilename, this.source);
+		if (this.source) source.setSourceContent(data.filename, this.source);
 		return source;
 	}
 }
