@@ -8,6 +8,11 @@ import builtins from "browserify/lib/builtins.js";
 import {has,forEach,includes} from "lodash";
 import buildDOMTests from "./test/utils/build-dom-tests.js";
 import replace from 'rollup-plugin-replace';
+import uglifyjs from "uglify-js";
+
+var Temple;
+try { Temple = require("./"); }
+catch(e) {}
 
 const emptyModule = require.resolve("browserify/lib/_empty.js");
 const rollupEmptyModule = require.resolve("rollup-plugin-node-resolve/src/empty.js");
@@ -72,6 +77,21 @@ export default parser;
 export var parse = parser.parse;`,
 				map: { mappings: "" }
 			};
+		}
+	},
+	{
+		transform: function(code, id) {
+			if (path.extname(id) !== ".html") return;
+
+			return Temple.compile(code, {
+				filename: id,
+				async: true
+			}).then((res) => {
+				return {
+					code: `export default ${JSON.stringify(uglifyjs.minify(res.code, { fromString: true }).code)};`,
+					map: { mappings: '' }
+				};
+			});
 		}
 	},
 	json()

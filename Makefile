@@ -1,15 +1,13 @@
 BIN = ./node_modules/.bin
 SRC = $(wildcard src/* src/*/*)
 
-build: temple.js temple.cli.js temple.es6.js dist/temple.js dist/temple.min.js
+build: temple.js temple.cli.js temple.es6.js temple.playground.js dist/temple.js dist/temple.min.js
 
 test: test-basic test-full test-dist test-dist-min
-	make clean-self
 
 test-coverage: test-basic test-dist test-dist-min coverage
-	make clean-self
 
-clean:
+clean: clean-self
 	rm -rf temple* dist/ coverage/
 
 dist:
@@ -39,6 +37,9 @@ temple-tests.full.js: test/full.js temple.js
 
 temple.cov.js: temple.js
 	$(BIN)/istanbul instrument $< > $@
+
+temple.playground.js: src/playground/index.js $(SRC) temple.js dist/temple.min.js
+	TARGET=node PLAYGROUND=1 $(BIN)/rollup $< -c > $@
 
 install-self: clean-self
 	ln -s ../ node_modules/templejs

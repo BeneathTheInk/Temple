@@ -7,10 +7,11 @@ import help from "./commands/help";
 import version from "./commands/version";
 import compile from "./commands/compile";
 import run from "./commands/run";
+import playground from "./commands/playground";
 
 var commands = {
 	help, version,
-	compile, run
+	compile, run, playground
 };
 
 // command aliases
