@@ -3,9 +3,7 @@ import Node from "./node";
 import {getKey,compileGroup,resetKey,header} from "./utils";
 
 export default class Element extends Node {
-	get reactive() {
-		return this.children.some(c => c.reactive);
-	}
+	get reactive() { return false; }
 
 	compile(data) {
 		this.start(data);
