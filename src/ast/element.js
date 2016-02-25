@@ -23,7 +23,7 @@ export default class Element extends Node {
 		header(data, "var idom = Temple.idom;\n");
 
 		if (childs.length || attrs.length) {
-			if (!this.reactive) {
+			if (!childs.some(c => c.reactive)) {
 				this.write(`idom.elementOpen(${tagName}${key ? ", " + key : ""});`);
 				body();
 				this.write(`idom.elementClose(${tagName});`);

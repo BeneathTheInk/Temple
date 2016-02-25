@@ -9,8 +9,9 @@ export default class Set extends Node {
 		let exp = this.expression.compile(data);
 		let safevar = JSON.stringify(this.variable);
 		if (this.attribute) this.push("(");
+		else this.push(this.tabs());
 		this.push([ `ctx.set(${safevar}, `, exp, `)` ]);
-		if (!this.attribute) this.write(";");
+		if (!this.attribute) this.push(";\n");
 		else this.push(`, "")`);
 
 		return this.end();
