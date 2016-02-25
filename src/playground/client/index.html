@@ -36,9 +36,50 @@ body, html {
 </style>
 
 <script>
+var content = new Temple.Variable("");
+var examples = new Temple.List();
+var selectedExample = new Temple.Variable();
+document.addEventListener("DOMContentLoaded", updateExamples);
+
 window.addEventListener("load", function() {
 	Temple.paint("layout", "body", {
-		content: new Temple.Variable("")
+		content: content,
+		examples: examples,
+		selectedExample: selectedExample,
+		fetchExample: fetchExample,
+		resetEditor: resetEditor
 	});
 });
+
+function updateExamples() {
+	var req = new XMLHttpRequest();
+
+	req.addEventListener("load", function() {
+		examples.splice(0, examples.length);
+		if (Array.isArray(req.response)) {
+			examples.push.apply(examples, req.response);
+		}
+	});
+
+	req.open("GET", "/examples");
+	req.responseType = "json";
+	req.send();
+}
+
+function fetchExample(example) {
+	var req = new XMLHttpRequest();
+
+	req.addEventListener("load", function() {
+		selectedExample.set(example);
+		content.set(req.responseText);
+	});
+
+	req.open("GET", "/examples/" + encodeURIComponent(example));
+	req.send();
+}
+
+function resetEditor() {
+	selectedExample.set();
+	content.set("");
+}
 </script>

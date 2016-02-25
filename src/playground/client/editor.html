@@ -46,41 +46,21 @@ Template.editor.decorate("ace-editor", function(d, content) {
 <template name="editor-navbar" use="actions">
 	<div class="dropdown btn" on-click="toggle-dropdown">
 		<span class="handle"><i class="icon icon-caret-down"></i></span>
-		<span class="value">cli-test.html</span>
+		{% set selected = selectedExample.get() %}
+		{% if selected %}<span class="value">{{ selected }}</span>{% endif %}
 		<div class="dropdown-menu">
 			{% each ex in examples %}
-			<a href="#" on-click={'select-item',ex}>{{ ex }}</a>
+			<a href="#" on-click={'select-item',fetchExample,ex}>{{ ex }}</a>
 			{% endeach %}
 		</div>
 	</div>
 	<a href="#" class="btn btn-right"><i class="icon icon-share"></i> Share</a>
-	<a href="#" class="btn btn-right"><i class="icon icon-reset icon-fw"></i> Start Over</a>
+	<a href="#" class="btn btn-right" on-click={'reset-editor',resetEditor}>
+		<i class="icon icon-reset icon-fw"></i> Start Over
+	</a>
 </template>
 
 <script>
-var examples = new Temple.List();
-
-Template["editor-navbar"].helpers({
-	examples: examples
-});
-
-function updateExamples() {
-	var req = new XMLHttpRequest();
-
-	req.addEventListener("load", function() {
-		examples.splice(0, examples.length);
-		if (Array.isArray(req.response)) {
-			examples.push.apply(examples, req.response);
-		}
-	});
-
-	req.open("GET", "/examples");
-	req.responseType = "json";
-	req.send();
-}
-
-document.addEventListener("DOMContentLoaded", updateExamples);
-
 function closest(node, selector) {
 	while (node) {
 		if (node.nodeType === Node.ELEMENT_NODE) {
@@ -95,29 +75,34 @@ function closest(node, selector) {
 	}
 }
 
-Template["editor-navbar"].actions("select-item", function(e, item) {
-	e.original.preventDefault();
-	console.log(item);
-});
-
-Template["editor-navbar"].actions("toggle-dropdown", function(e) {
-	// don't prevent default on menu item
-	if (!closest(e.original.target, ".dropdown-menu a")) {
+Template["editor-navbar"].actions({
+	"select-item": function(e, fetch, item) {
 		e.original.preventDefault();
+		fetch(item);
+	},
+	"toggle-dropdown": function(e) {
+		// don't prevent default on menu item
+		if (!closest(e.original.target, ".dropdown-menu a")) {
+			e.original.preventDefault();
+		}
+
+		var dropdown = e.target;
+		dropdown.classList.toggle("open");
+
+		setTimeout(function() {
+			var onclick;
+			document.addEventListener("click", onclick = function(e) {
+				document.removeEventListener("click", onclick);
+				if (!closest(e.target, dropdown)) {
+					dropdown.classList.remove("open");
+				}
+			});
+		}, 0);
+	},
+	"reset-editor": function(e, reset) {
+		e.original.preventDefault();
+		reset();
 	}
-
-	var dropdown = e.target;
-	dropdown.classList.toggle("open");
-
-	setTimeout(function() {
-		var onclick;
-		document.addEventListener("click", onclick = function(e) {
-			document.removeEventListener("click", onclick);
-			if (!closest(e.target, dropdown)) {
-				dropdown.classList.remove("open");
-			}
-		});
-	}, 0);
 });
 </script>
 
