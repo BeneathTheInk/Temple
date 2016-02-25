@@ -16,10 +16,6 @@ Template.editor.helpers({
 });
 
 Template.editor.decorate("ace-editor", function(d, content) {
-	if (typeof ace === "undefined") return setTimeout(function() {
-		d.comp.invalidate();
-	}, 500);
-
 	var editor = ace.edit(d.target);
 	editor.setTheme("ace/theme/monokai");
     var session = editor.getSession()
@@ -27,12 +23,20 @@ Template.editor.decorate("ace-editor", function(d, content) {
 	session.setMode("ace/mode/html");
 	session.setUseWrapMode(true);
 
+	var didChange = false;
+
 	Trackr.autorun(function() {
-		if (!editor.isFocused()) editor.setValue(content.get(), -1);
+		var val = content.get();
+		if (!didChange) editor.setValue(val, -1);
+		didChange = false;
 	});
 
 	editor.on("change", _.debounce(function() {
-		content.set(editor.getValue());
+		var val = editor.getValue();
+		if (content.get() !== val) {
+			didChange = true;
+			content.set(val);
+		}
 	}, 1000));
 
 	d.comp.onInvalidate(function() {
