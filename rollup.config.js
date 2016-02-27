@@ -16,12 +16,9 @@ catch(e) {}
 
 const emptyModule = require.resolve("browserify/lib/_empty.js");
 const rollupEmptyModule = require.resolve("rollup-plugin-node-resolve/src/empty.js");
-
 forEach(builtins, function(p, id) {
 	if (p === emptyModule) builtins[id] = rollupEmptyModule;
 });
-
-const emptyModules = [ "fs-promise" ];
 
 const resolve = _resolve({
 	jsnext: false,
@@ -53,12 +50,8 @@ const plugins = [
 			if (p && (process.env.TARGET === "node" || process.env.TARGET === "es6") &&
 				!incremental.test(id) && !relPath.test(id)) return false;
 
-			if (includes(emptyModules, id)) return id;
 			if (has(builtins, id)) return builtins[id];
 			return resolve.resolveId(id, p);
-		},
-		load: function(id) {
-			if (includes(emptyModules, id)) return "export default {};";
 		}
 	},
 	{
@@ -114,11 +107,11 @@ if (process.env.TARGET !== "node" && process.env.TARGET !== "es6") {
 			events: [ "EventEmitter" ]
 		}
 	}));
-
-	plugins.push(replace({
-		"process.env.NODE_ENV": JSON.stringify("production")
-	}));
 }
+
+plugins.push(replace({
+	"process.env.NODE_ENV": JSON.stringify("production")
+}));
 
 export default {
 	format: process.env.TARGET === "node" ? "cjs" :

@@ -23,7 +23,9 @@
 	"main": "temple.js",
 	"bin": "temple.cli.js",
 	"jsnext:main": "temple.es6.js",
-	"superfast": "./lib/superfast.js",
+	"browser": {
+		"fs-promise": false
+	},
 	"dependencies": {
 		"assign-props": "~1.1.2",
 		"backbone-extend-standalone": "~0.1.2",
