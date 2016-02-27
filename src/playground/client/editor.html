@@ -5,7 +5,7 @@
 	{% render "button-bar" %}
 	{% endwith %}
 
-	<div class="ace-editor" ace-editor={content}></div>
+	<div class="ace-editor" ace-editor={content,resetEditor}></div>
 </template>
 
 <script>
@@ -15,9 +15,10 @@ Template.editor.helpers({
 	}
 });
 
-Template.editor.decorate("ace-editor", function(d, content) {
+Template.editor.decorate("ace-editor", function(d, content, reset) {
 	var editor = ace.edit(d.target);
 	editor.setTheme("ace/theme/monokai");
+	editor.$blockScrolling = Infinity;
     var session = editor.getSession()
 	session.setUseWorker(false);
 	session.setMode("ace/mode/html");
@@ -35,7 +36,8 @@ Template.editor.decorate("ace-editor", function(d, content) {
 		var val = editor.getValue();
 		if (content.get() !== val) {
 			didChange = true;
-			content.set(val);
+			if (val) content.set(val);
+			else reset();
 		}
 	}, 1000));
 
@@ -50,8 +52,9 @@ Template.editor.decorate("ace-editor", function(d, content) {
 <template name="editor-navbar" use="actions">
 	<div class="dropdown btn" on-click="toggle-dropdown">
 		<span class="handle"><i class="icon icon-caret-down"></i></span>
-		{% set selected = selectedExample.get() %}
-		{% if selected %}<span class="value">{{ selected }}</span>{% endif %}
+		<span class="value{% if !selectedExample.get() %} value-hide{% endif %}">
+			{{ selectedExample.get() }}
+		</span>
 		<div class="dropdown-menu">
 			{% each ex in examples %}
 			<a href="#" on-click={'select-item',fetchExample,ex}>{{ ex }}</a>
@@ -59,7 +62,7 @@ Template.editor.decorate("ace-editor", function(d, content) {
 		</div>
 	</div>
 	<a href="#" class="btn btn-right"><i class="icon icon-share"></i> Share</a>
-	<a href="#" class="btn btn-right" on-click={'reset-editor',resetEditor}>
+	<a href="#" class="btn btn-right{% if !content.get() %} btn-hide{% endif %}" on-click={'reset-editor',resetEditor}>
 		<i class="icon icon-reset icon-fw"></i> Start Over
 	</a>
 </template>
