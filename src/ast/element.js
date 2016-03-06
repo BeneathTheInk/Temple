@@ -28,7 +28,7 @@ export default class Element extends Node {
 				body();
 				this.write(`idom.elementClose(${tagName});`);
 			} else {
-				this.write(`Temple.Element(${tagName}, ${key || "null"}, ctx, function(ctx) {`).indent();
+				this.write(`Temple.Element(${tagName}, ${key || "null"}, scope, function(scope) {`).indent();
 				body();
 				this.outdent().write(`});`);
 			}

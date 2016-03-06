@@ -197,12 +197,12 @@ function bindTo(options, lazy, d, id) {
 	let args = toArray(arguments).slice(4);
 	let type = getType(el);
 	let onChange;
-	let twctx = pick(d, "context", "template", "target");
+	let twscope = pick(d, "scope", "template", "target");
 
 	// detect changes to the input's value
 	if (typeof fbind.change === "function") {
 		onChange = function(e) {
-			fbind.change.apply(assign(twctx, {
+			fbind.change.apply(assign(twscope, {
 				original: e
 			}), [getNodeValue(el, type)].concat(args));
 		};
@@ -230,7 +230,7 @@ function bindTo(options, lazy, d, id) {
 	defer(function() {
 		if (stopped) return;
 		nodeValueComp = Trackr.autorun(function() {
-			setNodeValue(el, fbind.get.apply(twctx, args), type, options.live);
+			setNodeValue(el, fbind.get.apply(twscope, args), type, options.live);
 		});
 	});
 }

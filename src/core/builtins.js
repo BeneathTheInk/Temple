@@ -1,32 +1,32 @@
-import Context from "./context";
+import Scope from "./scope";
 import {map} from "./utils";
 import {elementOpen,elementClose,autoelement} from "./idom";
 
-export function Each(val, vars, ctx, fn, that) {
+export function Each(val, vars, scope, fn, that) {
 	return map(val, function(item, key) {
-		let nctx = new Context(ctx);
+		let nscope = new Scope(scope);
 
-		if (vars.length === 1) nctx.set(vars[0], item);
+		if (vars.length === 1) nscope.set(vars[0], item);
 		else if (vars.length == 2) {
-			nctx.set(vars[0], key);
-			nctx.set(vars[1], item);
+			nscope.set(vars[0], key);
+			nscope.set(vars[1], item);
 		}
 
-		return fn.call(that, nctx, key, val);
+		return fn.call(that, nscope, key, val);
 	});
 }
 
-export function With(val, ctx, fn, that) {
-	let nctx = new Context(ctx);
-	nctx.set(val);
-	nctx.dataVar.set(val);
-	return fn.call(that, nctx);
+export function With(val, scope, fn, that) {
+	let nscope = new Scope(scope);
+	nscope.set(val);
+	nscope.dataVar.set(val);
+	return fn.call(that, nscope);
 }
 
-export function Element(tagname, key, ctx, fn, that) {
+export function Element(tagname, key, scope, fn, that) {
 	let node = elementOpen(tagname, key);
-	let nctx = new Context(null, ctx);
-	let comp = autoelement(node, () => fn.call(that, nctx, node));
+	let nscope = new Scope(null, scope);
+	let comp = autoelement(node, () => fn.call(that, nscope, node));
 	elementClose(tagname);
 	return comp;
 }

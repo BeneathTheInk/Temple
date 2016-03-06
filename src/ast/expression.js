@@ -1,7 +1,7 @@
 import Node from "./node";
 
-// method to run to query the context
-const CONTEXT_LOOKUP = "ctx.lookup";
+// method to run to query the scope
+const SCOPE_LOOKUP = "scope.lookup";
 
 export default class Expression extends Node {
 	get reactive() { return !Expression.isStatic(this.tree); }
@@ -59,10 +59,10 @@ export default class Expression extends Node {
 			}
 
 			case "Identifier": // plain varable
-				return `${CONTEXT_LOOKUP}(${JSON.stringify(tree.name)})`;
+				return `${SCOPE_LOOKUP}(${JSON.stringify(tree.name)})`;
 
 			case "ThisExpression": // plain varable
-				return `${CONTEXT_LOOKUP}()`;
+				return `${SCOPE_LOOKUP}()`;
 
 			case "MemberExpression": {// object property
 				let out = _render(tree.object);
@@ -78,7 +78,7 @@ export default class Expression extends Node {
 			case "CallExpression": { // function call
 				let out = _render(tree.callee);
 				if (tree.callee.type === "MemberExpression") out += "(";
-				else out += `.call(${CONTEXT_LOOKUP}()` + (tree.arguments.length ? ", " : "");
+				else out += `.call(${SCOPE_LOOKUP}()` + (tree.arguments.length ? ", " : "");
 				out += tree.arguments.map(_render).join(", ") + ")";
 				return out;
 			}

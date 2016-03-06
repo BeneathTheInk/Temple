@@ -2,7 +2,7 @@ import {forEach,isArray,assign} from "lodash";
 import { currentElement, updateAttribute } from "../core/idom";
 import Trackr from "trackr";
 import raf from "raf";
-import Context from "../core/context";
+import Scope from "../core/scope";
 
 var decorators = {};
 
@@ -59,9 +59,9 @@ export function find(name) {
 }
 
 // finds the best decorator
-export function lookup(ctx, name) {
+export function lookup(scope, name) {
 	// look on the closest template
-	let owner = ctx.getTemplateContext();
+	let owner = scope.getTemplateScope();
 	if (owner) {
 		let dec = owner.template.findDecorator(name);
 		if (dec) return assign({ owner }, dec);
@@ -78,22 +78,22 @@ function setAttribute(node, name, values) {
 	updateAttribute(node, name, v);
 }
 
-export function render(_ctx, name, value) {
+export function render(_scope, name, value) {
 	let node = currentElement();
 	if (!node) throw new Error("Not currently patching.");
 
-	// each decorator is given its own context
-	let ctx = new Context(null, _ctx);
+	// each decorator is given its own scope
+	let scope = new Scope(null, _scope);
 
 	let isStaticValue = typeof value !== "function";
 	let getValue = () => {
-		let val = isStaticValue ? value : value(ctx);
+		let val = isStaticValue ? value : value(scope);
 		if (!isArray(val)) val = [ val ];
 		return val;
 	};
 
 	// look up decorator by name
-	let d = lookup(ctx, name);
+	let d = lookup(scope, name);
 
 	// quick escape if static value and no decorator
 	if (isStaticValue && !d) {
@@ -103,13 +103,13 @@ export function render(_ctx, name, value) {
 
 	let anim, comp;
 	let cancel = false;
-	let decctx = assign({
+	let decscope = assign({
 		target: node,
-		context: ctx
+		scope: scope
 	}, d);
 
 	let run = function(c) {
-		decctx.comp = c;
+		decscope.comp = c;
 		let val = getValue();
 
 		if (!d) {
@@ -118,7 +118,7 @@ export function render(_ctx, name, value) {
 		}
 
 		// execute the callback
-		d.callback.apply(d.template, [decctx].concat(val));
+		d.callback.apply(d.template, [decscope].concat(val));
 	};
 
 	// defer computation if desired

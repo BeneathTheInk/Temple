@@ -1,7 +1,7 @@
 import * as idom from "./core/idom";
 import * as utils from "./core/utils";
 import Trackr from "trackr";
-import Context from "./core/context";
+import Scope from "./core/scope";
 import * as AST from "./ast";
 import pkg from "../package.json";
 
@@ -17,6 +17,6 @@ export * from "./core/compile";
 export * from "./core/builtins";
 
 export {
-	Trackr, Context, AST, idom, utils,
+	Trackr, Scope, AST, idom, utils,
 	plugins, decorators, actions
 };

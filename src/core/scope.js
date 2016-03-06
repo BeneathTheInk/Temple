@@ -4,20 +4,20 @@ import {Variable as ReactiveVar} from "trackr-objects";
 import assignProps from "assign-props";
 import {getHelper} from "./templates";
 
-export default function Context(data, parent, template) {
-	if (!(this instanceof Context)) {
-		return new Context(parent);
+export default function Scope(data, parent, template) {
+	if (!(this instanceof Scope)) {
+		return new Scope(parent);
 	}
 
 	EventEmitter.call(this);
 	this.setMaxListeners(0);
 
-	if (data instanceof Context) {
+	if (data instanceof Scope) {
 		[template, parent, data] = [parent, data, null];
 	}
 
-	if (parent && !(parent instanceof Context)) {
-		throw new Error("Expecting an instance of Context for parent.");
+	if (parent && !(parent instanceof Scope)) {
+		throw new Error("Expecting an instance of Scope for parent.");
 	}
 
 	// internal view state
@@ -37,10 +37,10 @@ export default function Context(data, parent, template) {
 	if (!this.parent) this.dataVar.set(data);
 }
 
-Context.prototype = Object.create(EventEmitter.prototype);
-Context.prototype.constructor = Context;
+Scope.prototype = Object.create(EventEmitter.prototype);
+Scope.prototype.constructor = Scope;
 
-assignProps(Context.prototype, {
+assignProps(Scope.prototype, {
 	scope: function() { return this.s.scope; },
 	dataVar: function() { return this.s.data; },
 	data: function() { return this.s.data.get(); },
@@ -48,7 +48,7 @@ assignProps(Context.prototype, {
 	parent: function() { return this.s.parent; }
 });
 
-Context.prototype.set = function(key, value) {
+Scope.prototype.set = function(key, value) {
 	if (typeof key === "object") {
 		forEach(key, (v, k) => this.set(k, v));
 		return this;
@@ -64,9 +64,9 @@ Context.prototype.set = function(key, value) {
 	return this;
 };
 
-Context.prototype.get = function(key) { return has(this.s.scope, key) ? this.s.scope[key] : void 0; };
+Scope.prototype.get = function(key) { return has(this.s.scope, key) ? this.s.scope[key] : void 0; };
 
-Context.prototype.parentData = function(dist) {
+Scope.prototype.parentData = function(dist) {
 	if (typeof dist !== "number" || isNaN(dist)) dist = 1;
 
 	if (dist >= 0) {
@@ -90,7 +90,7 @@ Context.prototype.parentData = function(dist) {
 	return view ? view.data : void 0;
 };
 
-Context.prototype.getTemplateContext = function() {
+Scope.prototype.getTemplateScope = function() {
 	let view = this;
 
 	while (view) {
@@ -102,17 +102,17 @@ Context.prototype.getTemplateContext = function() {
 	}
 };
 
-Context.prototype.getTemplate = function() {
-	let ctx = this.getTemplateContext();
-	return ctx ? ctx.template : void 0;
+Scope.prototype.getTemplate = function() {
+	let scope = this.getTemplateScope();
+	return scope ? scope.template : void 0;
 };
 
-var lookup = function(tpl, ctx, key) {
+var lookup = function(tpl, scope, key) {
 	let view;
 
 	// 0-0. check for this
 	if (!key || key === "this") {
-		view = ctx;
+		view = scope;
 		while (view) {
 			let val = view.data;
 			if (val !== void 0) return val;
@@ -122,7 +122,7 @@ var lookup = function(tpl, ctx, key) {
 
 	// 0-1. special method $this
 	if (key === "$this") {
-		return (d) => ctx.parentData(d);
+		return (d) => scope.parentData(d);
 	}
 
 	// 1. check closest template helpers
@@ -132,7 +132,7 @@ var lookup = function(tpl, ctx, key) {
 	}
 
 	// 2. check lexical scope
-	view = ctx;
+	view = scope;
 	while (view) {
 		let val = view.get(key);
 		if (val !== void 0) return val;
@@ -144,6 +144,6 @@ var lookup = function(tpl, ctx, key) {
 	if (val !== void 0) return val;
 };
 
-Context.prototype.lookup = function(key) {
+Scope.prototype.lookup = function(key) {
 	return lookup(this.getTemplate(), this, key);
 };

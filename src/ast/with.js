@@ -10,7 +10,7 @@ export default class With extends Node {
 		let exp = this.expression.compile(data);
 
 		if (!this.attribute) this.push(this.tabs());
-		this.push([ `Temple.With(`, exp, `, ctx, function(ctx) {` ]).indent();
+		this.push([ `Temple.With(`, exp, `, scope, function(scope) {` ]).indent();
 		if (!this.attribute) this.push("\n");
 		let c = this._sn(data.filename, compileGroup(this.children, data));
 		if (this.attribute) c = [ " return Temple.utils.joinValues(", c.join(","), "); " ];

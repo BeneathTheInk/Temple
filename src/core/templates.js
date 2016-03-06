@@ -1,5 +1,5 @@
 import {toArray,includes,has,assign} from "lodash";
-import Context from "./context";
+import Scope from "./scope";
 import {EventEmitter} from "events";
 import Trackr from "trackr";
 import {patch} from "./idom";
@@ -45,16 +45,16 @@ Template.prototype.constructor = Template;
 Template.prototype.type = "template";
 Template.prototype.initialize = function(){};
 
-// plugin proxy for contexts
+// plugin proxy for scopes
 Template.prototype.use = function use(p) {
 	return loadPlugin(this, p, toArray(arguments).slice(1));
 };
 
-Template.prototype.createContext = function(data, parent) {
-	if (data instanceof Context) [parent,data] = [data,null];
-	let ctx = new Context(data, parent, this);
-	this.emit("context", ctx);
-	return ctx;
+Template.prototype.createScope = function(data, parent) {
+	if (data instanceof Scope) [parent,data] = [data,null];
+	let scope = new Scope(data, parent, this);
+	this.emit("scope", scope);
+	return scope;
 };
 
 Template.prototype.invalidate = function() {
@@ -64,10 +64,10 @@ Template.prototype.invalidate = function() {
 
 Template.prototype.render = function(data, key) {
 	this.s.renderdep.depend();
-	let ctx = this.createContext(data);
-	this.s.render(ctx, key);
-	this.emit("render", ctx);
-	return ctx;
+	let scope = this.createScope(data);
+	this.s.render(scope, key);
+	this.emit("render", scope);
+	return scope;
 };
 
 const injectable_nodes = [
@@ -82,12 +82,12 @@ Template.prototype.paint = function(node, data) {
 		throw new Error("Expecting a valid DOM element to paint.");
 	}
 
-	let ctx = data instanceof Context ? data : new Context(data);
+	let scope = data instanceof Scope ? data : new Scope(data);
 	let c = Trackr.autorun(() => {
-		patch(node, () => this.render(ctx));
+		patch(node, () => this.render(scope));
 	});
 
-	c.context = ctx;
+	c.scope = scope;
 	c.template = this;
 
 	c.onStop(() => {
@@ -124,9 +124,9 @@ Template.prototype.getHelper = function(key) {
 	return globalHelpers.get(key);
 };
 
-export function render(name, ctx, key) {
+export function render(name, scope, key) {
 	let tpl = getByName(name);
-	if (tpl) return tpl.render(ctx, key);
+	if (tpl) return tpl.render(scope, key);
 }
 
 export function getByName(name) {

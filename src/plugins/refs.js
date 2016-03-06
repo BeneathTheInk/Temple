@@ -16,21 +16,21 @@ export function warnOnce(msg) {
 }
 
 export function decorator(d, key) {
-	let ctx = d.owner;
-	if (!ctx.refs) ctx.refs = {};
+	let scope = d.owner;
+	if (!scope.refs) scope.refs = {};
 
 	// warn about overwrites overwrite
-	if (has(ctx.refs, key)) {
+	if (has(scope.refs, key)) {
 		warnOnce(`Multiple elements with reference '${key}'.`);
 		return;
 	}
 
 	// set the reference
-	ctx.refs[key] = d.target;
+	scope.refs[key] = d.target;
 
 	// remove the reference when the element disappears
 	d.comp.onInvalidate(() => {
-		delete ctx.refs[key];
+		delete scope.refs[key];
 	});
 }
 

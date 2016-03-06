@@ -1,15 +1,15 @@
 import {toArray,isArray,forEach as _each} from "lodash";
 import matchesSelector from "dom-matches";
 
-export function forEach(val, fn, ctx) {
-	if (val && typeof val.forEach === "function") val.forEach(fn, ctx);
-	else _each(val, fn, ctx);
+export function forEach(val, fn, scope) {
+	if (val && typeof val.forEach === "function") val.forEach(fn, scope);
+	else _each(val, fn, scope);
 }
 
-export function map(val, fn, ctx) {
+export function map(val, fn, scope) {
 	let res = [];
 	forEach(val, (v, i, l) => {
-		res.push(fn.call(ctx, v, i, l));
+		res.push(fn.call(scope, v, i, l));
 	});
 	return res;
 }

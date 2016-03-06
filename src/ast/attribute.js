@@ -28,10 +28,10 @@ export default class Attribute extends Node {
 		}
 
 		header(data, "var decorators = Temple.decorators;\n");
-		this.push([ this.tabs(), `decorators.render(ctx, ${JSON.stringify(this.name)}` ]);
+		this.push([ this.tabs(), `decorators.render(scope, ${JSON.stringify(this.name)}` ]);
 
 		if (fun) {
-			this.push(`, function(ctx) {\n`).indent();
+			this.push(`, function(scope) {\n`).indent();
 			this.write([ "return ", value, ";" ]);
 			this.outdent().push([ this.tabs(), `}` ]);
 		} else if (value) {

@@ -13,7 +13,7 @@ export default class Each extends Node {
 		let vars = JSON.stringify(this.variables || []);
 
 		if (!this.attribute) this.push(this.tabs());
-		this.push([ `Temple.Each(`, exp, `, `, vars, `, ctx, function(ctx, ${indexvar}) {` ]).indent();
+		this.push([ `Temple.Each(`, exp, `, `, vars, `, scope, function(scope, ${indexvar}) {` ]).indent();
 		if (!this.attribute) this.push("\n");
 		data = addKey(data, { value: indexvar });
 		let c = this._sn(data.filename, compileGroup(this.children, data));

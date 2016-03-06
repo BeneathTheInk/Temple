@@ -9,7 +9,7 @@ export default class Template extends Node {
 
 		header(data, "var Template = {};\n");
 
-		this.write(`Template[${safename}] = Temple.create(${safename}, ${safetype ? safetype + ", " : ""}function(ctx, key) {`).indent();
+		this.write(`Template[${safename}] = Temple.create(${safename}, ${safetype ? safetype + ", " : ""}function(scope, key) {`).indent();
 		data = addKey(data, { value: "key" });
 		this.push(compileGroup(this.children, data));
 		this.outdent().write("});\n");

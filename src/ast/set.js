@@ -10,7 +10,7 @@ export default class Set extends Node {
 		let safevar = JSON.stringify(this.variable);
 		if (this.attribute) this.push("(");
 		else this.push(this.tabs());
-		this.push([ `ctx.set(${safevar}, `, exp, `)` ]);
+		this.push([ `scope.set(${safevar}, `, exp, `)` ]);
 		if (!this.attribute) this.push(";\n");
 		else this.push(`, "")`);
 

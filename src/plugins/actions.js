@@ -5,9 +5,9 @@ var actions = {};
 
 // Action Class
 export class Action {
-	constructor(name, context) {
+	constructor(name, scope) {
 		this.name = name;
-		this.context = context;
+		this.scope = scope;
 		this.bubbles = true;
 	}
 
@@ -16,11 +16,11 @@ export class Action {
 		return this;
 	}
 
-	static create(name, context) {
+	static create(name, scope) {
 		let action;
 
 		if (typeof name === "string") {
-			action = new Action(name, context);
+			action = new Action(name, scope);
 		} else if (isObject(name) && !(name instanceof Action)) {
 			action = assign(new Action(), action);
 		} else {
@@ -62,7 +62,7 @@ export function defineEvent(event) {
 		let node, args;
 		let listener = function(e) {
 			// create a new action object
-			var action = new Action(key, decor.context);
+			var action = new Action(key, decor.scope);
 			action.original = e;
 			action.target = action.node = node;
 			action.owner = decor.owner;
@@ -133,33 +133,33 @@ export function remove(name, fn) {
 
 export function fire(a, b, args) {
 	let action = Action.create(a, b);
-	if (!action.context) {
-		throw new Error("Action is missing a context.");
+	if (!action.scope) {
+		throw new Error("Action is missing a scope.");
 	}
 
-	let ctx = action.context;
+	let scope = action.scope;
 	let name = action.name;
 	args = [].concat(action, args);
 
 	// runs function, unless propagation is stopped
 	function run(fn) {
-		if (fn.apply(ctx, args) === false) {
+		if (fn.apply(scope, args) === false) {
 			action.bubbles = false;
 		}
 
 		return !action.bubbles;
 	}
 
-	// bubble the action up through all the contexts
-	while (action.bubbles && ctx) {
-		if (ctx.template) {
-			let acts = ctx.template._actions;
+	// bubble the action up through all the scopes
+	while (action.bubbles && scope) {
+		if (scope.template) {
+			let acts = scope.template._actions;
 			if (acts != null && Array.isArray(acts[name])) {
 				acts[name].some(run);
 			}
 		}
 
-		ctx = ctx.parent;
+		scope = scope.parent;
 	}
 
 	// bubble action to the global actions
