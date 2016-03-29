@@ -23,7 +23,7 @@ function parseFiles(files, { filename }) {
 	}
 
 	if (Array.isArray(files)) files = files.reduce(function(memo, src, name) {
-		if (typeof name === "number") name = `template${name}.js`;
+		if (typeof name === "number") name = `template${name}.html`;
 		memo[name] = src;
 		return memo;
 	}, {});
@@ -75,6 +75,7 @@ export function compile(files, options={}, cb) {
 
 					if (entry) return entry;
 
+					if (typeof fs.stat !== "function") return;
 					return fs.stat(full).then(() => full).catch(e => {
 						if (e.code !== "ENOENT") throw e;
 					});

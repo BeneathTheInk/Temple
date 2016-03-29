@@ -36,7 +36,8 @@ Template.preview.decorate("preview-content", function(d, content) {
 		reloadPreview.depend();
 
 		var lp = promise = Temple.compile(content.get(), {
-			format: "iife"
+			format: "iife",
+			moduleName: "Template"
 		}).then(function(src) {
 			if (promise !== lp) return;
 

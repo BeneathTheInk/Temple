@@ -14,20 +14,24 @@ dist:
 	mkdir -p dist
 
 dist/temple.js: src/index.js $(SRC) dist
-	TARGET=browser $(BIN)/rollup $< -c -m $@.map -o $@
+	$(BIN)/rollup $< -c rollup/browser.js -m $@.map -o $@
 
 dist/temple.min.js: dist/temple.js dist
 	$(BIN)/uglifyjs $< -m -c warnings=false > $@
 
 temple.js: src/index.js $(SRC)
-	TARGET=node $(BIN)/rollup $< -c > $@
+	$(BIN)/rollup $< -c rollup/node.js > $@
 
 temple.cli.js: src/cli.js $(SRC) temple.js
 	echo "#!/usr/bin/env node\n" > $@
-	TARGET=node $(BIN)/rollup $< -c >> $@
+	$(BIN)/rollup $< -c rollup/node.js >> $@
+	chmod +x $@
 
 temple.es6.js: src/index.js $(SRC)
-	TARGET=es6 $(BIN)/rollup $< -c > $@
+	$(BIN)/rollup $< -c rollup/es6.js > $@
+
+temple.playground.js: src/playground/index.js $(SRC) temple.js dist/temple.min.js
+	$(BIN)/rollup $< -c rollup/node.js > $@
 
 temple-tests.basic.js: test/basic.js temple.js
 	TARGET=node TEST=1 $(BIN)/rollup $< -c > $@
@@ -37,9 +41,6 @@ temple-tests.full.js: test/full.js temple.js
 
 temple.cov.js: temple.js
 	$(BIN)/istanbul instrument $< > $@
-
-temple.playground.js: src/playground/index.js $(SRC) temple.js dist/temple.min.js
-	TARGET=node PLAYGROUND=1 $(BIN)/rollup $< -c > $@
 
 install-self: clean-self
 	ln -s ../ node_modules/templejs
