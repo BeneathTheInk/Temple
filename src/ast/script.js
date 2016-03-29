@@ -29,7 +29,7 @@ export default class Script extends Node {
 				this.write(`script[${JSON.stringify(n)}] = ${JSON.stringify(v)};`);
 			});
 			this.write(`document.head.appendChild(script);`);
-			this.outdent().write(`}());`);
+			this.outdent().write(`}());\n`);
 		} else {
 			this._normalize_indent();
 			let line = this._line || 1;

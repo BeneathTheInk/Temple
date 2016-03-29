@@ -60,6 +60,7 @@ export function compile(files, options={}, cb) {
 	let includes = [];
 
 	return rollup({
+		onwarn: () => {},
 		entry: "_entry.js",
 		plugins: [
 			{

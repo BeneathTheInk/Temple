@@ -19,7 +19,7 @@ Template.editor.decorate("ace-editor", function(d, content, reset) {
 	var editor = ace.edit(d.target);
 	editor.setTheme("ace/theme/monokai");
 	editor.$blockScrolling = Infinity;
-    var session = editor.getSession()
+	var session = editor.getSession()
 	session.setUseWorker(false);
 	session.setMode("ace/mode/html");
 	session.setUseWrapMode(true);
