@@ -78,10 +78,7 @@ export function compile(argv, Temple, onBuild) {
 		if (hasStdin) p.push(fetchStdin());
 
 		return Promise.all(p).then(r => {
-			return Temple.compile(fromPairs(r), {
-				format: argv.format,
-				async: true
-			});
+			return Temple.compile(fromPairs(r), argv);
 		}).then(result => {
 			done();
 			if (watcher) {

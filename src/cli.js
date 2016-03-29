@@ -23,7 +23,7 @@ commands.open = function(argv) {
 };
 
 var argv = minimist(process.argv.slice(2), {
-	string: [ "output", "format" ],
+	string: [ "output", "format", "moduleName", "moduleId" ],
 	boolean: [ "help", "version", "open", "watch" ],
 	alias: {
 		h: "help", H: "help",
@@ -31,7 +31,8 @@ var argv = minimist(process.argv.slice(2), {
 		m: "source-map",
 		o: "output",
 		w: "watch",
-		f: "format"
+		f: "format",
+		n: "moduleName"
 	}
 });
 

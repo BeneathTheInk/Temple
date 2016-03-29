@@ -65,18 +65,10 @@ start = ws nodes:(
 	/ includeNode
 	/ templateNode
 	/ commentNode ) ws)* {
-		var [children,styles,includes] = map(nodes, 0).reduce(function(m,n) {
-			m[n instanceof AST.Style ? 1 :
-				n instanceof AST.Include ? 2 : 0].push(n);
-			return m;
-		},[[],[],[]]);
-
 		return createNode("File", {
 			filename: options.filename,
 			source: text(),
-			children: children,
-			styles: styles,
-			includes: includes
+			children: map(nodes, 0)
 		});
 	}
 

@@ -30,25 +30,36 @@ Template.preview.decorate("preview-content", function(d, content) {
 	doc.write("");
 	doc.close();
 
+	var promise;
+
 	Trackr.autorun(function() {
 		reloadPreview.depend();
-		doc.open();
-		doc.write([
-			"<!DOCTYPE html>",
-			"<html lang=\"en-US\">",
-			"	<head>",
-			"		<meta charset=\"UTF-8\" />",
-			"		<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />",
-			"	</head>",
-			"	<body>",
-			"		<script type=\"text/javascript\" src=\"/temple.js\"></scr" + "ipt>",
-			"		<script type=\"text/javascript\">",
-			Temple.compile(content.get()).toString(),
-			"		</scr" + "ipt>",
-			"	</body>",
-			"</html>"
-		].join("\n"));
-		doc.close();
+
+		var lp = promise = Temple.compile(content.get(), {
+			format: "iife"
+		}).then(function(src) {
+			if (promise !== lp) return;
+
+			doc.open();
+			doc.write([
+				"<!DOCTYPE html>",
+				"<html lang=\"en-US\">",
+				"	<head>",
+				"		<meta charset=\"UTF-8\" />",
+				"		<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />",
+				"	</head>",
+				"	<body>",
+				"		<script type=\"text/javascript\" src=\"/temple.js\"></scr" + "ipt>",
+				"		<script type=\"text/javascript\">",
+				src,
+				"		</scr" + "ipt>",
+				"	</body>",
+				"</html>"
+			].join("\n"));
+			doc.close();
+		}).catch(function(e) {
+			console.error(e.stack || e);
+		});
 	});
 });
 </script>

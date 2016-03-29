@@ -5,14 +5,14 @@ import pegjs from "pegjs";
 import json from "rollup-plugin-json";
 import path from "path";
 import builtins from "browserify/lib/builtins.js";
-import {has,forEach,includes} from "lodash";
+import {has,forEach} from "lodash";
 import buildDOMTests from "./test/utils/build-dom-tests.js";
 import replace from 'rollup-plugin-replace';
 import uglifyjs from "uglify-js";
 
 var Temple;
 try { Temple = require("./"); }
-catch(e) {}
+catch(e) { e; }
 
 const emptyModule = require.resolve("browserify/lib/_empty.js");
 const rollupEmptyModule = require.resolve("rollup-plugin-node-resolve/src/empty.js");
@@ -78,7 +78,8 @@ export var parse = parser.parse;`,
 
 			return Temple.compile(code, {
 				filename: id,
-				async: true
+				format: "iife",
+				moduleName: "Template"
 			}).then((res) => {
 				return {
 					code: `export default ${JSON.stringify(uglifyjs.minify(res.code, { fromString: true }).code)};`,

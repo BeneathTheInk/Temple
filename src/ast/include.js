@@ -1,7 +1,5 @@
 import Node from "./node";
 import path from "path";
-import fs from "fs-promise";
-import {includes} from "lodash";
 
 export default class Include extends Node {
 	resolve(file) {
@@ -9,21 +7,8 @@ export default class Include extends Node {
 	}
 
 	compile(data) {
-		let fpath = this.resolve(data.filename);
-
-		if (includes(data.included, fpath)) {
-			let empty = this._sn(data.filename, "");
-			return data.async ? Promise.resolve(empty) : empty;
-		}
-
-		let compile = (src) => {
-			return data.parse(src, fpath).compile(data);
-		};
-
-		if (data.async) {
-			return fs.readFile(fpath, { encoding: "utf-8" }).then(compile);
-		} else {
-			return compile(fs.readFileSync(fpath, { encoding: "utf-8" }));
-		}
+		this.start(data);
+		this.write(`import ${JSON.stringify(this.src)};`);
+		return this.end();
 	}
 }
