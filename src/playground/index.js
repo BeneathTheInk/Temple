@@ -23,15 +23,17 @@ app.get("/", (req, res) => {
 	res.type("html").send(html);
 });
 
+const distDir = path.resolve(__dirname, "../dist");
+
 app.get("/temple(.min)?.js", (req, res) => {
-	res.sendFile(path.join(__dirname, "dist", req.path));
+	res.sendFile(path.join(distDir, req.path));
 });
 
 app.get("/playground.js", (req, res) => {
 	res.type("js").send(clientSource);
 });
 
-const examplesDir = path.join(__dirname, "src/playground/examples");
+const examplesDir = path.resolve(__dirname, "../examples");
 
 app.get("/examples", (req, res, next) => {
 	fs.readdir(examplesDir)
