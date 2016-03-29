@@ -73,7 +73,7 @@ Template.prototype.render = function(data, key) {
 const injectable_nodes = [
 	1,  // Node.ELEMENT_NODE,
 	9,  // Node.DOCUMENT_NODE,
-	11, // Node.DOCUMENT_FRAGMENT_NODE
+	11  // Node.DOCUMENT_FRAGMENT_NODE
 ];
 
 Template.prototype.paint = function(node, data) {

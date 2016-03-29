@@ -34,7 +34,7 @@ export function autoelement(node, fn) {
 		// catch errors that idom likes to throw
 		let cur;
 		try { cur = idom.currentElement(); }
-		catch(e) {}
+		catch(e) { e; }
 
 		// call straight or patch
 		if (cur === node) fn(node, c);
