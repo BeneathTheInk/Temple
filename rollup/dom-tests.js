@@ -1,5 +1,7 @@
-const fs = require("fs-promise");
-const path = require("path");
+import path from "path";
+import fs from "fs-promise";
+
+const domtest = /^\$DOMTEST:(.*)/;
 
 function ignoreNoExist(e) {
 	if (e.code !== "ENOENT" && e.code !== "ENOTDIR") throw e;
@@ -12,9 +14,9 @@ function fetchFile(d, n) {
 	}).catch(ignoreNoExist);
 }
 
-export default function(dir) {
+function buildDOMTests(dir) {
 	return fs.readdir(dir).then(files => {
-		let src = `import test from "tape";\n\nimport * as Temple from "templejs";`;
+		let src = `import test from "tape";\n\nvar Temple = require("../");`;
 		let next = () => {
 			if (!files.length) return Promise.resolve(src);
 			let file = files.shift();
@@ -29,9 +31,16 @@ export default function(dir) {
 					fetchFile(full, "test.js")
 				]).then(res => {
 					src += `\n\ntest(${JSON.stringify(file)}, function(t) {
-	${res[0]}
-	Temple.exec(${JSON.stringify(res[1])});
-	${res[2]}
+	Promise.resolve().then(function() {
+		${res[0]}
+		return Temple.exec(${JSON.stringify(res[1])});
+	}).then(function() {
+		${res[2]}
+	}).catch(function(e) {
+		t.error(e);
+	}).then(function() {
+		t.end();
+	});
 });`;
 				});
 			}).then(next);
@@ -39,4 +48,19 @@ export default function(dir) {
 
 		return next();
 	});
+}
+
+export default function() {
+	return {
+		resolveId: function(id, p) {
+			let m = id.match(domtest);
+			if (!m) return;
+			return "$DOMTEST:" + path.resolve(path.dirname(p), m[1]);
+		},
+		load: function(id) {
+			let m = id.match(domtest);
+			if (!m) return;
+			return buildDOMTests(m[1]);
+		}
+	};
 }

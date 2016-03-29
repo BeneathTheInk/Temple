@@ -1,14 +1,15 @@
 BIN = ./node_modules/.bin
 SRC = $(wildcard src/* src/*/* src/*/*/*)
+TEST = $(wildcard test/* test/*/* test/*/*/*)
 
-build: temple.js temple.cli.js temple.es6.js temple.playground.js dist/temple.js dist/temple.min.js
+build: build-dist build-lib
+build-dist: dist/temple.js dist/temple.min.js
+build-lib: lib/index.js lib/cli.js lib/es6.js lib/playground.js
 
-test: test-basic test-full test-dist test-dist-min
+test: test-node test-browser
 
-test-coverage: test-basic test-dist test-dist-min coverage
-
-clean: clean-self
-	rm -rf temple* dist/ coverage/
+clean:
+	rm -rf lib/ dist/ coverage/
 
 dist:
 	mkdir -p dist
@@ -19,52 +20,39 @@ dist/temple.js: src/index.js $(SRC) dist
 dist/temple.min.js: dist/temple.js dist
 	$(BIN)/uglifyjs $< -m -c warnings=false > $@
 
-temple.js: src/index.js $(SRC)
+lib:
+	mkdir -p lib
+
+lib/index.js: src/index.js lib/ $(SRC)
 	$(BIN)/rollup $< -c rollup/node.js > $@
 
-temple.cli.js: src/cli.js $(SRC) temple.js
+lib/cli.js: src/cli.js $(SRC) lib/index.js
 	echo "#!/usr/bin/env node\n" > $@
 	$(BIN)/rollup $< -c rollup/node.js >> $@
 	chmod +x $@
 
-temple.es6.js: src/index.js $(SRC)
+lib/es6.js: src/index.js lib/ $(SRC)
 	$(BIN)/rollup $< -c rollup/es6.js > $@
 
-temple.playground.js: src/playground/index.js $(SRC) temple.js dist/temple.min.js
+lib/playground.js: src/playground/index.js lib/ $(SRC) lib/index.js dist/temple.min.js
 	$(BIN)/rollup $< -c rollup/node.js > $@
 
-temple-tests.basic.js: test/basic.js temple.js
-	TARGET=node TEST=1 $(BIN)/rollup $< -c > $@
-
-temple-tests.full.js: test/full.js temple.js
-	TARGET=node TEST=1 $(BIN)/rollup $< -c > $@
-
-temple.cov.js: temple.js
+lib/coverage.js: temple.js
 	$(BIN)/istanbul instrument $< > $@
 
-install-self: clean-self
-	ln -s ../ node_modules/templejs
+bin/test-compile.js: test/compile.js lib/index.js
+	$(BIN)/rollup $< -c rollup/test.js > $@
 
-clean-self:
-	rm -f node_modules/templejs
+bin/test-runtime.js: test/runtime.js lib/index.js
+	$(BIN)/rollup $< -c rollup/test.js > $@
 
-test-basic: temple-tests.basic.js install-self
+bin/test-full.js: test/index.js lib/index.js
+	$(BIN)/rollup $< -c rollup/test.js > $@
+
+test-node: bin/test-compile.js
 	node $<
 
-test-full: temple-tests.full.js install-self
-	$(BIN)/browserify $< -i fs-promise --debug | $(BIN)/tape-run
+test-browser: bin/test-full.js
+	$(BIN)/browserify $< --debug | $(BIN)/tape-run
 
-test-dist: temple-tests.full.js dist/temple.js
-	$(BIN)/browserify $< -i fs-promise -r ./dist/temple.js:templejs --debug | $(BIN)/tape-run
-
-test-dist-min: temple-tests.full.js dist/temple.min.js
-	$(BIN)/browserify $< -i fs-promise -r ./dist/temple.min.js:templejs --debug | $(BIN)/tape-run
-
-coverage: temple-tests.full.js temple.cov.js
-	$(BIN)/browserify $< -i fs-promise -r ./temple.cov.js:templejs --debug | node ./bin/browser-coverage.js
-	$(BIN)/istanbul report --root coverage lcov
-
-report-coverage: coverage
-	$(BIN)/istanbul-coveralls --no-rm
-
-.PHONY: build test test-coverage clean test-basic test-full test-dist test-dist-min report-coverage install-self clean-self
+.PHONY: build build-lib build-dist clean test test-node test-browser

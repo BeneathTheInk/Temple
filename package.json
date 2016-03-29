@@ -20,9 +20,9 @@
     "prepublish": "make clean && make",
     "semantic-release": "semantic-release pre && npm publish && semantic-release post"
   },
-  "main": "temple.js",
-  "bin": "temple.cli.js",
-  "jsnext:main": "temple.es6.js",
+  "main": "lib/index.js",
+  "bin": "lib/cli.js",
+  "jsnext:main": "lib/es6.js",
   "browser": {
     "fs-promise": false
   },

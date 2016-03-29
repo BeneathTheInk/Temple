@@ -31,10 +31,11 @@ function parseFiles(files, { filename }) {
 	return files;
 }
 
-export function parse(files, options) {
-	files = parseFiles(files);
+export function parse(files, options={}) {
+	let singleMode = typeof files === "string";
+	files = parseFiles(files, options);
 
-	return map(files, function(src, name) {
+	let results = map(files, function(src, name) {
 		try {
 			return baseParse(src, assign({
 				filename: name
@@ -45,6 +46,8 @@ export function parse(files, options) {
 			throw e;
 		}
 	});
+
+	return singleMode ? results[0] : results;
 }
 
 function srcToString(smf) {
@@ -148,10 +151,18 @@ export function compile(files, options={}, cb) {
 }
 
 export function exec(tpl, options) {
-	/* jshint -W054 */
-	var r = compile(tpl, options);
-	// console.log(r);
-	return (new Function("Temple", r.code))(Temple);
+	return compile(tpl, assign({
+		format: "cjs"
+	}, options)).then(function(r) {
+		const module = { exports: {} };
+		const exports = module.exports;
+		const _require = (id) => {
+			if (id === "templejs") return Temple;
+			return require(id);
+		};
+
+		return (new Function("module", "exports", "require", r.code))(module, exports, _require);
+	});
 }
 
 // export function compileHTML(html, options) {

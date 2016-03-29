@@ -6,10 +6,6 @@ addons:
     packages:
       - xvfb
 
-cache:
-  directories:
-    - node_modules
-
 notifications:
   email: false
 
@@ -27,10 +23,9 @@ install:
 before_script:
   - npm run lint
 
-script: make test-coverage
+script: npm test
 
 after_success:
-  - make report-coverage
   - npm run semantic-release
 
 branches:

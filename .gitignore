@@ -1,6 +1,6 @@
 /dist
-/node_modules
+node_modules/
 /lib
 .infinite
 /coverage
-/temple*
+bin/test*
