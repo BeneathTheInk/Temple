@@ -2,7 +2,7 @@ import {assign,map,find,has} from "lodash";
 import {parse as baseParse} from "./m+xml.pegjs";
 import * as Temple from "../";
 import {rollup} from "rollup";
-import inject from "rollup-plugin-inject";
+import inject from "@mrgalaxy/rollup-plugin-inject";
 import fs from "fs-promise";
 import path from "path";
 
