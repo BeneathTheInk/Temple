@@ -1,5 +1,5 @@
 import * as AST from "../ast";
-import {assign,map,includes} from "lodash";
+import {assign,map,includes,union} from "lodash";
 import jsep from "jsep";
 #####
 
@@ -40,24 +40,8 @@ import jsep from "jsep";
 	function enterAttribute() { attributeMode = true; }
 	function exitAttribute() { attributeMode = false; }
 
-	var rawNodes = assign({
-		script: "Script",
-		style: "Style",
-	}, options.rawNodes);
-	var rawTags = Object.keys(rawNodes);
+	var rawTags = union(["script","style"], Object.keys(options.tags || {}));
 	var currentRawTag;
-
-	function createRawNode(tag, attrs, value) {
-		let astType = rawNodes[tag];
-		if (!astType) {
-			throw new Error("Unknown raw node tag '" + tag + "'");
-		}
-		return createNode(astType, {
-			tagname: tag,
-			attributes: attrs,
-			value: value
-		});
-	}
 }
 
 start = ws nodes:(
@@ -154,7 +138,6 @@ html = nodes:
 	( commentNode
 	/ section
 	/ interpolator
-	/ rawElementNode
 	/ elementNode
 	/ notClosingTag )* { return combineText(nodes); }
 
@@ -180,7 +163,12 @@ rawElementNode "raw tag"
 		return true;
 	} {
 		if (tagname[0] === "$") tagname = tagname.substr(1);
-		return createRawNode(tagname, attrs, v);
+
+		return createNode("Raw", {
+			tagname: tagname,
+			attributes: attrs,
+			value: v
+		});
 	}
 
 rawElementClosingTag = "</" t:tagname &{
