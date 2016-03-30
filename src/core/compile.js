@@ -134,16 +134,10 @@ export function compile(files, options={}, cb) {
 
 export function exec(tpl, options) {
 	return compile(tpl, assign({
-		format: "cjs"
+		format: "iife",
+		moduleName: "Template"
 	}, options)).then(function(r) {
-		const module = { exports: {} };
-		const exports = module.exports;
-		const _require = (id) => {
-			if (id === "templejs") return Temple;
-			return require(id);
-		};
-
-		return (new Function("module", "exports", "require", r.code))(module, exports, _require);
+		return (new Function("Temple", r.code))(Temple);
 	});
 }
 
