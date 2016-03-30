@@ -1,6 +1,5 @@
 import babel from "rollup-plugin-babel";
 import pegjs from "./pegjs";
-import temple from "./temple";
 import json from "rollup-plugin-json";
 import commonjs from 'rollup-plugin-commonjs';
 import nodeGlobals from "rollup-plugin-node-globals";
@@ -23,13 +22,12 @@ export default {
 	plugins: [
 		builtins(),
 		{
-			resolveId: function(id, p) {
+			resolveId: function(id) {
 				if (id === "fs") return rollupEmptyModule;
-				return _resolve.resolveId(id, p);
+				return _resolve.resolveId.apply(this, arguments);
 			}
 		},
 		pegjs(),
-		temple(),
 		json(),
 		babel({
 			exclude: [ "node_modules/**" ],

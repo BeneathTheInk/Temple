@@ -46,6 +46,7 @@
     "trackr-objects": "^0.4.0"
   },
   "devDependencies": {
+    "ace-editor-builds": "^1.2.0",
     "autorelease": "^1.6.0",
     "autorelease-github": "^1.1.1",
     "autorelease-travis": "^1.2.1",

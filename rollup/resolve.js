@@ -16,7 +16,7 @@ export default function() {
 			if (p && !incremental.test(id) && !relPath.test(id)) return false;
 
 			// otherwise resolve like node resolves
-			return resolve.resolveId(id, p);
+			return resolve.resolveId.apply(this, arguments);
 		}
 	};
 }

@@ -1,10 +1,9 @@
-<include src="header.html" />
-<include src="editor.html" />
-<include src="preview.html" />
-<include src="button-bar.html" />
+<include src="./header.html" />
+<include src="./editor.html" />
+<include src="./preview.html" />
+<include src="./button-bar.html" />
 
 <script type="text/javascript" src="https://use.fonticons.com/7a9027f4.js"></script>
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.5.0/lodash.min.js"></script>
 
 <template name="layout">
 	{% render "header" %}
@@ -39,9 +38,9 @@ body, html {
 var content = new Temple.Variable("");
 var examples = new Temple.List();
 var selectedExample = new Temple.Variable();
-document.addEventListener("DOMContentLoaded", updateExamples);
 
-window.addEventListener("load", function() {
+document.addEventListener("DOMContentLoaded", function() {
+	updateExamples();
 	Temple.paint("layout", "body", {
 		content: content,
 		examples: examples,

@@ -1,4 +1,9 @@
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.3/ace.js"></script>
+<script>
+import {debounce} from "lodash";
+import "ace-editor-builds/src/ace.js";
+import "ace-editor-builds/src/theme-monokai.js";
+import "ace-editor-builds/src/mode-html.js";
+</script>
 
 <template name="editor">
 	{% with buttonCtx %}
@@ -32,7 +37,7 @@ Template.editor.decorate("ace-editor", function(d, content, reset) {
 		didChange = false;
 	});
 
-	editor.on("change", _.debounce(function() {
+	editor.on("change", debounce(function() {
 		var val = editor.getValue();
 		if (content.get() !== val) {
 			didChange = true;

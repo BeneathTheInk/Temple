@@ -1,13 +1,13 @@
-import {assign,map,find,has} from "lodash";
+import {assign,map,find,has,includes} from "lodash";
 import {parse as baseParse} from "./m+xml.pegjs";
 import * as Temple from "../";
 import {rollup} from "rollup";
 import inject from "@mrgalaxy/rollup-plugin-inject";
-import fs from "fs-promise";
 import path from "path";
 
 const smfurl = "sourceMappingURL=";
 const datauri = "data:application/json;charset=utf-8;base64,";
+const rel_regex = /^\.{0,2}\//;
 
 var toBase64;
 if (typeof window !== "undefined" && typeof window.btoa === "function") {
@@ -58,9 +58,10 @@ function srcToString(smf) {
 
 export function compile(files, options={}, cb) {
 	files = parseFiles(files, options);
+	let exts = [].concat(options.extensions || ".html").filter(Boolean);
 	let basedir = options.basedir || (options.filename ? path.dirname(options.filename) : ".");
 	let hasCb = typeof cb === "function";
-	let includes = [];
+	let templates = [];
 
 	return rollup({
 		onwarn: () => {},
@@ -75,13 +76,12 @@ export function compile(files, options={}, cb) {
 					let entry = find(Object.keys(files), (name) => {
 						return path.resolve(basedir, name) === full;
 					});
-
 					if (entry) return entry;
 
-					if (typeof fs.stat !== "function") return;
-					return fs.stat(full).then(() => full).catch(e => {
-						if (e.code !== "ENOENT") throw e;
-					});
+					// only relative paths are followed
+					if (rel_regex.test(id) && includes(exts, path.extname(id))) {
+						return full;
+					}
 				},
 				load: function(id) {
 					if (id === "_entry.js") {
@@ -99,10 +99,10 @@ export function compile(files, options={}, cb) {
 					}
 				},
 				transform: function(src, id) {
-					if (id === "_entry.js" ||
-						id === "_template.js") return;
+					if (!includes(exts, path.extname(id))) return;
 
 					try {
+						templates.push(id);
 						let file = baseParse(src, assign({
 							filename: id
 						}, options));
@@ -123,7 +123,7 @@ export function compile(files, options={}, cb) {
 				idom: [ "templejs", "idom" ],
 				decorators: [ "templejs", "decorators" ]
 			})
-		]
+		].concat(options.plugins).filter(Boolean)
 	}).then(function(bundle) {
 		let out = bundle.generate({
 			format: options.format,
@@ -137,7 +137,7 @@ export function compile(files, options={}, cb) {
 			}
 		});
 
-		out.includes = includes;
+		out.templates = templates;
 		out.toString = srcToString;
 
 		return out;
