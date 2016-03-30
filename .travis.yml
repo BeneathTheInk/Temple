@@ -1,33 +1,24 @@
 sudo: false
 language: node_js
-
 addons:
   apt:
     packages:
       - xvfb
-
 notifications:
   email: false
-
 node_js:
   - '5'
-
 before_install:
   - npm i -g npm@latest
-
 install:
-  - export DISPLAY=':99.0'
-  - Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+  - "export DISPLAY=':99.0'"
+  - 'Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &'
   - npm install
-
 before_script:
   - npm run lint
-
 script: npm test
-
 after_success:
-  - npm run semantic-release
-
+  - npm run autorelease
 branches:
   only:
-    - "master"
+    - master

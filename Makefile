@@ -2,13 +2,9 @@ BIN = ./node_modules/.bin
 SRC = $(wildcard src/* src/*/* src/*/*/*)
 TEST = $(wildcard test/* test/*/* test/*/*/*)
 
-build: build-rollup-plugin-node-builtins build-lib build-dist
+build: build-lib build-dist
 build-dist: dist/temple.js dist/temple.min.js
 build-lib: lib/index.js lib/cli.js lib/es6.js lib/playground.js
-
-# until https://github.com/calvinmetcalf/rollup-plugin-node-builtins/issues/6 is fixed
-build-rollup-plugin-node-builtins:
-	cd node_modules/rollup-plugin-node-builtins && npm run build
 
 test: test-node test-browser
 

@@ -1,6 +1,6 @@
 {
   "name": "templejs",
-  "description": "A reactive Mustache view framework.",
+  "description": "A JavaScript view framework.",
   "author": "Beneath the Ink <info@beneaththeink.com>",
   "contributors": [
     {
@@ -18,7 +18,7 @@
     "test": "make test",
     "build": "make build",
     "prepublish": "make clean && make",
-    "semantic-release": "semantic-release pre && npm publish && semantic-release post"
+    "autorelease": "autorelease pre && npm publish && autorelease post"
   },
   "main": "lib/index.js",
   "bin": "lib/cli.js",
@@ -46,6 +46,9 @@
     "trackr-objects": "^0.4.0"
   },
   "devDependencies": {
+    "autorelease": "^1.6.0",
+    "autorelease-github": "^1.1.1",
+    "autorelease-travis": "^1.2.1",
     "babel-eslint": "^6.0.0",
     "babel-plugin-lodash": "^2.0.1",
     "babel-preset-es2015-rollup": "^1.1.1",
@@ -63,7 +66,6 @@
     "rollup-plugin-node-globals": "1.0.3",
     "rollup-plugin-node-resolve": "^1.4.0",
     "rollup-plugin-replace": "^1.1.0",
-    "semantic-release": "^4.3.5",
     "tape": "^4.4.0",
     "tape-run": "^2.1.3",
     "uglify-js": "^2.6.1"
