@@ -9,7 +9,7 @@ build-lib: lib/index.js lib/cli.js lib/es6.js lib/playground.js
 test: test-node test-browser
 
 clean:
-	rm -rf lib/ dist/ coverage/
+	rm -rf lib/ dist/ coverage/ bin/test*
 
 dist:
 	mkdir -p dist
