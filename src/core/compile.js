@@ -1,4 +1,4 @@
-import {assign,map,find,has,includes} from "lodash";
+import {assign,find,has,includes} from "lodash";
 import {parse as baseParse} from "./m+xml.pegjs";
 import * as Temple from "../";
 import {rollup} from "rollup";
@@ -31,23 +31,14 @@ function parseFiles(files, { filename }) {
 	return files;
 }
 
-export function parse(files, options={}) {
-	let singleMode = typeof files === "string";
-	files = parseFiles(files, options);
-
-	let results = map(files, function(src, name) {
-		try {
-			return baseParse(src, assign({
-				filename: name
-			}, options));
-		} catch(e) {
-			e.filename = name;
-			e.source = src;
-			throw e;
-		}
-	});
-
-	return singleMode ? results[0] : results;
+export function parse(src, options={}) {
+	try {
+		return baseParse(src, options);
+	} catch(e) {
+		e.filename = name;
+		e.source = src;
+		throw e;
+	}
 }
 
 function srcToString(smf) {
@@ -100,21 +91,12 @@ export function compile(files, options={}, cb) {
 				},
 				transform: function(src, id) {
 					if (!includes(exts, path.extname(id))) return;
+					templates.push(id);
 
-					try {
-						templates.push(id);
-						let file = baseParse(src, assign({
-							filename: id
-						}, options));
-
-						let out = file.compile(options).toStringWithSourceMap();
-						out.map = out.map.toJSON();
-						return out;
-					} catch(e) {
-						e.filename = id;
-						e.source = src;
-						throw e;
-					}
+					let file = parse(src, assign({ filename: id }, options));
+					let out = file.compile(options).toStringWithSourceMap();
+					out.map = out.map.toJSON();
+					return out;
 				}
 			},
 			inject({

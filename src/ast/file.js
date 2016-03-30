@@ -4,7 +4,7 @@ import Node from "./node";
 export default class File extends Node {
 	compile(data) {
 		data = assign({}, data, {
-			filename: this.filename || uniqueId("template_"),
+			filename: this.filename || (uniqueId("template") + ".html"),
 			headers: []
 		});
 

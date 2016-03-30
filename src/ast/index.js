@@ -1,5 +1,4 @@
 import Node from "./node";
-import Root from "./root";
 import File from "./file";
 import Include from "./include";
 import Template from "./template";
@@ -21,7 +20,7 @@ import Style from "./style";
 import * as utils from "./utils";
 
 export {
-	utils, Node, Root, File, Include,
+	utils, Node, File, Include,
 	Comment, Template, Script, Style,
 	Element, Text, Attribute,
 	If, Branch, Each, With, Set, Render,

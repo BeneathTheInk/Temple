@@ -1,3 +1,1 @@
-import "./root";
-import "./html";
-import "./section-tags";
+import "./file";
