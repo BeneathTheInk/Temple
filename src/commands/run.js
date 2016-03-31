@@ -1,6 +1,7 @@
 import {compile,printError} from "./compile";
 import open from "open";
 import express from "express";
+import {resolve} from "path";
 
 const html = `<!DOCTYPE html>
 
@@ -20,10 +21,11 @@ export default function(argv, Temple) {
 	let app = express();
 
 	app.get("/", (req, res) => res.send(html));
-	app.use(express.static(__dirname + "/dist"));
+	app.use(express.static(resolve(__dirname, "../dist")));
 	app.get("/template.js", (req, res) => res.type("js").send(source));
 
 	argv.format = "iife";
+	if (!argv.moduleName) argv.moduleName = "Template";
 	argv.watch = true;
 
 	return compile(argv, Temple, result => {

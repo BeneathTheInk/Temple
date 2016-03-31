@@ -83,7 +83,7 @@ export function compile(argv, Temple, onBuild) {
 			done();
 			if (watcher) {
 				watcher.unwatch(watchedFiles);
-				watcher.add(watchedFiles = result.includes);
+				watcher.add(watchedFiles = result.templates);
 			}
 			if (onBuild) onBuild(result);
 			return result;

@@ -20,10 +20,13 @@
 Template.list.actions("add-item", function(e, items) {
 	e.original.preventDefault();
 	var input = e.target.elements.itemValue;
-	if (input.value) {
-		items.push(input.value);
+	var value = input.value.trim();
+
+	if (value) {
+		items.push(value);
 		input.value = "";
 	}
+
 	input.focus();
 });
 
