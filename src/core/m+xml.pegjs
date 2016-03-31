@@ -269,12 +269,20 @@ attributeValue
 Sections
 */
 
-section
-	= ifSection
+section "section"
+	= &(sOpen (name:jsVariable {
+		if (!includes([
+			"render", "if", "endif", "each", "endeach", "with", "endwith", "set"
+		], name)) {
+			expected("valid template section name");
+		}
+	})) v:(ifSection
 	/ eachSection
 	/ renderSection
 	/ withSection
-	/ setSection
+	/ setSection) {
+		return v;
+	}
 
 sOpen = "{%" ws
 sClose = ws "%}"
