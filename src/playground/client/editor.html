@@ -1,0 +1,126 @@
+<script>
+import {debounce} from "lodash";
+import "ace-editor-builds/src/ace.js";
+import "ace-editor-builds/src/theme-monokai.js";
+import "ace-editor-builds/src/mode-html.js";
+</script>
+
+<template name="editor">
+	{% with buttonCtx %}
+	{% render "button-bar" %}
+	{% endwith %}
+
+	<div class="ace-editor" ace-editor={content,resetEditor}></div>
+</template>
+
+<script>
+Template.editor.helpers({
+	buttonCtx: {
+		contentView: "editor-navbar"
+	}
+});
+
+Template.editor.decorate("ace-editor", function(d, content, reset) {
+	var editor = ace.edit(d.target);
+	editor.setTheme("ace/theme/monokai");
+	editor.$blockScrolling = Infinity;
+	var session = editor.getSession()
+	session.setUseWorker(false);
+	session.setMode("ace/mode/html");
+	session.setUseWrapMode(true);
+
+	var didChange = false;
+
+	Trackr.autorun(function() {
+		var val = content.get();
+		if (!didChange) editor.setValue(val, -1);
+		didChange = false;
+	});
+
+	editor.on("change", debounce(function() {
+		var val = editor.getValue();
+		if (content.get() !== val) {
+			didChange = true;
+			if (val) content.set(val);
+			else reset();
+		}
+	}, 1000));
+
+	d.comp.onInvalidate(function() {
+		editor.destroy();
+	});
+}, {
+	defer: true
+});
+</script>
+
+<template name="editor-navbar" use="actions">
+	<div class="dropdown btn" on-click="toggle-dropdown">
+		<span class="handle"><i class="icon icon-caret-down"></i></span>
+		<span class="value{% if !selectedExample.get() %} value-hide{% endif %}">
+			{{ selectedExample.get() }}
+		</span>
+		<div class="dropdown-menu">
+			{% each ex in examples %}
+			<a href="#" on-click={'select-item',fetchExample,ex}>{{ ex }}</a>
+			{% endeach %}
+		</div>
+	</div>
+	<a href="#" class="btn btn-right"><i class="icon icon-share"></i> Share</a>
+	<a href="#" class="btn btn-right{% if !content.get() %} btn-hide{% endif %}" on-click={'reset-editor',resetEditor}>
+		<i class="icon icon-reset icon-fw"></i> Start Over
+	</a>
+</template>
+
+<script>
+function closest(node, selector) {
+	while (node) {
+		if (node.nodeType === Node.ELEMENT_NODE) {
+			if (selector.nodeType === Node.ELEMENT_NODE) {
+				if (selector === node) return node;
+			} else if (typeof selector === "string") {
+				if (node.matches(selector)) return node;
+			}
+		}
+
+		node = node.parentNode;
+	}
+}
+
+Template["editor-navbar"].actions({
+	"select-item": function(e, fetch, item) {
+		e.original.preventDefault();
+		fetch(item);
+	},
+	"toggle-dropdown": function(e) {
+		// don't prevent default on menu item
+		if (!closest(e.original.target, ".dropdown-menu a")) {
+			e.original.preventDefault();
+		}
+
+		var dropdown = e.target;
+		dropdown.classList.toggle("open");
+
+		setTimeout(function() {
+			var onclick;
+			document.addEventListener("click", onclick = function(e) {
+				document.removeEventListener("click", onclick);
+				if (!closest(e.target, dropdown)) {
+					dropdown.classList.remove("open");
+				}
+			});
+		}, 0);
+	},
+	"reset-editor": function(e, reset) {
+		e.original.preventDefault();
+		reset();
+	}
+});
+</script>
+
+<style>
+.ace-editor {
+	width: 100%;
+	height: 100%;
+}
+</style>

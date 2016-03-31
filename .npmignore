@@ -1,5 +1,7 @@
-.git*
-test/
-src/
-docs/
-gulpfile.js
+.*
+test*
+Makefile
+/docs
+/coverage
+rollup.config.js
+/bin

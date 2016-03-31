@@ -1,0 +1,84 @@
+<include src="./header.html" />
+<include src="./editor.html" />
+<include src="./preview.html" />
+<include src="./button-bar.html" />
+
+<script type="text/javascript" src="https://use.fonticons.com/7a9027f4.js"></script>
+
+<template name="layout">
+	{% render "header" %}
+	<div class="content-box editor-box">{% render "editor" %}</div>
+	<div class="content-box preview-box">{% render "preview" %}</div>
+</template>
+
+<style>
+body, html {
+	height: 100%;
+	font-family: sans-serif;
+}
+
+*, *:before, *:after {
+	box-sizing: border-box;
+}
+
+.content-box {
+	float: left;
+	width: 50%;
+	height: 100%;
+	position: relative;
+	padding-top: 50px;
+}
+
+.content-box:nth-of-type(1) {
+	border-right: 2px solid #cccccc;
+}
+</style>
+
+<script>
+var content = new Temple.Variable("");
+var examples = new Temple.List();
+var selectedExample = new Temple.Variable();
+
+document.addEventListener("DOMContentLoaded", function() {
+	updateExamples();
+	Temple.paint("layout", "body", {
+		content: content,
+		examples: examples,
+		selectedExample: selectedExample,
+		fetchExample: fetchExample,
+		resetEditor: resetEditor
+	});
+});
+
+function updateExamples() {
+	var req = new XMLHttpRequest();
+
+	req.addEventListener("load", function() {
+		examples.splice(0, examples.length);
+		if (Array.isArray(req.response)) {
+			examples.push.apply(examples, req.response);
+		}
+	});
+
+	req.open("GET", "/examples");
+	req.responseType = "json";
+	req.send();
+}
+
+function fetchExample(example) {
+	var req = new XMLHttpRequest();
+
+	req.addEventListener("load", function() {
+		selectedExample.set(example);
+		content.set(req.responseText);
+	});
+
+	req.open("GET", "/examples/" + encodeURIComponent(example));
+	req.send();
+}
+
+function resetEditor() {
+	selectedExample.set();
+	content.set("");
+}
+</script>

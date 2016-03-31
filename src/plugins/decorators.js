@@ -1,9 +1,8 @@
-import * as _ from "underscore";
+import {forEach,isArray,assign} from "lodash";
+import { currentElement, updateAttribute } from "../core/idom";
 import Trackr from "trackr";
-import { updateAttribute, getContext } from "../idom";
-import { getPropertyFromClass } from "../utils";
-import { register } from "./";
 import raf from "raf";
+import Scope from "../core/scope";
 
 var decorators = {};
 
@@ -12,88 +11,18 @@ export function plugin() {
 	this.decorate = add;
 	this.stopDecorating = remove;
 	this.findDecorator = find;
-	this.renderDecorator = render;
-
-	// copy inherited decorators
-	if (typeof this !== "function") {
-		var decs = getPropertyFromClass(this, "_decorators");
-		this._decorators = _.extend(this._decorators || {}, decs);
-	}
 }
 
 export default plugin;
-register("decorators", plugin);
-
-export function render(name, options) {
-	options = options || {};
-	let ictx = getContext();
-	let el = ictx && ictx.walker.getCurrentParent();
-
-	// look up decorator by name
-	let d = find.call(this, name);
-
-	// render as attribute if no decorators
-	if (!d) {
-		if (el && typeof options.string === "function") {
-			Trackr.autorun(function() {
-				updateAttribute(el, name, options.string());
-			});
-		}
-
-		return;
-	}
-
-	let view = this;
-	let _comp = Trackr.currentComputation;
-	let dcomp, anim;
-
-	_comp.onInvalidate(function() {
-		if (anim) raf.cancel(anim);
-		if (dcomp) dcomp.stop();
-	});
-
-	// render each decorator
-	function runDecorator() {
-		anim = null;
-		dcomp = Trackr.autorun(function(comp) {
-			// assemble the arguments!
-			var args = [ _.extend({
-				target: el,
-				owner: d.context,
-				view: view,
-				comp: comp,
-				options: d.options,
-				render: options
-			}, options.mixin) ];
-
-			// render arguments based on options
-			if (d.options && d.options.parse === "string") {
-				if (typeof options.string === "function") args.push(options.string());
-			} else if (d.options == null || d.options.parse !== false) {
-				if (typeof options["arguments"] === "function") args = args.concat(options["arguments"]());
-			}
-
-			// execute the callback
-			d.callback.apply(d.context, args);
-		});
-	}
-
-	// defer computation because we cannot have unknown changes happening to the DOM
-	let inline = d.options && (d.options.inline || d.options.instant);
-	if (inline) runDecorator();
-	else anim = raf(runDecorator);
-
-	return true;
-}
 
 // creates a decorator
 export function add(name, fn, options) {
 	if (typeof name === "object") {
 		options = fn;
-		_.each(name, function(fn, n) {
-			if (_.isArray(fn)) add.call(this, n, fn[0], fn[1]);
+		forEach(name, (fn, n) => {
+			if (isArray(fn)) add.call(this, n, fn[0], fn[1]);
 			else add.call(this, n, fn, options);
-		}, this);
+		});
 		return this;
 	}
 
@@ -102,29 +31,12 @@ export function add(name, fn, options) {
 
 	var decs = this._decorators ? this._decorators : decorators;
 	decs[name] = {
+		template: this,
 		callback: fn,
 		options: options || {}
 	};
 
 	return this;
-}
-
-// finds first decorator
-export function find(name) {
-	let c = this;
-
-	while (c != null) {
-		let decs = c._decorators;
-		if (decs != null && decs[name]) {
-			return _.extend({ context: c }, decs[name]);
-		}
-
-		c = c.parent === c ? null : c.parent;
-	}
-
-	if (decorators[name]) {
-		return _.extend({ context: global }, decorators[name]);
-	}
 }
 
 // removes a decorator
@@ -137,4 +49,96 @@ export function remove(name) {
 	}
 
 	return this;
+}
+
+export function find(name) {
+	let decs = this._decorators;
+	if (decs != null && decs[name]) {
+		return decs[name];
+	}
+}
+
+// finds the best decorator
+export function lookup(scope, name) {
+	// look on the closest template
+	let owner = scope.getTemplateScope();
+	if (owner) {
+		let dec = owner.template.findDecorator(name);
+		if (dec) return assign({ owner }, dec);
+	}
+
+	// look globally
+	if (decorators[name]) {
+		return assign({ owner: global }, decorators[name]);
+	}
+}
+
+function setAttribute(node, name, values) {
+	let v = !values || !values.length || values[0] == null ? "" : values[0];
+	updateAttribute(node, name, v);
+}
+
+export function render(_scope, name, value) {
+	let node = currentElement();
+	if (!node) throw new Error("Not currently patching.");
+
+	// each decorator is given its own scope
+	let scope = new Scope(null, _scope);
+
+	let isStaticValue = typeof value !== "function";
+	let getValue = () => {
+		let val = isStaticValue ? value : value(scope);
+		if (!isArray(val)) val = [ val ];
+		return val;
+	};
+
+	// look up decorator by name
+	let d = lookup(scope, name);
+
+	// quick escape if static value and no decorator
+	if (isStaticValue && !d) {
+		setAttribute(node, name, getValue());
+		return;
+	}
+
+	let anim, comp;
+	let cancel = false;
+	let decscope = assign({
+		target: node,
+		scope: scope
+	}, d);
+
+	let run = function(c) {
+		decscope.comp = c;
+		let val = getValue();
+
+		if (!d) {
+			setAttribute(node, name, val);
+			return;
+		}
+
+		// execute the callback
+		d.callback.apply(d.template, [decscope].concat(val));
+	};
+
+	// defer computation if desired
+	if (d && d.options && d.options.defer) {
+		// clean up when current computation reruns
+		let pcomp = Trackr.currentComputation;
+		if (!pcomp) throw new Error("Can only render decorator in a computation.");
+		pcomp.onInvalidate(() => {
+			cancel = true;
+			if (anim) raf.cancel(anim);
+			if (comp) comp.stop();
+		});
+
+		// run decorator on the next frame
+		anim = raf(() => {
+			if (cancel) return;
+			anim = null;
+			comp = Trackr.autorun(run);
+		});
+	} else {
+		Trackr.autorun(run);
+	}
 }

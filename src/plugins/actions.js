@@ -1,21 +1,37 @@
-import * as _ from "underscore";
-import { register } from "./";
-import { getPropertyFromClass } from "../utils";
+import {isObject,assign,isArray,forEach,without} from "lodash";
 
-var slice = Array.prototype.slice;
 var decorators = {};
 var actions = {};
 
 // Action Class
 export class Action {
-	constructor(name) {
+	constructor(name, scope) {
 		this.name = name;
+		this.scope = scope;
 		this.bubbles = true;
 	}
 
 	stopPropagation() {
 		this.bubbles = false;
 		return this;
+	}
+
+	static create(name, scope) {
+		let action;
+
+		if (typeof name === "string") {
+			action = new Action(name, scope);
+		} else if (isObject(name) && !(name instanceof Action)) {
+			action = assign(new Action(), action);
+		} else {
+			action = name;
+		}
+
+		if (!(action instanceof Action)) {
+			throw new Error("Expecting action name, object or instance of Action.");
+		}
+
+		return action;
 	}
 }
 
@@ -24,20 +40,11 @@ export function plugin() {
 	this.use("decorators");
 	this._actions = {};
 	this.actions = this.addAction = add;
-	this.addActionOnce = addOnce;
 	this.removeAction = remove;
-	this.fireAction = fire;
-	this.decorate(decorators, { inline: true });
-
-	// copy inherited actions
-	if (typeof this !== "function") {
-		var decs = getPropertyFromClass(this, "_actions");
-		this._actions = _.extend(this._actions || {}, decs);
-	}
+	this.decorate(decorators);
 }
 
 export default plugin;
-register("actions", plugin);
 
 // standard dom events
 defineEvent([
@@ -49,36 +56,26 @@ defineEvent([
 ]);
 
 export function defineEvent(event) {
-	if (_.isArray(event)) return event.forEach(defineEvent);
+	if (isArray(event)) return event.forEach(defineEvent);
 
 	decorators["on-" + event] = function(decor, key) {
-		var self = this,
-			args, node;
-
-		function listener(e) {
+		let node, args;
+		let listener = function(e) {
 			// create a new action object
-			var action = new Action(key);
+			var action = new Action(key, decor.scope);
 			action.original = e;
 			action.target = action.node = node;
-			action.context = decor.context;
-			action.view = decor.view;
-
-			// find the first parent with the fire method
-			var fireOn = self;
-			while (typeof fireOn.fireAction !== "function") {
-				// if it has no parent, we can't do anything
-				if (fireOn.parent == null) return;
-				fireOn = fireOn.parent;
-			}
+			action.owner = decor.owner;
+			action.template = decor.template;
 
 			// fire the action
-			return fireOn.fireAction.apply(fireOn, [ action ].concat(args));
-		}
+			return fire(action, null, args);
+		};
 
 		node = decor.target;
-		args = _.toArray(arguments).slice(2);
-		node.addEventListener(event, listener);
+		args = Array.prototype.slice.call(arguments, 2);
 
+		node.addEventListener(event, listener);
 		decor.comp.onInvalidate(function() {
 			node.removeEventListener(event, listener);
 		});
@@ -88,7 +85,7 @@ export function defineEvent(event) {
 // Msutache Instance Methods
 export function add(name, fn) {
 	if (typeof name === "object" && fn == null) {
-		_.each(name, function(fn, n) { add.call(this, n, fn); }, this);
+		forEach(name, (fn, n) => add.call(this, n, fn));
 		return this;
 	}
 
@@ -99,22 +96,6 @@ export function add(name, fn) {
 	if (!obj) obj = actions;
 	if (obj[name] == null) obj[name] = [];
 	if (!~obj[name].indexOf(fn)) obj[name].push(fn);
-
-	return this;
-}
-
-export function addOnce(name, fn) {
-	if (typeof name === "object" && fn == null) {
-		_.each(name, function(fn, n) { addOnce.call(this, n, fn); }, this);
-		return this;
-	}
-
-	var onAction;
-
-	add.call(this, name, onAction = function () {
-		remove.call(this, name, onAction);
-		fn.apply(this, arguments);
-	});
 
 	return this;
 }
@@ -138,45 +119,47 @@ export function remove(name, fn) {
 	}
 
 	else if (name == null) {
-		_.each(obj, function(d, n) {
+		forEach(obj, function(d, n) {
 			obj[n] = d.filter(function(f) { return f !== fn; });
 		});
 	}
 
 	else if (obj[name] != null) {
-		obj[name] = _.without(obj[name], fn);
+		obj[name] = without(obj[name], fn);
 	}
 
 	return this;
 }
 
-export function fire(action) {
-	if (typeof action === "string") action = new Action(action);
-	if (_.isObject(action) && !(action instanceof Action)) action = _.extend(new Action(), action);
-	if (!(action instanceof Action)) throw new Error("Expecting action name, object or instance of Action.");
+export function fire(a, b, args) {
+	let action = Action.create(a, b);
+	if (!action.scope) {
+		throw new Error("Action is missing a scope.");
+	}
 
-	var name = action.name,
-		args = slice.call(arguments, 1),
-		view = this;
-
-	args.unshift(action);
+	let scope = action.scope;
+	let name = action.name;
+	args = [].concat(action, args);
 
 	// runs function, unless propagation is stopped
 	function run(fn) {
-		if (fn.apply(view, args) === false) {
+		if (fn.apply(scope, args) === false) {
 			action.bubbles = false;
 		}
-		
+
 		return !action.bubbles;
 	}
 
-	// bubble the action up through all the views
-	while (action.bubbles && view) {
-		if (view._actions != null && Array.isArray(view._actions[name])) {
-			view._actions[name].some(run);
+	// bubble the action up through all the scopes
+	while (action.bubbles && scope) {
+		if (scope.template) {
+			let acts = scope.template._actions;
+			if (acts != null && Array.isArray(acts[name])) {
+				acts[name].some(run);
+			}
 		}
 
-		view = view.parent;
+		scope = scope.parent;
 	}
 
 	// bubble action to the global actions

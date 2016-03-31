@@ -1,42 +1,48 @@
-import { register } from "./";
+import { has, includes } from "lodash";
 
 export function plugin() {
 	this.use("decorators");
-	this.refs = {};
-	this.decorate("ref", decorator, { inline: true });
-	this.findByRef = find;
+	this.decorate("ref", decorator);
 }
 
 export default plugin;
-register("refs", plugin);
+
+var warned = [];
+
+export function warnOnce(msg) {
+	if (includes(warned, msg)) return;
+	console.warn(msg);
+	warned.push(msg);
+}
 
 export function decorator(d, key) {
-	var self = this;
+	let scope = d.owner;
+	if (!scope.refs) scope.refs = {};
 
-	// don't overwrite
-	if (this.refs[key] != null) {
-		console.warn("Multiple elements with reference '%s'.", key);
+	// warn about overwrites overwrite
+	if (has(scope.refs, key)) {
+		warnOnce(`Multiple elements with reference '${key}'.`);
 		return;
 	}
 
 	// set the reference
-	this.refs[key] = d.target;
+	scope.refs[key] = d.target;
 
 	// remove the reference when the element disappears
-	d.comp.onInvalidate(function() {
-		delete self.refs[key];
+	d.comp.onInvalidate(() => {
+		delete scope.refs[key];
 	});
 }
 
-export function find(key) {
-	var tpls = [ this ],
-		tpl;
-
-	while (tpls.length) {
-		tpl = tpls.shift();
-		if (tpl.refs && tpl.refs[key]) return tpl.refs[key];
-		tpls = tpls.concat(tpl.getComponents());
-	}
-
-	return null;
-}
+// export function find(key) {
+// 	var tpls = [ this ],
+// 		tpl;
+//
+// 	while (tpls.length) {
+// 		tpl = tpls.shift();
+// 		if (tpl.refs && tpl.refs[key]) return tpl.refs[key];
+// 		// tpls = tpls.concat(tpl.getComponents());
+// 	}
+//
+// 	return null;
+// }

@@ -1,4 +1,6 @@
 /dist
-/node_modules
+node_modules/
 /lib
 .infinite
+/coverage
+bin/test*

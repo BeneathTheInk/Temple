@@ -1,0 +1,83 @@
+<template name="list" use="actions">
+	<h3>Todo List</h3>
+
+	<ol>
+		{% each i, item in items %}
+		<li>
+			{{ item }}
+			<a href="#" class="remove" on-click={'remove-item',items,i}>remove</a>
+		</li>
+		{% endeach %}
+	</ol>
+
+	<form on-submit={'add-item',items}>
+		<input type="text" name="itemValue" autofocus />
+		<button type="submit">Add #{{ items.length + 1 }}</button>
+	</form>
+</template>
+
+<script>
+Template.list.actions("add-item", function(e, items) {
+	e.original.preventDefault();
+	var input = e.target.elements.itemValue;
+	var value = input.value.trim();
+
+	if (value) {
+		items.push(value);
+		input.value = "";
+	}
+
+	input.focus();
+});
+
+Template.list.actions("remove-item", function(e, items, index) {
+	e.original.preventDefault();
+	items.splice(index, 1);
+});
+</script>
+
+<style>
+body {
+	font-family: sans-serif;
+	color: #333;
+}
+
+button {
+	background-color: #1dd550;
+	border: none;
+	border-radius: 3px;
+	padding: 5px 10px;
+	border: 1px solid #19d14c;
+	color: white;
+	font-size: 1em;
+}
+
+input[type="text"] {
+	outline: none;
+	border: 1px solid #d5d5d5;
+	border-radius: 3px;
+	padding: 5px 10px;
+	font-size: 1em;
+}
+
+input[type="text"]:focus {
+	border-color: #b1afaf;
+}
+
+a.remove {
+	color: #bf2f2f;
+	font-size: 0.8em;
+	display: inline-block;
+	margin-left: 1em;
+}
+
+a.remove:hover {
+	text-decoration: none;
+}
+</style>
+
+<script>
+Template.list.paint("body", {
+	items: new Temple.List()
+});
+</script>

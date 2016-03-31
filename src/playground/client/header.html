@@ -1,0 +1,39 @@
+<template name="header">
+	<nav>
+		<div class="page-header">
+			<h1>Temple Playground</h1>
+		</div>
+	</nav>
+</template>
+
+<style>
+body {
+	margin: 0;
+	padding: 100px 0 0 0;
+	font-size: 16px;
+	line-height: 1.5;
+}
+
+nav {
+	position: fixed;
+	width: 100%;
+	top: 0;
+	left: 0;
+	height: 100px;
+	background-color: green;
+}
+
+nav .page-header {
+
+}
+
+@media(max-height: 900px) {
+	body {
+		padding-top: 70px;
+	}
+
+	nav {
+		height: 70px;
+	}
+}
+</style>
