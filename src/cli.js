@@ -1,15 +1,13 @@
 import minimist from "minimist";
 import {has} from "lodash";
 
-var Temple = require("./");
-
 import help from "./commands/help";
 import version from "./commands/version";
 import compile from "./commands/compile";
 import run from "./commands/run";
 import playground from "./commands/playground";
 
-var commands = {
+const commands = {
 	help, version,
 	compile, run, playground
 };
@@ -22,13 +20,13 @@ commands.open = function(argv) {
 	return commands.run.apply(this, arguments);
 };
 
-var argv = minimist(process.argv.slice(2), {
+const argv = minimist(process.argv.slice(2), {
 	string: [ "output", "format", "moduleName", "moduleId" ],
 	boolean: [ "help", "version", "open", "watch" ],
 	alias: {
 		h: "help", H: "help",
 		v: "version", V: "version",
-		m: "source-map",
+		m: "sourceMap", "source-map": "sourceMap",
 		o: "output",
 		w: "watch",
 		f: "format",
@@ -51,4 +49,4 @@ else if (argv._.length) {
 	cmd = process.stdin.isTTY ? "help" : "compile";
 }
 
-commands[cmd](argv, Temple);
+commands[cmd](argv);

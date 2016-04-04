@@ -1,8 +1,9 @@
-import {compile,printError} from "./compile";
+import {compile,printError,srcToString} from "./compile";
 import open from "open";
 import express from "express";
 import {resolve} from "path";
 
+const browser = resolve(__dirname, "../dist/browser.min.js");
 const html = `<!DOCTYPE html>
 
 <html lang="en-US">
@@ -16,33 +17,40 @@ const html = `<!DOCTYPE html>
 	</body>
 </html>`;
 
-export default function(argv, Temple) {
+export default async function(argv) {
+	let c = compile(argv);
 	let source;
 	let app = express();
 
 	app.get("/", (req, res) => res.send(html));
-	app.use(express.static(resolve(__dirname, "../dist")));
+	app.get("/temple.js", (req, res) => res.sendFile(browser));
 	app.get("/template.js", (req, res) => res.type("js").send(source));
 
 	argv.format = "iife";
 	if (!argv.moduleName) argv.moduleName = "Template";
 	argv.watch = true;
 
-	return compile(argv, Temple, result => {
-		source = result.toString();
-	}).then(() => {
-		// let server = http.createServer(onRequest());
-		let server = app.listen(argv.port || 6392, "127.0.0.1", () => {
-			let addr = server.address();
-			let url = `http://${addr.address}:${addr.port}`;
-			if (argv.open) open(url);
-			console.log(`HTTP server listening at ${url}.`);
-			console.log(`Type Ctrl-C to stop the server.`);
-		});
+	c.on("build", (result) => {
+		source = srcToString.call(result);
+	});
 
-		server.on("error", (e) => {
-			printError(e);
-			process.exit(1);
-		});
-	}).catch(printError);
+	try {
+		await c.build();
+	} catch(e) {
+		printError(e);
+		return process.exit(1);
+	}
+
+	let server = app.listen(argv.port || 6392, () => {
+		let addr = server.address();
+		let url = `http://localhost:${addr.port}`;
+		if (argv.open) open(url);
+		console.log(`HTTP server listening at ${url}.`);
+		console.log(`Type Ctrl-C to stop the server.`);
+	});
+
+	server.on("error", (e) => {
+		printError(e);
+		process.exit(1);
+	});
 }

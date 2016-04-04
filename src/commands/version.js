@@ -1,5 +1,6 @@
+import {name,version} from "../../package.json";
 
-export default function(argv, Temple) {
-	console.log("templejs %s", Temple.version);
+export default function() {
+	console.log("%s %s", name, version);
 	process.exit(0);
 }
