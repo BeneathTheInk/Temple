@@ -21,7 +21,13 @@ dist/browser.js: src/index.js dist
 dist/browser.min.js: dist/browser.js
 	$(BIN)/uglifyjs $< -mc warnings=false > $@
 
+test.js: test/index.js $(TEST)
+	$(BIN)/rollup $< -c build/rollup.node.js > $@
+
+test: test.js
+	$(BIN)/tape $<
+
 clean:
-	rm -rf bin/ dist/
+	rm -rf test.js bin/ dist/
 
 .PHONY: build clean

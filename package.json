@@ -18,7 +18,7 @@
     "lint": "eslint src/ test/",
     "test": "make test",
     "build": "make clean && make",
-    "prepublish": "make clean && make",
+    "prepublish": "npm run build",
     "autorelease": "autorelease pre && npm publish && autorelease post"
   },
   "main": "index.js",
