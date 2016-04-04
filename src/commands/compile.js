@@ -1,20 +1,10 @@
 import fs from "fs-promise";
 import path from "path";
 import chokidar from "chokidar";
-import {has,assign,fromPairs,repeat} from "lodash";
+import {repeat} from "lodash";
 import chalk from "chalk";
 import Temple from "templejs-compiler";
-import {rollup} from "rollup";
 import {EventEmitter} from "events";
-import inject from "@mrgalaxy/rollup-plugin-inject";
-
-async function fetchFile(f) {
-	let src = await fs.readFile(path.resolve(f), {
-		encoding: "utf-8"
-	});
-
-	return [f, src];
-}
 
 var STDIN;
 
@@ -75,7 +65,7 @@ export function compile(argv) {
 	let emitter = new EventEmitter();
 	let timeout, watcher;
 	let building = false;
-	let files = argv._.map(f => path.resolve(f));
+	let files = argv._.slice(0);
 	let watchedFiles = files.slice(0);
 	let hasStdin = !process.stdin.isTTY;
 
@@ -85,78 +75,26 @@ export function compile(argv) {
 		let done = () => building = false;
 
 		try {
-			const templates = [];
-			let p = files.map(fetchFile);
-			if (hasStdin) p.push(fetchStdin());
-			let srcs = fromPairs(await Promise.all(p));
-
-			let bundle = await rollup({
-				onwarn: () => {},
-				entry: "_entry.js",
-				plugins: [
-					{
-						resolveId: function(id) {
-							if (id === "_entry.js" ||
-								id === "_template.js" ||
-								id === "_input.html") return id;
-						},
-						load: function(id) {
-							if (id === "_entry.js") {
-								return Object.keys(srcs)
-									.map(f => `import ${JSON.stringify(f)};`)
-									.join("\n") +
-									"\nexport default Template;\n";
-							}
-
-							if (id === "_template.js") {
-								return "export default {};\n";
-							}
-
-							if (has(srcs, id)) return srcs[id];
-						},
-						transform: function(src, id) {
-							if (path.extname(id) !== ".html") return;
-							if (id[0] === "/") templates.push(id);
-
-							let res = Temple.compile(src, assign({}, argv, {
-								filename: id,
-								extensions: [ ".html" ],
-								format: "none"
-							}));
-
-							return {
-								code: res.code,
-								map: res.map.toJSON()
-							};
-						}
+			let result = await Temple.compileFile(files, {
+				plugins: [hasStdin ? {
+					resolveId: function(id) {
+						if (id === "_input.html") return id;
 					},
-					inject({
-						Temple: "templejs",
-						Template: "_template.js",
-						idom: [ "templejs", "idom" ],
-						decorators: [ "templejs", "decorators" ]
-					})
-				]
-			});
-
-			let out = bundle.generate({
+					load: function(id) {
+						if (id === "_input.html") return fetchStdin();
+					}
+				} : {}],
 				format: argv.format,
-				sourceMap: true,
-				exports: "default",
-				useStrict: false,
 				moduleId: argv.moduleId,
-				moduleName: argv.moduleName,
-				globals: {
-					templejs: "Temple"
-				}
+				moduleName: argv.moduleName
 			});
 
 			if (watcher) {
 				watcher.unwatch(watchedFiles);
-				watcher.add(watchedFiles = templates);
+				watcher.add(watchedFiles = result.templates);
 			}
 
-			emitter.emit("build", out);
+			emitter.emit("build", result);
 		} finally {
 			done();
 		}

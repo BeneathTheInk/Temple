@@ -24,7 +24,6 @@
   "main": "index.js",
   "bin": "bin/cli.js",
   "dependencies": {
-    "@mrgalaxy/rollup-plugin-inject": "^2.0.0",
     "chalk": "^1.1.3",
     "chokidar": "^1.4.3",
     "express": "^4.13.4",
@@ -32,7 +31,6 @@
     "lodash": "^4.8.1",
     "minimist": "^1.2.0",
     "open": "0.0.5",
-    "rollup": "^0.25.8",
     "templejs-compiler": "^1.1.0",
     "templejs-playground": "^1.0.0",
     "templejs-runtime": "^1.0.0"
