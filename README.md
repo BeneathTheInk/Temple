@@ -18,7 +18,7 @@ templejs playground
 
 Some helpful links:
 
-- [Online Playground](#)
+- [Online Playground](https://temple.beneaththeink.com)
 - [Template Syntax Reference](https://github.com/BeneathTheInk/Temple/wiki/Language-Reference)
 - [API Documentation](https://github.com/BeneathTheInk/Temple/wiki/API-Documentation)
 - [Examples](https://github.com/tyler-johnson/temple-playground/tree/master/examples)
