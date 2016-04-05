@@ -26,11 +26,12 @@ const argv = minimist(process.argv.slice(2), {
 	alias: {
 		h: "help", H: "help",
 		v: "version", V: "version",
-		m: "sourceMap", "source-map": "sourceMap",
+		m: "sourceMap", "source-map": "sourceMap", "sourcemap": "sourceMap",
 		o: "output",
 		w: "watch",
 		f: "format",
-		n: "moduleName"
+		n: "moduleName", "module-name": "moduleName",
+		"module-id": "moduleId"
 	}
 });
 
