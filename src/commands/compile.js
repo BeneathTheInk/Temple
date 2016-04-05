@@ -1,28 +1,32 @@
 import fs from "fs-promise";
 import path from "path";
 import chokidar from "chokidar";
-import {fromPairs,repeat} from "lodash";
+import {repeat} from "lodash";
 import chalk from "chalk";
-
-function fetchFile(f) {
-	return fs.readFile(path.resolve(f), {
-		encoding: "utf-8"
-	}).then(src => {
-		return [f, src];
-	});
-}
+import Temple from "templejs-compiler";
+import {EventEmitter} from "events";
 
 var STDIN;
 
-function fetchStdin() {
-	if (STDIN != null) return Promise.resolve([ "_input.js", STDIN ]);
-	return new Promise((resolve, reject) => {
+async function fetchStdin() {
+	if (STDIN != null) return [ "_input.html", STDIN ];
+
+	return await new Promise((resolve, reject) => {
 		let src = "";
 		process.stdin.setEncoding("utf-8");
 		process.stdin.on("data", (d) => src += d);
-		process.stdin.on("end", () => resolve([ "_input.js", STDIN = src ]));
+		process.stdin.on("end", () => resolve([ "_input.html", STDIN = src ]));
 		process.stdin.on("error", reject);
 	});
+}
+
+const smfurl = "sourceMappingURL=";
+const datauri = "data:application/json;charset=utf-8;base64,";
+
+export function srcToString(smf) {
+	return this.code + (!smf ? "" : "\n\n//# " + smfurl +
+		(typeof smf === "string" ? smf :
+			datauri + new Buffer(this.map.toString(), "utf8").toString("base64")));
 }
 
 export function printError(e) {
@@ -57,87 +61,115 @@ export function printError(e) {
 	}
 }
 
-function panic(e) {
-	printError(e);
-	process.exit(1);
-}
-
-export function compile(argv, Temple, onBuild) {
+export function compile(argv) {
+	let emitter = new EventEmitter();
 	let timeout, watcher;
 	let building = false;
-	let files = argv._.map(f => path.resolve(f));
+	let files = argv._.slice(0);
 	let watchedFiles = files.slice(0);
 	let hasStdin = !process.stdin.isTTY;
 
-	function build() {
+	async function build() {
 		if (building) return invalidate();
 		building = true;
 		let done = () => building = false;
 
-		let p = files.map(fetchFile);
-		if (hasStdin) p.push(fetchStdin());
+		try {
+			let result = await Temple.compileFile(files, {
+				plugins: [hasStdin ? {
+					resolveId: function(id) {
+						if (id === "_input.html") return id;
+					},
+					load: function(id) {
+						if (id === "_input.html") return fetchStdin();
+					}
+				} : {}],
+				format: argv.format,
+				moduleId: argv.moduleId,
+				moduleName: argv.moduleName
+			});
 
-		return Promise.all(p).then(r => {
-			return Temple.compile(fromPairs(r), argv);
-		}).then(result => {
-			done();
 			if (watcher) {
 				watcher.unwatch(watchedFiles);
 				watcher.add(watchedFiles = result.templates);
 			}
-			if (onBuild) onBuild(result);
-			return result;
-		}, e => {
+
+			emitter.emit("build", result);
+		} finally {
 			done();
-			throw e;
-		});
+		}
 	}
 
 	function invalidate() {
 		if (timeout) return;
 		timeout = setTimeout(() => {
 			timeout = null;
-			build().catch(printError);
+			build().catch(e => {
+				emitter.emit("error", e);
+			});
 		}, 500);
 	}
 
+	emitter.build = build;
+	emitter.invalidate = invalidate;
+
 	if (argv.watch) {
-		watcher = chokidar.watch(watchedFiles, {
+		watcher = emitter.watcher = chokidar.watch(watchedFiles, {
 			ignoreInitial: true,
 			persistent: true
 		});
 
 		watcher.on("all", invalidate);
-		watcher.on("error", panic);
+		watcher.on("error", e => {
+			emitter.emit("error", e);
+		});
 	}
 
-	return build();
+	emitter.close = function close() {
+		if (watcher) watcher.close();
+		emitter.emit("close");
+	};
+
+	return emitter;
 }
 
-export default function(argv, Temple) {
-	return compile(argv, Temple, result => {
-		let mapFile = argv["source-map"];
-		let output = argv.output ? path.resolve(argv.output) : null;
-		let p = [];
-		let code;
+export default async function(argv) {
+	const c = compile(argv);
+	const onError = e => {
+		printError(e);
+		if (!argv.watch) process.exit(1);
+	};
 
-		if (!mapFile) {
-			code = result.code;
-		} else {
+	c.on("build", async (result) => {
+		try {
+			let mapFile = argv.sourceMap;
+			let output = argv.output ? path.resolve(argv.output) : null;
+			let p = [];
+			let code;
+
 			if (mapFile === "inline") mapFile = null;
-			code = result.toString(mapFile);
+			code = srcToString.call(result, mapFile);
 
 			if (typeof mapFile === "string") {
 				if (output) mapFile = path.resolve(path.dirname(output), mapFile);
 				else mapFile = path.resolve(mapFile);
-				p.push(fs.writeFile(mapFile, result.map.toString()));
+				p.push(fs.writeFile(mapFile, JSON.stringify(result.map, null, 2)));
 			}
-		}
 
-		if (output) return fs.writeFile(output, code);
-		console.log(code);
-	}).catch(e => {
-		printError(e);
-		if (!argv.watch) process.exit(1);
+			if (output) p.push(fs.writeFile(output, code));
+			else console.log(code);
+
+			await Promise.all(p);
+		} catch(e) {
+			onError(e);
+		}
 	});
+
+	c.on("error", onError);
+
+	try {
+		await c.build();
+	} catch(e) {
+		onError(e);
+	}
 }

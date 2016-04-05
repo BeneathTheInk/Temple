@@ -21,6 +21,6 @@ Some helpful links:
 - [Online Playground](#)
 - [Template Syntax Reference](https://github.com/BeneathTheInk/Temple/wiki/Language-Reference)
 - [API Documentation](https://github.com/BeneathTheInk/Temple/wiki/API-Documentation)
-- [Examples](examples)
+- [Examples](https://github.com/tyler-johnson/temple-playground/tree/master/examples)
 
 All contributions are welcome! Please submit an [issue](https://github.com/BeneathTheInk/Temple/issues/new) or [pull-request](https://github.com/BeneathTheInk/Temple/pulls). If you need help, join me on [Gitter](https://gitter.im/BeneathTheInk/Temple).

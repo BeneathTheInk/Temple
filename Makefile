@@ -2,57 +2,32 @@ BIN = ./node_modules/.bin
 SRC = $(wildcard src/* src/*/* src/*/*/*)
 TEST = $(wildcard test/* test/*/* test/*/*/*)
 
-build: build-lib build-dist
-build-dist: dist/temple.js dist/temple.min.js
-build-lib: lib/index.js lib/cli.js lib/es6.js lib/playground.js
+build: bin/cli.js dist/browser.min.js
 
-test: test-node test-browser
+bin:
+	mkdir -p $@
 
-clean:
-	rm -rf lib/ dist/ coverage/ bin/test*
-
-dist:
-	mkdir -p dist
-
-dist/temple.js: src/index.js $(SRC) dist
-	$(BIN)/rollup $< -c rollup/browser.js -m $@.map -o $@
-
-dist/temple.min.js: dist/temple.js dist
-	$(BIN)/uglifyjs $< -m -c warnings=false > $@
-
-lib:
-	mkdir -p lib
-
-lib/index.js: src/index.js lib/ $(SRC)
-	$(BIN)/rollup $< -c rollup/node.js > $@
-
-lib/cli.js: src/cli.js $(SRC) lib/index.js
-	echo "#!/usr/bin/env node\n" > $@
-	$(BIN)/rollup $< -c rollup/node.js >> $@
+bin/cli.js: src/cli.js $(SRC) bin
+	echo "#!/usr/bin/env node" > $@
+	$(BIN)/rollup $< -c build/rollup.node.js >> $@
 	chmod +x $@
 
-lib/es6.js: src/index.js lib/ $(SRC)
-	$(BIN)/rollup $< -c rollup/es6.js > $@
+dist:
+	mkdir -p $@
 
-lib/playground.js: src/playground/index.js lib/ $(SRC) lib/index.js dist/temple.min.js
-	$(BIN)/rollup $< -c rollup/node.js > $@
+dist/browser.js: src/index.js dist
+	$(BIN)/rollup $< -c build/rollup.browser.js > $@
 
-lib/coverage.js: temple.js
-	$(BIN)/istanbul instrument $< > $@
+dist/browser.min.js: dist/browser.js
+	$(BIN)/uglifyjs $< -mc warnings=false > $@
 
-bin/test-compile.js: test/compile.js lib/index.js
-	$(BIN)/rollup $< -c rollup/test.js > $@
+test.js: test/index.js $(TEST)
+	$(BIN)/rollup $< -c build/rollup.node.js > $@
 
-bin/test-runtime.js: test/runtime.js lib/index.js
-	$(BIN)/rollup $< -c rollup/test.js > $@
+test: test.js
+	$(BIN)/tape $<
 
-bin/test-full.js: test/index.js lib/index.js
-	$(BIN)/rollup $< -c rollup/test.js > $@
+clean:
+	rm -rf test.js bin/ dist/
 
-test-node: bin/test-compile.js
-	node $<
-
-test-browser: bin/test-full.js
-	$(BIN)/browserify $< --debug | $(BIN)/tape-run
-
-.PHONY: build build-lib build-dist clean test test-node test-browser
+.PHONY: build clean
